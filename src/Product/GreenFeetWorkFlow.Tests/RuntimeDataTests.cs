@@ -1,6 +1,4 @@
-﻿using FluentAssertions;
-
-namespace GreenFeetWorkflow.Tests;
+﻿namespace GreenFeetWorkflow.Tests;
 
 /// <summary>
 /// test the runtime api

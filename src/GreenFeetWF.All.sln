@@ -13,6 +13,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GreenFeetWorkFlow.Ioc.Autof
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5B7CC424-7590-4D44-9EF9-B54E05F33A56}"
 	ProjectSection(SolutionItems) = preProject
+		createRelease.cmd = createRelease.cmd
 		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
