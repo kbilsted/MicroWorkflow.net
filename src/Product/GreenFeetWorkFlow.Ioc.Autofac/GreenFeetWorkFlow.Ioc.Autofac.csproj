@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+
+		<IsPackable>true</IsPackable>
+		<Authors>Kasper B. Graversen</Authors>
+		<RepositoryUrl>https://github.com/kbilsted/GreenFeetWorkFlowWorkflow</RepositoryUrl>
+		<IncludeSymbols>True</IncludeSymbols>
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+		<Title>Autofac extensions</Title>
+		<PackageTags>Autofac; GreenFeetWorkFlow</PackageTags>
+		<PackageReadmeFile>readme.md</PackageReadmeFile>
+
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Autofac" Version="7.1.0" />
+		<ProjectReference Include="..\GreenFeetWorkFlow\GreenFeetWorkFlow.csproj" />
+
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="LICENSE">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Update="readme.md">
+		  <Pack>True</Pack>
+		  <PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+
+</Project>
