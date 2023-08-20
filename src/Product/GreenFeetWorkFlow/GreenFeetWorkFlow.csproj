@@ -7,14 +7,13 @@
 
 		<IsPackable>true</IsPackable>
 
-		<Title>A free and tiny workflow engine</Title>
+		<Title>A very fast workflow engine with zero dependencies</Title>
 
 		<Authors>Kasper B. Graversen</Authors>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<RepositoryUrl>https://github.com/kbilsted/GreenFeetWorkflow</RepositoryUrl>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<AnalysisLevel>6.0</AnalysisLevel>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Description>
 			A very simple workflow engine that can run in any DB, or memory, adapts to any logging framework and any IOC container.
 			Is so simple to use that you can understand the situation even when production fails and you need to look in the Database for state.
@@ -23,22 +22,16 @@
 		</Description>
 
 		<Copyright>Kasper B. Graversen</Copyright>
-
-		<PackageProjectUrl></PackageProjectUrl>
+		<IncludeContentInPack>true</IncludeContentInPack>
+		<PackageProjectUrl>https://github.com/kbilsted/GreenFeetWorkFlow</PackageProjectUrl>
 
 		<PackageTags>workflow; work flow; workflows; GreenFeetWorkFlow; GreenFeetWorkFlow; free</PackageTags>
-
-		<AssemblyVersion>0.0.0.1</AssemblyVersion>
-
-		<FileVersion>0.0.0.1</FileVersion>
 
 		<IncludeSymbols>True</IncludeSymbols>
 
 		<GeneratePackageOnBuild>False</GeneratePackageOnBuild>
 
 		<PackageId>$(AssemblyName)</PackageId>
-
-		<IsPublishable>False</IsPublishable>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

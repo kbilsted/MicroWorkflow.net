@@ -10,7 +10,7 @@ public class DemoInMemoryPersister : IStepPersister
 
     static readonly Dictionary<int, Step> ReadySteps = new();
     static readonly HashSet<int> Locked = new();
-    HashSet<int>? LockedLocal;
+    HashSet<int>? LockedLocal = new();
 
     public object? Transaction { get; set; }
 
@@ -29,12 +29,9 @@ public class DemoInMemoryPersister : IStepPersister
                 return null;
 
             Locked.Add(step.Id);
-            if (LockedLocal != null)
+            if (LockedLocal.Any())
                 throw new Exception("inside an existing transaction");
-            LockedLocal = new HashSet<int>
-            {
-                step.Id
-            };
+            LockedLocal.Add(step.Id);
 
             return step;
         }
@@ -59,9 +56,6 @@ public class DemoInMemoryPersister : IStepPersister
 
             foreach (var step in newSteps)
             {
-                if (step.CorrelationId == null)
-                    throw new NullReferenceException("step correlationId cannot be null");
-
                 step.Id = GlobalId++;
                 ReadySteps.Add(step.Id, step);
             }
@@ -74,7 +68,6 @@ public class DemoInMemoryPersister : IStepPersister
         {
             foreach (var step in LockedLocal!)
                 Locked.Remove(step);
-            LockedLocal = null;
         }
     }
 
