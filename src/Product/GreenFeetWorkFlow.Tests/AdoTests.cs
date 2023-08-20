@@ -41,11 +41,8 @@ public class WorkerTests
             })));
 
         stepResult.Should().Be("hello 1234");
-        helper.Persister.CountTables(helper.FlowId).Should().BeEquivalentTo(new Dictionary<StepStatus, int>{
-            { StepStatus.Ready, 0},
-            { StepStatus.Done, 1},
-            { StepStatus.Failed, 0},
-        });
+        helper.AssertTableCounts(helper.FlowId, ready: 0, done: 1, failed: 0);
+
     }
 
     [Test]
@@ -84,29 +81,20 @@ public class WorkerTests
                 GenericStepHandler.Create(step => throw new FailCurrentStepException("some description"))
             ));
 
-        helper.Persister.CountTables(helper.FlowId).Should().BeEquivalentTo(new Dictionary<StepStatus, int>{
-            { StepStatus.Ready, 0},
-            { StepStatus.Done, 0},
-            { StepStatus.Failed, 1},
-        });
+        helper.AssertTableCounts(helper.FlowId, ready: 0, done: 0, failed: 1);
     }
 
     [Test]
     public void When_executing_step_throwing_special_FailCurrentStepException_from_step_Then_fail_current_step()
     {
-
-
         helper.CreateAndRunEngine(
             new Step("test-throw-failstepexception_from_step_variable") { FlowId = helper.FlowId },
             (
                 "test-throw-failstepexception_from_step_variable",
                 GenericStepHandler.Create(step => throw step.FailAsException())));
 
-        helper.Persister.CountTables(helper.FlowId).Should().BeEquivalentTo(new Dictionary<StepStatus, int>{
-            { StepStatus.Ready, 0},
-            { StepStatus.Done, 0},
-            { StepStatus.Failed, 1},
-        });
+        helper.AssertTableCounts(helper.FlowId, ready: 0, done: 0, failed: 1);
+
     }
 
 
@@ -126,12 +114,7 @@ public class WorkerTests
                     throw new Exception("exception message");
                 })));
 
-        helper.Persister.CountTables(helper.FlowId)
-            .Should().BeEquivalentTo(new Dictionary<StepStatus, int>{
-                { StepStatus.Ready, 1},
-                { StepStatus.Done, 0},
-                { StepStatus.Failed, 0},
-            });
+        helper.AssertTableCounts(helper.FlowId, ready: 1, done: 0, failed: 0);
 
         var row = helper.Persister.GetStep(dbid!.Value);
         row!.PersistedState.Should().Be("\"hej\"");
@@ -204,18 +187,13 @@ public class WorkerTests
         helper.CreateAndRunEngine(new Step { Name = "check-flowid/a", FlowId = helper.FlowId }, implA, implB);
 
         stepResult.Should().Be($"{helper.FlowId}");
-        helper.Persister.CountTables(helper.FlowId).Should().BeEquivalentTo(new Dictionary<StepStatus, int>{
-            { StepStatus.Ready, 0},
-            { StepStatus.Done, 2},
-            { StepStatus.Failed, 0},
-        });
+        
+        helper.AssertTableCounts(helper.FlowId, ready: 0, done: 2, failed: 0);
     }
 
     [Test]
     public void TwoSteps_flow_same_correlationid()
     {
-
-
         string? stepResult = null;
 
         var implA = ("check-correlationid/a", new GenericStepHandler(step => step.Done(new Step("check-correlationid/b"))));
@@ -234,18 +212,12 @@ public class WorkerTests
 
         stepResult.Should().Be(helper.CorrelationId);
 
-        helper.Persister.CountTables(helper.FlowId).Should().BeEquivalentTo(new Dictionary<StepStatus, int>{
-            { StepStatus.Ready, 0},
-            { StepStatus.Done, 2},
-            { StepStatus.Failed, 0},
-        });
+        helper.AssertTableCounts(helper.FlowId, ready: 0, done: 2, failed: 0);
     }
 
     [Test]
     public void When_a_step_creates_a_new_step_Then_new_step_may_change_correlationid()
     {
-
-
         string? stepResult = null;
         string oldId = Guid.NewGuid().ToString();
         string newId = Guid.NewGuid().ToString();
@@ -305,11 +277,7 @@ public class WorkerTests
 
         stepResult.Should().Be($"cooking potatoes");
 
-        helper.Persister.CountTables(helper.FlowId).Should().BeEquivalentTo(new Dictionary<StepStatus, int>{
-            { StepStatus.Ready, 1},
-            { StepStatus.Done, 1},
-            { StepStatus.Failed, 0},
-        });
+        helper.AssertTableCounts(helper.FlowId, ready: 1, done: 1, failed: 0);
     }
 
     [Test]
@@ -319,45 +287,28 @@ public class WorkerTests
 
         var name = "When_step_is_in_the_future_Then_it_can_be_activated_to_execute_now";
 
+        var engine = helper.CreateEngine((name, GenericStepHandler.Create(step => { stepResult = step.FlowId; return step.Done(); })));
         Step futureStep = new()
         {
             Name = name,
             FlowId = helper.FlowId,
-            SearchKey = helper.FlowId.ToString(),
             ScheduleTime = DateTime.Now.AddYears(35)
         };
-        helper.CreateAndRunEngine(
-            new[] { futureStep },
-            (name,
-            step =>
-            {
-                stepResult = step.SearchKey;
-                return step.Done();
-            }
-        ));
+        var id = engine.Runtime.Data.AddStep(futureStep, null);
+        engine.Start(numberOfWorkers: 1, stopWhenNoWorkLeft: true);
+        helper.AssertTableCounts(helper.FlowId, ready: 1, done: 0, failed: 0);
 
-        helper.Persister.CountTables(helper.FlowId).Should().BeEquivalentTo(new Dictionary<StepStatus, int>{
-            { StepStatus.Ready, 1},
-            { StepStatus.Done, 0},
-            { StepStatus.Failed, 0},
-        });
-
-        _ = helper.Engine!.Runtime.Data.ActivateStep(helper.FlowId.ToString(), null, null);
+        _ = helper.Engine!.Runtime.Data.ActivateStep(id, null);
         helper.Engine.Start(numberOfWorkers: 1, stopWhenNoWorkLeft: true);
 
         stepResult.Should().Be(helper.FlowId.ToString());
 
-        helper.Persister.CountTables(helper.FlowId).Should().BeEquivalentTo(new Dictionary<StepStatus, int>{
-            { StepStatus.Ready, 0},
-            { StepStatus.Done, 1},
-            { StepStatus.Failed, 0},
-        });
+        helper.AssertTableCounts(helper.FlowId, ready: 0, done: 1, failed: 0);
     }
 
     [Test]
     public void TwoSteps_flow_with_last_step_undefined_stephandler__so_test_terminate()
     {
-
         string? stepResult = null;
 
         var cookHandler = ("undefined-next-step/cookFood", new GenericStepHandler((step) =>
@@ -372,19 +323,13 @@ public class WorkerTests
 
         stepResult.Should().Be($"cooking potatoes");
 
-        helper.Persister.CountTables(helper.FlowId)
-            .Should().BeEquivalentTo(new Dictionary<StepStatus, int>{
-            { StepStatus.Ready, 1},
-            { StepStatus.Done, 1},
-            { StepStatus.Failed, 0},
-        });
+        helper.AssertTableCounts(helper.FlowId, ready: 1, done: 1, failed: 0);
     }
 
 
     [Test]
     public void When_a_step_creates_two_steps_Then_those_steps_can_be_synchronized_and_join_into_a_forth_merge_step()
     {
-
         string? stepResult = null;
 
         var stepDriveToShop = new Step("v1/forkjoin/drive-to-shop", new[] { "milk", "cookies" });
@@ -422,11 +367,8 @@ public class WorkerTests
 
         stepResult.Should().Be($"total: 61");
 
-        helper.Persister.CountTables(helper.FlowId).Should().BeEquivalentTo(new Dictionary<StepStatus, int>{
-            { StepStatus.Ready, 0},
-            { StepStatus.Done, 4},
-            { StepStatus.Failed, 0},
-        });
+        helper.AssertTableCounts(helper.FlowId, ready: 0, done: 4, failed: 0);
+
     }
 
 

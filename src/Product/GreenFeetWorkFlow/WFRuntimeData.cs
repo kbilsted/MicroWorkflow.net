@@ -13,14 +13,11 @@ public class WfRuntimeData
         this.formatter = formatter;
     }
 
-    public int ActivateStep(string searchKey, string? stepName, object? activationArguments)
+    public int ActivateStep(int id, object? activationArguments)
     {
-        string serializedArguments = activationArguments == null
-         ? serializedArguments = string.Empty
-         : serializedArguments = formatter.Serialize(activationArguments);
+        string? serializedArguments = formatter.Serialize(activationArguments);
 
-        // todo mangler at anvende  serializedArguments 
-        int rows = iocContainer.GetInstance<IStepPersister>().ActivateStep(searchKey, stepName, null);
+        int rows = iocContainer.GetInstance<IStepPersister>().ActivateStep(id, serializedArguments);
 
         return rows;
     }

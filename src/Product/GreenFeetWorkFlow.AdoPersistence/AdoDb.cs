@@ -229,12 +229,12 @@ public class AdoDbStepPersister : IStepPersister
     }
 
     // TODO fejler
-    public int ActivateStep(string searchKey, string? stepName, string? arguments)
+    public int ActivateStep(int id, string? activationData)
     {
         if (Transaction == null)
             CreateTransaction();
 
-        int rows = helper.UpdateReadyBySearchKeyAndName(TableNameReady, stepName, searchKey, Transaction!);
+        int rows = helper.UpdateStep(TableNameReady, id, DateTime.Now, activationData, Transaction!);
         Commit();
         return rows;
     }

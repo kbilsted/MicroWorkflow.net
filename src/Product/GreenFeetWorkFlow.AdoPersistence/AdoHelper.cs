@@ -46,18 +46,16 @@ public class AdoHelper
         return ReadStepRow(cmd);
     }
 
-    public int UpdateReadyBySearchKeyAndName(string readyTableName, string? stepName, string searchKey, SqlTransaction tx)
+     // TODO mangler activationData
+    public int UpdateStep(string tableName, int id, DateTime scheduleTime, string? activationData, SqlTransaction tx)
     {
-        Sql sql = new Sql(@$"UPDATE {readyTableName} 
-        SET [ScheduleTime] = @now ")
-        .Where("[SearchKey] = @SearchKey")
-        .Where(stepName, "[Name] = @Name");
+        Sql sql = new Sql(@$"UPDATE {tableName} 
+        SET [ScheduleTime] = @scheduleTime")
+        .Where("[Id] = @Id");
 
         using var cmd = new SqlCommand(sql, tx.Connection, tx);
-        cmd.Parameters.Add(new SqlParameter("now", DateTime.Now));
-        cmd.Parameters.Add(new SqlParameter("SearchKey", searchKey));
-        if (stepName != null)
-            cmd.Parameters.Add(new SqlParameter("Name", stepName));
+        cmd.Parameters.Add(new SqlParameter("scheduleTime", scheduleTime));
+        cmd.Parameters.Add(new SqlParameter("Id", id));
 
         return cmd.ExecuteNonQuery();
     }

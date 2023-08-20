@@ -96,7 +96,7 @@ public class DemoInMemoryPersister : IStepPersister
     {
     }
 
-    public int ActivateStep(string searchKey, string? stepName, string? activationArguments)
+    public int ActivateStep(int id, string? activationData)
     {
         throw new NotImplementedException();
     }

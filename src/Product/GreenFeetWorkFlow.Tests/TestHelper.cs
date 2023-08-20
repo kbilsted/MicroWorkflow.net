@@ -6,7 +6,7 @@ namespace GreenFeetWorkflow.Tests;
 
 public class TestHelper
 {
-    public string RndName = "test"+Guid.NewGuid().ToString();
+    public string RndName = "test" + Guid.NewGuid().ToString();
     public NewtonsoftStateFormatterJson? Formatter;
     public CancellationTokenSource cts = new();
     public AutofacBinding? iocContainer;
@@ -99,5 +99,16 @@ public class TestHelper
     public void CreateAndRunEngineWithAttributes(params Step[] steps)
     {
         CreateAndRunEngineWithAttributes(steps, 1);
+    }
+
+    public void AssertTableCounts(string flowId, int ready, int done, int failed)
+    {
+        Persister.CountTables(flowId).Should().BeEquivalentTo(
+            new Dictionary<StepStatus, int>
+            {
+                { StepStatus.Ready, ready},
+                { StepStatus.Done, done},
+                { StepStatus.Failed, failed},
+            });
     }
 }

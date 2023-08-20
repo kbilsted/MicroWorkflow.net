@@ -54,12 +54,11 @@ public interface IStepPersister : IDisposable
     /// </summary>
     int[] AddSteps(object? transaction = null, params Step[] steps);
     
-    // TODO arbejd på ID ikke searchkey
     /// <summary>
     /// Reschedule a ready step to 'now' and send it activation data
     /// </summary>
-    int ActivateStep(string searchKey, string? stepName, string? activationArguments);
-    
+    int ActivateStep(int id, string? activationData);
+
     object CreateTransaction();
     Dictionary<StepStatus, IEnumerable<Step>> SearchSteps(SearchModel model);
 
