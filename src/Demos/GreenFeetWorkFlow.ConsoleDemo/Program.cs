@@ -1,30 +1,6 @@
 ﻿using GreenFeetWorkflow;
 using System.Text.Json;
 
-//Console.WriteLine("i^2");
-//for (int i = 0; i < 20; i++)
-//{
-//    var t = TimeSpan.FromSeconds(i * i);
-//    Console.WriteLine($"{i}:: {t}   ");
-//}
-
-//Console.WriteLine("2 * i^2");
-//for (int i = 0; i < 20; i++)
-//{
-//    var t = TimeSpan.FromSeconds(2* i * i);
-//    Console.WriteLine($"{i}:: {t}   ");
-//}
-
-
-//Console.WriteLine("i^3");
-//for (int i = 0; i < 20; i++)
-//{
-//    var t = TimeSpan.FromSeconds(i * i * i);
-//    Console.WriteLine($"{i}:: {t}   ");
-//}
-
-
-
 // step 1. register the steps to be used by the engine.
 // For the demo we don't use a real IOC container
 var iocContainer = new DemoIocContainer().RegisterNamedSteps(typeof(FetchData).Assembly);

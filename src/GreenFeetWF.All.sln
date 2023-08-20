@@ -17,7 +17,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GreenFeetWorkFlow.Tests", "Product\GreenFeetWorkFlow.Tests\GreenFeetWorkFlow.Tests.csproj", "{AC80493C-B71B-4631-8CF6-20D067FD9460}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GreenFeetWorkFlow.Tests", "Demos\GreenFeetWorkFlow.Tests\GreenFeetWorkFlow.Tests.csproj", "{AC80493C-B71B-4631-8CF6-20D067FD9460}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GreenFeetWorkFlow.Formatter.NewtonsoftJson", "Product\GreenFeetWorkFlow.Formatter.NewtonsoftJson\GreenFeetWorkFlow.Formatter.NewtonsoftJson.csproj", "{01DB9CED-771C-46C3-A6F8-528DAB818FBF}"
 EndProject

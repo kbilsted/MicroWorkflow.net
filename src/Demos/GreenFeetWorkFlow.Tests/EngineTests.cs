@@ -28,4 +28,32 @@ public class EngineTests
 
         result[StepStatus.Ready].Single().Name.Should().Be(helper.RndName);
     }
+
+
+    [Test]
+    public void RetryTimeout_what_is_suitable()
+    {
+        Console.WriteLine("i^2");
+        for (int i = 1; i <= 20; i++)
+        {
+            var t = TimeSpan.FromSeconds(i * i);
+            Console.WriteLine($"{i}:: {t}   ");
+        }
+
+        Console.WriteLine("2 * i^2");
+        for (int i = 1; i <= 20; i++)
+        {
+            var t = TimeSpan.FromSeconds(2 * i * i);
+            Console.WriteLine($"{i}:: {t}   ");
+        }
+
+
+        Console.WriteLine("i^3");
+        for (int i = 1; i <= 20; i++)
+        {
+            var t = TimeSpan.FromSeconds(i * i * i);
+            Console.WriteLine($"{i}:: {t}   ");
+        }
+    }
+
 }
