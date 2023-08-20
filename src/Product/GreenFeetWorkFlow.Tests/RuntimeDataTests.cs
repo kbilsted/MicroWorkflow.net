@@ -31,43 +31,86 @@ public class RuntimeDataTests
     }
 
     [Test]
-    public void When_searching_for_correlationdi_Then_success()
+    public void When_SearchSteps_Then_success()
     {
         var engine = helper.CreateEngine();
-        var step = new Step(AttributeRegistrationTests.StepA.Name)
+        var step = new Step(helper.RndName)
         {
-            CorrelationId = helper.RndName,
-            ScheduleTime = DateTime.Now.AddSeconds(5)
+            FlowId = Guid.NewGuid().ToString(),
+            CorrelationId = Guid.NewGuid().ToString(),
+            SearchKey = Guid.NewGuid().ToString(),
         };
-        engine.Runtime.Data.AddSteps(step);
+        var id = engine.Runtime.Data.AddStep(step, null);
+
+        SearchModel.FetchLevels fetchLevels = new SearchModel.FetchLevels()
+        {
+            IncludeDone = true,
+            IncludeFail = true,
+            IncludeReady = true,
+        };
         var steps = engine.Runtime.Data.SearchSteps(new SearchModel()
         {
-            CorrelationId = helper.RndName,
-            FetchLevel = new SearchModel.FetchLevels()
-            {
-                IncludeDone = true,
-                IncludeFail = true,
-                IncludeReady = true,
-            }
+            Id = id,
+            FetchLevel = fetchLevels
         });
+        steps[StepStatus.Ready].Single().Id.Should().Be(id);
 
-        steps[StepStatus.Ready].Single().CorrelationId.Should().Be(helper.RndName);
+        steps = engine.Runtime.Data.SearchSteps(new SearchModel()
+        {
+            CorrelationId = step.CorrelationId,
+            FetchLevel = fetchLevels
+        });
+        steps[StepStatus.Ready].Single().Id.Should().Be(id);
+
+        steps = engine.Runtime.Data.SearchSteps(new SearchModel()
+        {
+            Name = step.Name,
+            FetchLevel = fetchLevels
+        });
+        steps[StepStatus.Ready].Single().Id.Should().Be(id);
+
+        steps = engine.Runtime.Data.SearchSteps(new SearchModel()
+        {
+            FlowId = step.FlowId,
+            FetchLevel = fetchLevels
+        });
+        steps[StepStatus.Ready].Single().Id.Should().Be(id);
+
+        steps = engine.Runtime.Data.SearchSteps(new SearchModel()
+        {
+            SearchKey = step.SearchKey,
+            FetchLevel = fetchLevels
+        });
+        steps[StepStatus.Ready].Single().Id.Should().Be(id);
+
+
+        // combined search
+        steps = engine.Runtime.Data.SearchSteps(new SearchModel()
+        {
+            Id = id,
+            CorrelationId = step.CorrelationId,
+            Name = step.Name,
+            FlowId = step.FlowId,
+            SearchKey = step.SearchKey,
+            FetchLevel = fetchLevels
+        });
+        steps[StepStatus.Ready].Single().Id.Should().Be(id);
     }
 
     [Test]
     public async Task When_reexecuting_a_step_Then_execute_it()
     {
-        Dictionary<int,int> results = new();
-        
-        var engine=helper.CreateEngine(("v1/fail-and-reactivate", GenericStepHandler.Create(_ => throw new FailCurrentStepException())));
+        Dictionary<int, int> results = new();
+
+        var engine = helper.CreateEngine(("v1/fail-and-reactivate", GenericStepHandler.Create(_ => throw new FailCurrentStepException())));
 
         var stepState = 12345;
-        var step = new Step("v1/fail-and-reactivate", stepState){ FlowId = helper.FlowId, CorrelationId = helper.CorrelationId};
+        var step = new Step("v1/fail-and-reactivate", stepState) { FlowId = helper.FlowId, CorrelationId = helper.CorrelationId };
         var id = engine.Runtime.Data.AddSteps(step).Single();
         await engine.StartAsync(true);
 
-        var newId= engine.Runtime.Data
-            .ReExecuteSteps(new SearchModel {Id = id, FetchLevel = new SearchModel.FetchLevels {IncludeFail = true}})
+        var newId = engine.Runtime.Data
+            .ReExecuteSteps(new SearchModel { Id = id, FetchLevel = new SearchModel.FetchLevels { IncludeFail = true } })
             .Single();
 
         var newStep = helper.Persister.GetStep(newId)!;
@@ -78,5 +121,5 @@ public class RuntimeDataTests
         newStep.CreatedByStepId.Should().Be(step.Id);
         newStep.ScheduleTime.Should().BeCloseTo(DateTime.Now, TimeSpan.FromSeconds(5));
     }
-    
+
 }

@@ -9,12 +9,10 @@ public class Sql
         if (AnyWhere)
         {
             sb.Append(" AND ");
-            sb.Append(sql);
-            sb.Append('\n');
         }
         else
         {
-            sb.Append(" WHERE\n");
+            sb.Append("\nWHERE ");
             AnyWhere = true;
         }
 

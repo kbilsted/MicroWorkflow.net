@@ -2,6 +2,8 @@
 
 namespace GreenFeetWorkflow;
 
+
+// TODO alle metoder bør tage en tx som parameter - evt optionel
 public class WfRuntimeData
 {
     private readonly IWorkflowIocContainer iocContainer;
@@ -21,6 +23,12 @@ public class WfRuntimeData
 
         return rows;
     }
+
+    /// <summary>
+    /// Add step to be executed
+    /// </summary>
+    /// <returns>the identity of the steps</returns>
+    public int AddStep(Step step, object? transaction) => AddSteps(transaction, new[] { step }).Single();
 
     /// <summary>
     /// Add steps to be executed

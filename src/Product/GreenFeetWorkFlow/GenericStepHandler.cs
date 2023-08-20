@@ -9,7 +9,7 @@ public class GenericStepHandler : IStepImplementation
 
     public GenericStepHandler(Func<Step, ExecutionResult> code)
     {
-        if(code == null) 
+        if (code == null)
             throw new ArgumentNullException(nameof(code));
         this.code = async (s) => await Task.FromResult(code(s));
     }
@@ -20,6 +20,8 @@ public class GenericStepHandler : IStepImplementation
     }
 
     public static GenericStepHandler Create(Func<Step, ExecutionResult> code) => new GenericStepHandler(code);
+
+    public static GenericStepHandler Create(Action<Step> code) => new GenericStepHandler((step) => { code(step); return ExecutionResult.Done(); });
 
     public async Task<ExecutionResult> ExecuteAsync(Step step)
     {

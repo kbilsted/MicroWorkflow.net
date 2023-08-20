@@ -8,7 +8,7 @@ public class DemoInMemoryPersister : IStepPersister
     readonly object GlobalLock = new();
     int GlobalId = 1;
 
-    static readonly Dictionary<int, Step> Available = new();
+    static readonly Dictionary<int, Step> ReadySteps = new();
     static readonly HashSet<int> Locked = new();
     HashSet<int>? LockedLocal;
 
@@ -18,7 +18,7 @@ public class DemoInMemoryPersister : IStepPersister
     {
         lock (GlobalLock)
         {
-            var step = Available
+            var step = ReadySteps
                 .Where(x =>
                 x.Value.ScheduleTime <= DateTime.Now
                 && !Locked.Contains(x.Value.Id))
@@ -52,7 +52,7 @@ public class DemoInMemoryPersister : IStepPersister
             LockedLocal.Remove(executedStep.Id);
 
             if (status != StepStatus.Ready)
-                Available.Remove(executedStep.Id);
+                ReadySteps.Remove(executedStep.Id);
 
             if (newSteps == null)
                 return;
@@ -63,7 +63,7 @@ public class DemoInMemoryPersister : IStepPersister
                     throw new NullReferenceException("step correlationId cannot be null");
 
                 step.Id = GlobalId++;
-                Available.Add(step.Id, step);
+                ReadySteps.Add(step.Id, step);
             }
         }
     }
@@ -85,7 +85,7 @@ public class DemoInMemoryPersister : IStepPersister
             foreach (var step in steps)
             {
                 step.Id = GlobalId++;
-                Available.Add(step.Id, step);
+                ReadySteps.Add(step.Id, step);
             }
         }
 
@@ -112,9 +112,13 @@ public class DemoInMemoryPersister : IStepPersister
         IEnumerable<Step> ready = new List<Step>();
         if (model.FetchLevel.IncludeReady)
         {
-            ready = Available.Where(x =>
+            ready = ReadySteps.Where(x =>
                 (model.CorrelationId != null && x.Value.CorrelationId == model.CorrelationId)
-                && (model.SearchKey != null && x.Value.SearchKey == model.SearchKey))
+                && (model.SearchKey != null && x.Value.SearchKey == model.SearchKey)
+                && (model.FlowId != null && x.Value.FlowId == model.FlowId)
+                && (model.Id != null && x.Value.Id == model.Id)
+                && (model.Name != null && x.Value.Name == model.Name)
+                )
                 .Select(x => x.Value);
         }
 

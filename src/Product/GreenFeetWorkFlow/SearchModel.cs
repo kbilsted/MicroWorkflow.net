@@ -5,6 +5,7 @@ public class SearchModel
     public int? Id { get; set; }
     public string? CorrelationId { get; set; }
     public string? SearchKey { get; set; }
+    public string? Name { get; set; }
     public string? FlowId { get; set; }
     public FetchLevels FetchLevel { get; set; }
 

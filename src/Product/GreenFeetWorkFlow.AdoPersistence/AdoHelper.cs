@@ -11,15 +11,21 @@ public class AdoHelper
         var sql = new Sql($"SELECT * FROM {table} WITH (NOLOCK)")
             .Where(model.Id, "[Id] = @Id")
             .Where(model.CorrelationId, "[CorrelationId] = @CorrelationId")
-            .Where(model.SearchKey, "[SearchKey] LIKE @SearchKey");
+            .Where(model.Name, "[Name] = @Name")
+            .Where(model.SearchKey, "[SearchKey] LIKE @SearchKey")
+            .Where(model.FlowId, "[FlowId] = @FlowId");
 
         using var cmd = new SqlCommand(sql, tx.Connection, tx);
         if (cmd.CommandText.Contains("@Id"))
             cmd.Parameters.Add(new SqlParameter("Id", model.Id));
         if (cmd.CommandText.Contains("@CorrelationId"))
             cmd.Parameters.Add(new SqlParameter("CorrelationId", model.CorrelationId));
+        if (cmd.CommandText.Contains("@Name"))
+            cmd.Parameters.Add(new SqlParameter("Name", model.Name));
         if (cmd.CommandText.Contains("@SearchKey"))
             cmd.Parameters.Add(new SqlParameter("SearchKey", model.SearchKey));
+        if (cmd.CommandText.Contains("@FlowId"))
+            cmd.Parameters.Add(new SqlParameter("FlowId", model.FlowId));
 
         using SqlDataReader reader = cmd.ExecuteReader();
 

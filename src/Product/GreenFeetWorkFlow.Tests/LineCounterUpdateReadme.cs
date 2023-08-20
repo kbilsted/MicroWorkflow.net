@@ -6,6 +6,7 @@ namespace GreenFeetWorkflow.Tests;
 public class LineCounterUpdateReadme
 {
     [Test]
+    [Explicit]
     public void UpdateReadme()
     {
         var basePath = Path.Combine(Assembly.GetExecutingAssembly().Location, "..", "..", "..", "..", "..","..");
