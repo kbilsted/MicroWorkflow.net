@@ -59,9 +59,7 @@ public class WorkflowEngine
     }
 
 
-    /// <summary>
-    /// Starts the engine using 1 or more background threads
-    /// </summary>
+    /// <summary> Starts the engine using 1 or more background threads </summary>
     public void Start(int numberOfWorkers,
         bool? stopWhenNoWorkLeft = false,
         CancellationToken? stoppingToken = null,
@@ -98,9 +96,7 @@ public class WorkflowEngine
     }
 
 
-    /// <summary>
-    /// Start the engine with the current thread as the worker. Also use this if you have trouble debugging weird scenarios
-    /// </summary>
+    /// <summary> Start the engine with the current thread as the worker. Also use this if you have trouble debugging weird scenarios </summary>
     public async Task StartAsync(
         bool? stopWhenNoWorkLeft = false,
         CancellationToken? stoppingToken = null,
@@ -110,7 +106,6 @@ public class WorkflowEngine
 
         await WorkerList!.Single().StartAsync();
     }
-
 }
 
 public class StepEngineRuntime

@@ -205,7 +205,6 @@ SET
 
     public int InsertStep(StepStatus target, string tablename, Step step, SqlTransaction tx)
     {
-
         if (target == StepStatus.Ready)
         {
             string sql =

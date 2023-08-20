@@ -2,14 +2,10 @@
 
 public class ExecutionResult
 {
-    /// <summary>
-    /// set this within a step-execution to denote if the job needs to run, again, has failed etc.
-    /// </summary>
+    /// <summary> set this within a step-execution to denote if the job needs to run, again, has failed etc. </summary>
     public StepStatus Status { get; set; }
 
-    /// <summary>
-    /// used only when rerunning a step
-    /// </summary>
+    /// <summary> used only when rerunning a step </summary>
     public object? NewState { get; set; }
 
     public string? Description { get; set; }
@@ -41,56 +37,36 @@ public class ExecutionResult
         Validate();
     }
 
-    /// <summary>
-    /// Mark the step as finished successfully.
-    /// </summary>
+    /// <summary> Mark the step as finished successfully. </summary>
     public static ExecutionResult Done() => new ExecutionResult(StepStatus.Done);
 
-    /// <summary>
-    /// Mark the step as finished successfully.
-    /// </summary>
+    /// <summary> Mark the step as finished successfully. </summary>
     public static ExecutionResult Done(Step newStep) => new(StepStatus.Done, new List<Step>(1) { newStep });
 
-    /// <summary>
-    /// Mark the step as finished successfully.
-    /// </summary>
+    /// <summary> Mark the step as finished successfully. </summary>
     public static ExecutionResult Done(params Step[] newSteps) => new ExecutionResult(StepStatus.Done, newSteps.ToList());
 
-    /// <summary>
-    /// Mark the step as finished successfully.
-    /// </summary>
+    /// <summary> Mark the step as finished successfully. </summary>
     public static ExecutionResult Done(List<Step> newSteps) => new ExecutionResult(StepStatus.Done, newSteps);
 
-    /// <summary>
-    /// Mark the step as finished with failure.
-    /// </summary>
+    /// <summary> Mark the step as finished with failure. </summary>
     public static ExecutionResult Fail() => new ExecutionResult(StepStatus.Failed);
 
-    /// <summary>
-    /// Mark the step as finished with failure.
-    /// </summary>
+    /// <summary> Mark the step as finished with failure. </summary>
     public static ExecutionResult Fail(string description) => new ExecutionResult(StepStatus.Failed, description: description);
 
-    /// <summary>
-    /// Mark the step as finished with failure.
-    /// </summary>
+    /// <summary> Mark the step as finished with failure. </summary>
     public static ExecutionResult Fail(params Step[] newSteps) => new ExecutionResult(StepStatus.Failed, newSteps.ToList());
 
-    /// <summary>
-    /// Mark the step as finished with failure.
-    /// </summary>
+    /// <summary> Mark the step as finished with failure. </summary>
     public static ExecutionResult Fail(List<Step> newSteps) => new ExecutionResult(StepStatus.Failed, newSteps);
 
-    /// <summary>
-    /// Throw this exception to tell the step engine that the job has finished with failure
-    /// </summary>
+    /// <summary> Throw this exception to tell the step engine that the job has finished with failure </summary>
     /// <returns>an exception to throw</returns>
     public static FailCurrentStepException FailAsException(string? description = null, Exception? exception = null)
         => new FailCurrentStepException(description ?? exception?.Message, exception);
 
-    /// <summary>
-    /// Mark the step for a re-execution
-    /// </summary>
+    /// <summary> Mark the step for a re-execution </summary>
     public static ExecutionResult Rerun(
         object? stateForRerun = null,
         List<Step>? newSteps = null,

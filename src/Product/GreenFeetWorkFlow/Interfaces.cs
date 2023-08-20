@@ -26,9 +26,7 @@ public interface IWorkflowLogger
 
 public interface IWorkflowIocContainer
 {
-    /// <summary>
-    /// implement to return null wnen registration is not found, and throw exception on creation failure.
-    /// </summary>
+    /// <summary> implement to return null wnen registration is not found, and throw exception on creation failure. </summary>
     IStepImplementation? GetNamedInstance(string stepName);
 
     T GetInstance<T>() where T : notnull;
@@ -37,9 +35,7 @@ public interface IWorkflowIocContainer
 // TODO NICE for testing tillad at der kun hentes et bestemt flowid  og rename to GetReadyStep()
 public interface IStepPersister : IDisposable
 {
-    /// <summary>
-    /// You can either set the transaction explicitly or create one using <see cref="CreateTransaction"/>
-    /// </summary>
+    /// <summary> You can either set the transaction explicitly or create one using <see cref="CreateTransaction"/> </summary>
     object? Transaction { get; set; }
 
     void Commit(StepStatus status, Step executedStep, List<Step>? newSteps);
@@ -49,28 +45,18 @@ public interface IStepPersister : IDisposable
     Step? GetStep();
     void RollBack();
     
-    /// <summary>
-    /// Persist one or more steps. If uses a separate transaction, or the supplied transaction when not null.
-    /// </summary>
+    /// <summary> Persist one or more steps. If uses a separate transaction, or the supplied transaction when not null. </summary>
     int[] AddSteps(object? transaction = null, params Step[] steps);
     
-    /// <summary>
-    /// Reschedule a ready step to 'now' and send it activation data
-    /// </summary>
+    /// <summary> Reschedule a ready step to 'now' and send it activation data </summary>
     int ActivateStep(int id, string? activationData);
 
     object CreateTransaction();
     Dictionary<StepStatus, IEnumerable<Step>> SearchSteps(SearchModel model);
 
-    /// <summary>
-    /// Move rows from done and fail columns
-    /// </summary>
-    /// <param name="entities"></param>
-    /// <param name="ids"></param>
+    /// <summary> Move rows from done and fail columns </summary>
     /// <returns>number of rows moved</returns>
     int[] ReExecuteSteps(Dictionary<StepStatus, IEnumerable<Step>> entities);
-
-
 }
 
 public interface IStateFormatter

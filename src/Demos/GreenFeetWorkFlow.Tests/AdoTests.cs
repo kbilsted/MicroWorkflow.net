@@ -17,7 +17,6 @@ public class WorkerTests
     [Test]
     public void When_creating_a_transaction_from_interfacetype_Then_it_is_created()
     {
-
         helper.CreateEngine();
         using IStepPersister p = helper.Persister;
         p.CreateTransaction();
@@ -28,7 +27,6 @@ public class WorkerTests
     [Test]
     public void When_executing_OneStep_with_no_state_Then_succeed()
     {
-
         string? stepResult = null;
 
         helper.CreateAndRunEngine(
@@ -42,13 +40,11 @@ public class WorkerTests
 
         stepResult.Should().Be("hello 1234");
         helper.AssertTableCounts(helper.FlowId, ready: 0, done: 1, failed: 0);
-
     }
 
     [Test]
     public void When_adding_two_steps_in_the_same_transaction_Then_succeed()
     {
-
         string[] stepResults = new string[2];
         const string name = "v1/When_adding_two_steps_in_the_same_transaction_Then_succeed";
 
@@ -94,14 +90,12 @@ public class WorkerTests
                 GenericStepHandler.Create(step => throw step.FailAsException())));
 
         helper.AssertTableCounts(helper.FlowId, ready: 0, done: 0, failed: 1);
-
     }
 
 
     [Test]
     public void When_executing_step_throwing_exception_Then_rerun_current_step_and_ensure_state_is_unchanged()
     {
-
         int? dbid = null;
 
         helper.CreateAndRunEngine(
@@ -145,8 +139,6 @@ public class WorkerTests
     [Test]
     public void OneStep_Repeating_Thrice()
     {
-
-
         string? stepResult = null;
 
         var stepHandler = ("repeating_step", new GenericStepHandler(step =>
@@ -173,8 +165,6 @@ public class WorkerTests
     [Test]
     public void TwoSteps_flow_same_flowid()
     {
-
-
         string? stepResult = null;
 
         var implA = ("check-flowid/a", new GenericStepHandler(step => step.Done(new Step("check-flowid/b"))));
@@ -368,7 +358,6 @@ public class WorkerTests
         stepResult.Should().Be($"total: 61");
 
         helper.AssertTableCounts(helper.FlowId, ready: 0, done: 4, failed: 0);
-
     }
 
 

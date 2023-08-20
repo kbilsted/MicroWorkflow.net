@@ -24,9 +24,7 @@ public class StepNameAttribute : Attribute
 
 public class ReflectionHelper
 {
-    /// <summary>
-    /// Harvest all steps annotated with <see cref="StepNameAttribute"/>
-    /// </summary>
+    /// <summary> Harvest all steps annotated with <see cref="StepNameAttribute"/> </summary>
     /// <exception cref="Exception">When duplicate step names are found</exception>
     public static IEnumerable<(Type implementationType, string stepName)> GetStepsFromAttribute(params Assembly[] assemblies)
     {

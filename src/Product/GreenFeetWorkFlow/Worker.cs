@@ -12,25 +12,19 @@ public class Worker
 {
     private static readonly object Lock = new();
 
-    /// <summary>
-    /// static field so it is shared among all workers. It ensures if no work and many workers, we don't bombard the persistent storage with request for ready items
-    /// </summary>
+    /// <summary> static field so it is shared among all workers. It ensures if no work and many workers, we don't bombard the persistent storage with request for ready items </summary>
     static DateTime SharedThresholdToReducePollingReadyItems = DateTime.MinValue;
 
     public CancellationToken StoppingToken { get; set; }
 
-    /// <summary>
-    /// The good name for a worker is nice for debugging when multiple workers are executing on the same engine.
-    /// </summary>
+    /// <summary> The good name for a worker is nice for debugging when multiple workers are executing on the same engine. </summary>
     public string? WorkerName { get; set; }
 
     readonly IWorkflowLogger logger;
     readonly IWorkflowIocContainer iocContainer;
     private readonly WfRuntimeData engineRuntimeData;
 
-    /// <summary>
-    /// nice for unit testing
-    /// </summary>
+    /// <summary> nice for unit testing </summary>
     public bool StopWhenNoWorkLeft { get; set; }
 
     // TODO make a configuration class - and later make it a DB configuration
@@ -123,14 +117,12 @@ public class Worker
 
                 if (logger.ErrorLoggingEnabled)
                     logger.LogError($"{nameof(Worker)}:GreenFeetWorkflow error - unhandled exception", ex, null);
-
             }
         }
     }
 
     Step? GetNextStep(IStepPersister persister)
     {
-
         Step? step = null;
 
         try

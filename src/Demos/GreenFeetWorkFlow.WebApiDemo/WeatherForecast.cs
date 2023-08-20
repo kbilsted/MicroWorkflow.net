@@ -23,5 +23,4 @@ public class WeaterForecastDB
     {
         "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
     };
-
 }

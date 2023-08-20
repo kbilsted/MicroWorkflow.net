@@ -5,9 +5,7 @@ namespace GreenFeetWorkflow.Ioc.Autofac;
 
 public static class AutofacExtensions
 {
-    /// <summary>
-    /// for unit testing - builds the autofac from the parameters
-    /// </summary>
+    /// <summary> for unit testing - builds the autofac from the parameters </summary>
     public static void RegisterInstances(this ContainerBuilder builder, IWorkflowLogger? logger, params (string, IStepImplementation)[] stepHandlers)
     {
         stepHandlers.ToList().ForEach(x =>
@@ -27,14 +25,10 @@ public static class AutofacExtensions
         builder.RegisterType(implementationType).Named<IStepImplementation>(stepName);
     }
 
-    /// <summary>
-    /// Register all implementations that are anotated with the <see cref="StepNameAttribute"/>
-    /// </summary>
+    /// <summary> Register all implementations that are anotated with the <see cref="StepNameAttribute"/> </summary>
     public static void RegisterStepImplementations(this ContainerBuilder builder, params Assembly[] assemblies) => RegisterStepImplementations(builder, null, assemblies);
 
-    /// <summary>
-    /// Register all implementations that are anotated with the <see cref="StepNameAttribute"/>
-    /// </summary>
+    /// <summary> Register all implementations that are anotated with the <see cref="StepNameAttribute"/> </summary>
     public static void RegisterStepImplementations(this ContainerBuilder builder, IWorkflowLogger? logger, params Assembly[] assemblies)
     {
         foreach (var x in ReflectionHelper.GetStepsFromAttribute(assemblies))

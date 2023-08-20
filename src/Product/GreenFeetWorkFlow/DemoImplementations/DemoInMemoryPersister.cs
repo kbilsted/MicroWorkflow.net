@@ -119,7 +119,6 @@ public class DemoInMemoryPersister : IStepPersister
         {
             { StepStatus.Ready, ready }
         };
-
     }
 
     public int[] ReExecuteSteps(Dictionary<StepStatus, IEnumerable<Step>> entities)

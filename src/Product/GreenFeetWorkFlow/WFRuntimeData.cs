@@ -24,21 +24,15 @@ public class WfRuntimeData
         return rows;
     }
 
-    /// <summary>
-    /// Add step to be executed
-    /// </summary>
+    /// <summary> Add step to be executed </summary>
     /// <returns>the identity of the steps</returns>
     public int AddStep(Step step, object? transaction) => AddSteps(transaction, new[] { step }).Single();
 
-    /// <summary>
-    /// Add steps to be executed
-    /// </summary>
+    /// <summary> Add steps to be executed </summary>
     /// <returns>the identity of the steps</returns>
     public int[] AddSteps(params Step[] steps) => AddSteps(null, steps);
 
-    /// <summary>
-    /// Add steps to be executed
-    /// </summary>
+    /// <summary> Add steps to be executed </summary>
     /// <returns>the identity of the steps</returns>
     public int[] AddSteps(object? transaction, params Step[] steps)
     {
@@ -84,9 +78,7 @@ public class WfRuntimeData
     // fail ready task - spawn new task to ensure we perform the operaton in case the tast is rerunning and is long to execute - worst case a direct call would time out waiting 
     // activateWaitingReadyTask
 
-    /// <summary>
-    /// Re-execute steps that are 'done' or 'failed' by inserting a clone into the 'ready' queue
-    /// </summary>
+    /// <summary> Re-execute steps that are 'done' or 'failed' by inserting a clone into the 'ready' queue </summary>
     /// <returns>Ids of inserted steps</returns>
     public int[] ReExecuteSteps(SearchModel criterias)
     {
@@ -100,14 +92,10 @@ public class WfRuntimeData
     }
 
 
-    /// <summary>
-    /// we round down to ensure a worker can pick up the step/rerun-step. if in unittest mode it may exit if not rounded.
-    /// </summary>
+    /// <summary> we round down to ensure a worker can pick up the step/rerun-step. if in unittest mode it may exit if not rounded. </summary>
     internal static DateTime? TrimToSeconds(DateTime? now) => now == null ? null : TrimToSeconds(now.Value);
 
-    /// <summary>
-    /// we round down to ensure a worker can pick up the step/rerun-step. if in unittest mode it may exit if not rounded.
-    /// </summary>
+    /// <summary> we round down to ensure a worker can pick up the step/rerun-step. if in unittest mode it may exit if not rounded. </summary>
     internal static DateTime TrimToSeconds(DateTime now) => new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second);
 
 

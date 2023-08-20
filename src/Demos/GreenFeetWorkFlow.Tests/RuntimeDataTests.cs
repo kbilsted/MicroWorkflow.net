@@ -121,5 +121,4 @@ public class RuntimeDataTests
         newStep.CreatedByStepId.Should().Be(step.Id);
         newStep.ScheduleTime.Should().BeCloseTo(DateTime.Now, TimeSpan.FromSeconds(5));
     }
-
 }

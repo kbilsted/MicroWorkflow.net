@@ -11,7 +11,6 @@ public class PerformanceTests
     {
         void doo(int workerCount)
         {
-
             var testhelper = new TestHelper();
             ConcurrentBag<(string, int)> stepResults = new ConcurrentBag<(string, int)>();
 
@@ -64,7 +63,6 @@ public class PerformanceTests
     {
         void doo(int workerCount)
         {
-
             var testhelper = new TestHelper();
             ConcurrentBag<(string, int)> stepResults = new ConcurrentBag<(string, int)>();
 
@@ -111,6 +109,4 @@ public class PerformanceTests
         //    { StepStatus.Failed, 0},
         //});
     }
-
-
 }
