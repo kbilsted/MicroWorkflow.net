@@ -253,7 +253,7 @@ public class Worker
     static DateTime CalculateScheduleTime(Step step)
     {
         var now = DateTime.Now;
-        var future = now + Min(TimeSpan.FromHours(2), TimeSpan.FromSeconds(step.ExecutionCount * step.ExecutionCount));
+        var future = now + Min(TimeSpan.FromHours(2), TimeSpan.FromSeconds(step.ExecutionCount * step.ExecutionCount * step.ExecutionCount));
         return WfRuntimeData.TrimToSeconds(future);
     }
 
