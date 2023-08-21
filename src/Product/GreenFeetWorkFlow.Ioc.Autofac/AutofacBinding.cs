@@ -16,7 +16,9 @@ public class AutofacBinding : IWorkflowIocContainer
 
     public T GetInstance<T>() where T : notnull
     {
-        return container.Resolve<T>();
+        var v = container.Resolve<T>() 
+            ?? throw new Exception($"Cannot find steppersister registered as {typeof(IStepPersister)}");
+        return v;
     }
 
     public IStepImplementation? GetNamedInstance(string statename)

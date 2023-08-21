@@ -43,10 +43,19 @@ public class TestHelper
     public WorkflowEngine CreateEngine(params (string, IStepImplementation)[] stepHandlers)
     {
         logger = new DiagnosticsStepLogger();
+        logger.TraceLoggingEnabled = true;
+        logger.DebugLoggingEnabled = true;
+        logger.InfoLoggingEnabled = true;
+        logger.ErrorLoggingEnabled = true;
+        ((DiagnosticsStepLogger)logger).AddNestedLogger(new ConsoleStepLogger());
 
         var builder = new ContainerBuilder();
         builder.RegisterInstances(logger, stepHandlers);
-        builder.Register<IStepPersister>(c => new AdoDbStepPersister(ConnectionString));
+        builder.Register<IStepPersister>(c =>
+        {
+            Console.WriteLine(Thread.CurrentThread.Name + " **NEW PERSISTER**");
+            return new AdoDbStepPersister(ConnectionString, logger);
+        }).InstancePerDependency();
         iocContainer = new AutofacBinding(builder);
 
         Formatter = new NewtonsoftStateFormatterJson(logger);
@@ -62,7 +71,7 @@ public class TestHelper
 
         var builder = new ContainerBuilder();
         builder.RegisterInstances(logger, stepHandlers);
-        builder.Register<IStepPersister>(c => new AdoDbStepPersister(ConnectionString));
+        builder.Register<IStepPersister>(c => new AdoDbStepPersister(ConnectionString, logger));
         iocContainer = new AutofacBinding(builder);
 
         Formatter = new NewtonsoftStateFormatterJson(logger);
@@ -83,7 +92,7 @@ public class TestHelper
 
         var builder = new ContainerBuilder();
         builder.RegisterStepImplementations(logger, typeof(TestHelper).Assembly);
-        builder.Register<IStepPersister>(c => new AdoDbStepPersister(ConnectionString));
+        builder.Register<IStepPersister>(c => new AdoDbStepPersister(ConnectionString, logger));
         iocContainer = new AutofacBinding(builder);
 
 
@@ -103,7 +112,9 @@ public class TestHelper
 
     public void AssertTableCounts(string flowId, int ready, int done, int failed)
     {
-        Persister.CountTables(flowId).Should().BeEquivalentTo(
+        iocContainer.GetInstance<IStepPersister>()
+            .Go((persister) => ((AdoDbStepPersister)persister).CountTables(flowId))
+            .Should().BeEquivalentTo(
             new Dictionary<StepStatus, int>
             {
                 { StepStatus.Ready, ready},

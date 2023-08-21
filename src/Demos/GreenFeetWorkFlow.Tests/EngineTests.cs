@@ -1,6 +1,4 @@
-﻿using FluentAssertions;
-
-namespace GreenFeetWorkflow.Tests;
+﻿namespace GreenFeetWorkflow.Tests;
 
 public class EngineTests
 {
@@ -17,7 +15,7 @@ public class EngineTests
     {
         helper.CreateEngine();
         Step step = new Step(helper.RndName) { ScheduleTime = DateTime.Now.AddMonths(1) };
-        var id = helper.Engine!.Runtime.Data.AddSteps(step).Single();
+        var id = helper.Engine!.Runtime.Data.AddStep(step);
 
         SearchModel model = new SearchModel() 
         { 
@@ -46,7 +44,6 @@ public class EngineTests
             var t = TimeSpan.FromSeconds(2 * i * i);
             Console.WriteLine($"{i}:: {t}   ");
         }
-
 
         Console.WriteLine("i^3");
         for (int i = 1; i <= 20; i++)

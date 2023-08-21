@@ -52,7 +52,7 @@ public class AdoHelper
         return ReadStepRow(cmd);
     }
 
-     // TODO mangler activationData
+    // TODO mangler activationData
     public int UpdateStep(string tableName, int id, DateTime scheduleTime, string? activationData, SqlTransaction tx)
     {
         Sql sql = new Sql(@$"UPDATE {tableName} 
@@ -66,7 +66,7 @@ public class AdoHelper
         return cmd.ExecuteNonQuery();
     }
 
-    public Step? GetStep(string tableName, SqlTransaction tx)
+    public Step? GetAndLockReadyStep(string tableName, SqlTransaction tx)
     {
         var sql = @$"SELECT TOP 1 * 
          FROM {tableName} WITH(ROWLOCK, UPDLOCK, READPAST) 
@@ -202,10 +202,34 @@ SET
         return cmd.ExecuteNonQuery();
     }
 
-
+    // TODO NICE optimize to enable multiple inserts in one call
     public int InsertStep(StepStatus target, string tablename, Step step, SqlTransaction tx)
     {
         if (target == StepStatus.Ready)
+            return InsertReady();
+        else
+            return InsertDoneFail();
+
+        static void AddParamaters(Step step, SqlCommand cmd)
+        {
+            cmd.Parameters.AddWithValue("@Name", step.Name);
+            cmd.Parameters.AddWithValue("@Singleton", step.Singleton);
+            cmd.Parameters.AddWithValue("@FlowId", step.FlowId);
+            cmd.Parameters.AddWithValue("@SearchKey", step.SearchKey ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@Description", step.Description ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@ExecutionCount", step.ExecutionCount);
+            cmd.Parameters.AddWithValue("@ScheduleTime", step.ScheduleTime);
+            cmd.Parameters.AddWithValue("@PersistedState", step.PersistedState ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@PersistedStateFormat", step.PersistedStateFormat ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@ExecutionStartTime", step.ExecutionStartTime ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@ExecutionDurationMillis", step.ExecutionDurationMillis ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@ExecutedBy", step.ExecutedBy ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@CorrelationId", step.CorrelationId ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@CreatedTime", step.CreatedTime);
+            cmd.Parameters.AddWithValue("@CreatedByStepId", step.CreatedByStepId ?? (object)DBNull.Value);
+        }
+
+        int InsertReady()
         {
             string sql =
     @$"set nocount on INSERT INTO {tablename}
@@ -236,7 +260,6 @@ SET
            ,@CreatedByStepId) 
  select cast(scope_identity() as int)";
 
-
             using SqlCommand cmd = new(sql, tx.Connection, tx);
             AddParamaters(step, cmd);
 
@@ -244,7 +267,8 @@ SET
             reader.Read();
             return reader.GetInt32(0);
         }
-        else
+
+        int InsertDoneFail()
         {
             string sql = @$"set nocount on INSERT INTO {tablename}
            ([Id]
@@ -288,37 +312,19 @@ SET
             cmd.ExecuteNonQuery();
             return step.Id;
         }
-
-        static void AddParamaters(Step step, SqlCommand cmd)
-        {
-            cmd.Parameters.AddWithValue("@Name", step.Name);
-            cmd.Parameters.AddWithValue("@Singleton", step.Singleton);
-            cmd.Parameters.AddWithValue("@FlowId", step.FlowId);
-            cmd.Parameters.AddWithValue("@SearchKey", step.SearchKey ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@Description", step.Description ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@ExecutionCount", step.ExecutionCount);
-            cmd.Parameters.AddWithValue("@ScheduleTime", step.ScheduleTime);
-            cmd.Parameters.AddWithValue("@PersistedState", step.PersistedState ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@PersistedStateFormat", step.PersistedStateFormat ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@ExecutionStartTime", step.ExecutionStartTime ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@ExecutionDurationMillis", step.ExecutionDurationMillis ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@ExecutedBy", step.ExecutedBy ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@CorrelationId", step.CorrelationId ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@CreatedTime", step.CreatedTime);
-            cmd.Parameters.AddWithValue("@CreatedByStepId", step.CreatedByStepId ?? (object)DBNull.Value);
-        }
     }
 
-    internal Dictionary<StepStatus, int> CountTables(string flowId, string tableNameReady, string tableNameDone, string tableNameFail, SqlTransaction tx)
+    internal Dictionary<StepStatus, int> CountTables(string? flowId, string tableNameReady, string tableNameDone, string tableNameFail, SqlTransaction tx)
     {
         int Count(string name)
         {
-            string sql = @$"SELECT COUNT(*)
-                FROM {name} WITH (NOLOCK)
-                WHERE [FlowId] = @FlowId";
+            string sql = new Sql(@$"SELECT COUNT(*)
+                FROM {name} WITH (NOLOCK)")
+                .Where(flowId, "[FlowId] = @FlowId");
 
             var cmd = new SqlCommand(sql, tx.Connection, tx);
-            cmd.Parameters.AddWithValue("@FlowId", flowId);
+            if(cmd.CommandText.Contains("FlowId"))
+                cmd.Parameters.AddWithValue("@FlowId", flowId);
 
             using var reader = cmd.ExecuteReader();
             reader.Read();

@@ -14,7 +14,7 @@ public class DemoInMemoryPersister : IStepPersister
 
     public object? Transaction { get; set; }
 
-    public Step? GetStep()
+    public Step? GetAndLockReadyStep()
     {
         lock (GlobalLock)
         {
@@ -37,7 +37,7 @@ public class DemoInMemoryPersister : IStepPersister
         }
     }
 
-    public void Commit(StepStatus status, Step executedStep, List<Step>? newSteps)
+    public void UpdateExecutedStep(StepStatus status, Step executedStep)
     {
         lock (GlobalLock)
         {
@@ -50,16 +50,11 @@ public class DemoInMemoryPersister : IStepPersister
 
             if (status != StepStatus.Ready)
                 ReadySteps.Remove(executedStep.Id);
-
-            if (newSteps == null)
-                return;
-
-            foreach (var step in newSteps)
-            {
-                step.Id = GlobalId++;
-                ReadySteps.Add(step.Id, step);
-            }
         }
+    }
+
+    public void Commit()
+    {
     }
 
     public void RollBack()
@@ -71,7 +66,7 @@ public class DemoInMemoryPersister : IStepPersister
         }
     }
 
-    public int[] AddSteps(object? transaction = null, params Step[] steps)
+    public int[] AddSteps(Step[] steps)
     {
         lock (GlobalLock)
         {
@@ -89,7 +84,7 @@ public class DemoInMemoryPersister : IStepPersister
     {
     }
 
-    public int ActivateStep(int id, string? activationData)
+    public int UpdateStep(int id, string? activationData, DateTime scheduleTime)
     {
         throw new NotImplementedException();
     }
@@ -122,6 +117,35 @@ public class DemoInMemoryPersister : IStepPersister
     }
 
     public int[] ReExecuteSteps(Dictionary<StepStatus, IEnumerable<Step>> entities)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Dictionary<StepStatus, int> CountTables(string? flowId)
+    {
+        lock (GlobalLock)
+        {
+            var rdyCount = ReadySteps.Where(x => { return flowId == null ? true : x.Value.FlowId == flowId; }).Count();
+
+            return new Dictionary<StepStatus, int>()
+            {
+                { StepStatus.Ready, rdyCount},
+                {StepStatus.Done,0 },
+                { StepStatus.Failed, 0 },
+            };
+        }
+    }
+
+    public void SetTransaction(object transaction)
+    {
+    }
+
+    public T Go<T>(Func<IStepPersister, T> code, object? transaction = null)
+    {
+        return code(this);
+    }
+
+    public Step? GetStep(int id)
     {
         throw new NotImplementedException();
     }

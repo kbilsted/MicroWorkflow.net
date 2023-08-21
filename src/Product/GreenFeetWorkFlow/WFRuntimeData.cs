@@ -1,7 +1,4 @@
-﻿using System.Reflection;
-
-namespace GreenFeetWorkflow;
-
+﻿namespace GreenFeetWorkflow;
 
 // TODO alle metoder bør tage en tx som parameter - evt optionel
 public class WfRuntimeData
@@ -15,26 +12,23 @@ public class WfRuntimeData
         this.formatter = formatter;
     }
 
+    /// <summary> Reschedule a ready step to 'now' and send it activation data </summary>
     public int ActivateStep(int id, object? activationArguments)
     {
         string? serializedArguments = formatter.Serialize(activationArguments);
+        var persister = iocContainer.GetInstance<IStepPersister>();
 
-        int rows = iocContainer.GetInstance<IStepPersister>().ActivateStep(id, serializedArguments);
-
+        int rows = persister.Go((persister) => persister.UpdateStep(id, serializedArguments, TrimToSeconds(DateTime.Now)));
         return rows;
     }
 
     /// <summary> Add step to be executed </summary>
     /// <returns>the identity of the steps</returns>
-    public int AddStep(Step step, object? transaction) => AddSteps(transaction, new[] { step }).Single();
+    public int AddStep(Step step, object? transaction = null) => AddSteps(new[] { step }, transaction).Single();
 
     /// <summary> Add steps to be executed </summary>
     /// <returns>the identity of the steps</returns>
-    public int[] AddSteps(params Step[] steps) => AddSteps(null, steps);
-
-    /// <summary> Add steps to be executed </summary>
-    /// <returns>the identity of the steps</returns>
-    public int[] AddSteps(object? transaction, params Step[] steps)
+    public int[] AddSteps(Step[] steps, object? transaction = null)
     {
         var now = DateTime.Now;
 
@@ -43,9 +37,8 @@ public class WfRuntimeData
             FixupNewStep(null, x, now);
         }
 
-        var stepPersister = iocContainer.GetInstance<IStepPersister>()
-            ?? throw new NullReferenceException($"Cannot find steppersister registered as {typeof(IStepPersister)}");
-        return stepPersister.AddSteps(transaction, steps);
+        IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
+        return persister.Go((persister) => persister.AddSteps(steps), transaction);
     }
 
     internal void FixupNewStep(Step? originStep, Step step, DateTime now)
@@ -66,10 +59,11 @@ public class WfRuntimeData
         FormatStateForSerialization(step);
     }
 
-
     public Dictionary<StepStatus, IEnumerable<Step>> SearchSteps(SearchModel model)
     {
-        var result = iocContainer.GetInstance<IStepPersister>().SearchSteps(model);
+        IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
+
+        var result = persister.Go((persister) => persister.SearchSteps(model));
         return result;
     }
 
@@ -84,10 +78,15 @@ public class WfRuntimeData
     {
         if (criterias.FetchLevel.IncludeReady)
             throw new ArgumentOutOfRangeException("Cannot search the ready queue");
-        var entries = SearchSteps(criterias);
 
-        var persister = iocContainer.GetInstance<IStepPersister>();
-        int[] rows = persister.ReExecuteSteps(entries);
+        IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
+
+        int[] rows = persister.Go((persister) =>
+        {
+            var entries = persister.SearchSteps(criterias);
+            return persister.ReExecuteSteps(entries);
+        });
+
         return rows;
     }
 

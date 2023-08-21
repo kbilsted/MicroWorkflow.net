@@ -106,14 +106,17 @@ public class RuntimeDataTests
 
         var stepState = 12345;
         var step = new Step("v1/fail-and-reactivate", stepState) { FlowId = helper.FlowId, CorrelationId = helper.CorrelationId };
-        var id = engine.Runtime.Data.AddSteps(step).Single();
+        var id = engine.Runtime.Data.AddStep(step);
         await engine.StartAsync(true);
 
         var newId = engine.Runtime.Data
             .ReExecuteSteps(new SearchModel { Id = id, FetchLevel = new SearchModel.FetchLevels { IncludeFail = true } })
             .Single();
 
-        var newStep = helper.Persister.GetStep(newId)!;
+        var newStep = helper.Persister.Go(p =>
+p.SearchSteps(new SearchModel() { Id = newId, FetchLevel = new SearchModel.FetchLevels() { IncludeReady = true } })
+[StepStatus.Ready]
+.Single());
         newStep.Id.Should().BeGreaterThan(id);
         newStep.PersistedState.Should().Be(stepState.ToString());
         newStep.CorrelationId.Should().Be(step.CorrelationId);

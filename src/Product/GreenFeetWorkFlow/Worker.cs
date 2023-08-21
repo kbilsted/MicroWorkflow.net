@@ -47,16 +47,32 @@ public class Worker
     public async Task StartAsync()
     {
         if (logger.InfoLoggingEnabled)
-            logger.LogInfo($"{nameof(Worker)}: starting engine", null, new Dictionary<string, object?>() { { "workerId", Thread.CurrentThread.Name! } });
+            logger.LogInfo($"{nameof(Worker)}: starting worker", null, new Dictionary<string, object?>() {
+                { "workerId", Thread.CurrentThread.Name! } });
 
         await ExecuteLoop();
 
         if (logger.InfoLoggingEnabled)
-            logger.LogInfo($"{nameof(Worker)}: stopping engine", null, new Dictionary<string, object?>()
+            logger.LogInfo($"{nameof(Worker)}: stopping worker", null, new Dictionary<string, object?>()
             {
                 { "workerId", Thread.CurrentThread.Name! },
                 { "IsCancellationRequested", StoppingToken.IsCancellationRequested }
             });
+    }
+
+    void Delay()
+    {
+        bool mustWaitMore;
+        do
+        {
+            lock (Lock)
+            {
+                mustWaitMore = DateTime.Now < SharedThresholdToReducePollingReadyItems;
+            }
+
+            if (mustWaitMore)
+                StoppingToken.WaitHandle.WaitOne(DelayNoReadyWork);
+        } while (mustWaitMore);
     }
 
     async Task ExecuteLoop()
@@ -65,17 +81,7 @@ public class Worker
         {
             try
             {
-                bool mustWaitMore;
-                do
-                {
-                    lock (Lock)
-                    {
-                        mustWaitMore = DateTime.Now < SharedThresholdToReducePollingReadyItems;
-                    }
-
-                    if (mustWaitMore)
-                        StoppingToken.WaitHandle.WaitOne(DelayNoReadyWork);
-                } while (mustWaitMore);
+                Delay();
 
                 var result = await FetchExecuteStoreStep();
 
@@ -127,7 +133,7 @@ public class Worker
 
         try
         {
-            step = persister.GetStep();
+            step = persister.GetAndLockReadyStep();
 
             if (step == null)
             {
@@ -172,14 +178,13 @@ public class Worker
     {
         using (var persister = iocContainer.GetInstance<IStepPersister>())
         {
-            IStepImplementation? implementation = null;
+            persister.CreateTransaction();
 
             Step? step = GetNextStep(persister);
             if (step == null)
                 return WorkerRunStatus.NoWorkDone;
 
-
-            implementation = iocContainer.GetNamedInstance(step.Name);
+            IStepImplementation? implementation = iocContainer.GetNamedInstance(step.Name);
             if (implementation == null)
             {
                 var msg = $"{nameof(Worker)}: missing step-implementation for step '{step.Name}'";
@@ -189,10 +194,10 @@ public class Worker
                 step.ScheduleTime = DateTime.Now + DelayMissingStepHandler;
                 step.Description = msg;
                 step.ExecutionCount++;
-                persister.Commit(StepStatus.Ready, step, null);
+                persister.UpdateExecutedStep(StepStatus.Ready, step);
+                persister.Commit();
                 return WorkerRunStatus.Continue;
             }
-
 
             if (logger.DebugLoggingEnabled)
                 logger.LogDebug($"{nameof(Worker)}: Executing step-implementation for step", null, CreateLogContext(step));
@@ -218,17 +223,19 @@ public class Worker
                 result = ExecutionResult.Rerun(description: e.Message);
             }
 
-            if (logger.TraceLoggingEnabled)
-                logger.LogTrace($"{nameof(Worker)}: Executed step. Status: {result.Status}. new steps: {result.NewSteps?.Count()}", null, CreateLogContext(step));
+            if (logger.DebugLoggingEnabled)
+                logger.LogDebug($"{nameof(Worker)}: Executed step. Status: {result.Status}. new steps: {result.NewSteps?.Count()}", null, CreateLogContext(step));
 
             FixupAfterExecution(step, result);
 
-            if (logger.DebugLoggingEnabled)
-                logger.LogDebug($"{nameof(Worker)}: Saving step result", null, CreateLogContext(step));
-
             try
             {
-                persister.Commit(result.Status, step, result.NewSteps);
+                persister.UpdateExecutedStep(result.Status, step);
+
+                if (result.NewSteps != null)
+                    persister.AddSteps(result.NewSteps.ToArray());
+
+                persister.Commit();
             }
             catch (Exception e)
             {

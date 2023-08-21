@@ -15,16 +15,6 @@ public class WorkerTests
     }
 
     [Test]
-    public void When_creating_a_transaction_from_interfacetype_Then_it_is_created()
-    {
-        helper.CreateEngine();
-        using IStepPersister p = helper.Persister;
-        p.CreateTransaction();
-
-        p.Transaction.Should().NotBeNull();
-    }
-
-    [Test]
     public void When_executing_OneStep_with_no_state_Then_succeed()
     {
         string? stepResult = null;
@@ -59,8 +49,8 @@ public class WorkerTests
         using var connection = new SqlConnection(helper.ConnectionString);
         connection.Open();
         using var tx = connection.BeginTransaction(System.Data.IsolationLevel.ReadCommitted);
-        engine.Runtime.Data.AddSteps(tx, new Step(name, 0));
-        engine.Runtime.Data.AddSteps(tx, new Step(name, 1));
+        engine.Runtime.Data.AddStep(new Step(name, 0), tx);
+        engine.Runtime.Data.AddStep(new Step(name, 1), tx);
         tx.Commit();
         engine.Start(1, true);
 
@@ -92,7 +82,6 @@ public class WorkerTests
         helper.AssertTableCounts(helper.FlowId, ready: 0, done: 0, failed: 1);
     }
 
-
     [Test]
     public void When_executing_step_throwing_exception_Then_rerun_current_step_and_ensure_state_is_unchanged()
     {
@@ -110,12 +99,14 @@ public class WorkerTests
 
         helper.AssertTableCounts(helper.FlowId, ready: 1, done: 0, failed: 0);
 
-        var row = helper.Persister.GetStep(dbid!.Value);
+        var row = helper.Persister.Go((p) => 
+        p.SearchSteps(new SearchModel() { Id = dbid!.Value, FetchLevel = new SearchModel.FetchLevels() { IncludeReady = true } })
+        [StepStatus.Ready]
+        .Single());
         row!.PersistedState.Should().Be("\"hej\"");
         row.FlowId.Should().Be(helper.FlowId);
         row.Name.Should().Be("test-throw-exception");
     }
-
 
     [Test]
     public void OneStep_fail()
@@ -155,11 +146,8 @@ public class WorkerTests
         helper.CreateAndRunEngine(new Step("repeating_step") { InitialState = 1, FlowId = helper.FlowId }, stepHandler);
 
         stepResult.Should().Be("hello 3");
-        helper.Persister.CountTables(helper.FlowId).Should().BeEquivalentTo(new Dictionary<StepStatus, int>{
-            { StepStatus.Ready, 0},
-            { StepStatus.Done, 1},
-            { StepStatus.Failed, 0},
-        });
+
+        helper.AssertTableCounts(helper.FlowId, ready: 0, done: 1, failed: 0);
     }
 
     [Test]
@@ -177,7 +165,7 @@ public class WorkerTests
         helper.CreateAndRunEngine(new Step { Name = "check-flowid/a", FlowId = helper.FlowId }, implA, implB);
 
         stepResult.Should().Be($"{helper.FlowId}");
-        
+
         helper.AssertTableCounts(helper.FlowId, ready: 0, done: 2, failed: 0);
     }
 
@@ -288,7 +276,9 @@ public class WorkerTests
         engine.Start(numberOfWorkers: 1, stopWhenNoWorkLeft: true);
         helper.AssertTableCounts(helper.FlowId, ready: 1, done: 0, failed: 0);
 
-        _ = helper.Engine!.Runtime.Data.ActivateStep(id, null);
+        var count = engine.Runtime.Data.ActivateStep(id, null);
+        count.Should().Be(1);
+
         helper.Engine.Start(numberOfWorkers: 1, stopWhenNoWorkLeft: true);
 
         stepResult.Should().Be(helper.FlowId.ToString());

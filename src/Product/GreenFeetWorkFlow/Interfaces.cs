@@ -1,10 +1,6 @@
-﻿namespace GreenFeetWorkflow;
+﻿using System.ComponentModel;
 
-// TODO fingure out how and what metrics to expose
-public interface IEngineMetrics
-{
-    // TODO int CountReadySteps();
-}
+namespace GreenFeetWorkflow;
 
 public interface IStepImplementation
 {
@@ -33,30 +29,39 @@ public interface IWorkflowIocContainer
 }
 
 // TODO NICE for testing tillad at der kun hentes et bestemt flowid  og rename to GetReadyStep()
+
+/// <summary>
+/// This interface is disposable such that connections/transactions may be cleaned up by the dispose method
+/// </summary>
 public interface IStepPersister : IDisposable
 {
+
+    T Go<T>(Func<IStepPersister, T> code, object? transaction = null);
+    object CreateTransaction();
     /// <summary> You can either set the transaction explicitly or create one using <see cref="CreateTransaction"/> </summary>
-    object? Transaction { get; set; }
-
-    void Commit(StepStatus status, Step executedStep, List<Step>? newSteps);
-
-    // TODO rename to CreateTxAndLockAvialableStep()
-    // TODO add CreateTxAndLockAvialableStep(id) - this is needed to activate a step
-    Step? GetStep();
+    void SetTransaction(object transaction);
+    void Commit();
     void RollBack();
     
-    /// <summary> Persist one or more steps. If uses a separate transaction, or the supplied transaction when not null. </summary>
-    int[] AddSteps(object? transaction = null, params Step[] steps);
-    
-    /// <summary> Reschedule a ready step to 'now' and send it activation data </summary>
-    int ActivateStep(int id, string? activationData);
+    void UpdateExecutedStep(StepStatus status, Step executedStep);
 
-    object CreateTransaction();
+    /// <summary>
+    /// Return a row and lock the row so other workers cannot pick it.
+    /// </summary>
+    Step? GetAndLockReadyStep();
+
+    /// <summary> Persist one or more steps. </summary>
+    int[] AddSteps(Step[] steps);
+
+    /// <summary> Reschedule a ready step to 'now' and send it activation data </summary>
+    int UpdateStep(int id, string? activationData, DateTime scheduleTime);
+
     Dictionary<StepStatus, IEnumerable<Step>> SearchSteps(SearchModel model);
 
     /// <summary> Move rows from done and fail columns </summary>
     /// <returns>number of rows moved</returns>
     int[] ReExecuteSteps(Dictionary<StepStatus, IEnumerable<Step>> entities);
+    Dictionary<StepStatus, int> CountTables(string? flowId = null);
 }
 
 public interface IStateFormatter

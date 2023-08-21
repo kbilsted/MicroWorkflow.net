@@ -12,7 +12,7 @@ public class WorkflowStarter : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        engine.Runtime.Data.AddSteps(new Step(StepFetchWeatherForecast.Name) { Singleton = true });
+        engine.Runtime.Data.AddStep(new Step(StepFetchWeatherForecast.Name) { Singleton = true });
 
         await engine.StartAsync(1, stoppingToken: stoppingToken);
     }

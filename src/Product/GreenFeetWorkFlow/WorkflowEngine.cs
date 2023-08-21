@@ -10,7 +10,7 @@ public class WorkflowEngine
     public IReadOnlyList<Worker>? WorkerList { get; private set; }
     public Thread[] Threads { get; private set; } = new Thread[0];
 
-    public StepEngineRuntime Runtime { get; private set; }
+    public EngineRuntime Runtime { get; private set; }
 
     public bool StopWhenNoWorkLeft { get; set; }
 
@@ -25,7 +25,7 @@ public class WorkflowEngine
         this.iocContainer = iocContainer;
 
         data = new WfRuntimeData(iocContainer, formatter);
-        Runtime = new StepEngineRuntime(data);
+        Runtime = new EngineRuntime(data, new WfRuntimeMetrics(iocContainer));
     }
 
     static string MakeWorkerName(int i)
@@ -39,6 +39,9 @@ public class WorkflowEngine
         CancellationToken? stoppingToken = null,
         string? engineName = null)
     {
+        if(logger.InfoLoggingEnabled)
+            logger.LogInfo($"{nameof(WorkflowEngine)}: starting engine" + engineName, null, null);
+
         StoppingToken = stoppingToken ?? CancellationToken.None;
 
         EngineName = engineName ?? MakeEngineName();
@@ -108,14 +111,16 @@ public class WorkflowEngine
     }
 }
 
-public class StepEngineRuntime
+public class EngineRuntime
 {
     public WfRuntimeData Data { get; }
-    public IEngineMetrics? Metrics { get; set; }
+    public WfRuntimeMetrics Metrics { get; set; }
 
-    public StepEngineRuntime(WfRuntimeData data /* , IEngineMetrics metrics*/)
+    public EngineRuntime(WfRuntimeData data, WfRuntimeMetrics metrics)
     {
         Data = data;
-        //Metrics = metrics;  
+        Metrics = metrics;  
     }
 }
+
+

@@ -5,10 +5,17 @@ namespace GreenFeetWorkflow.Tests;
 
 public class AdoSingletonStepTests
 {
+    TestHelper helper = new TestHelper();
+
+    [SetUp]
+    public void Setup()
+    {
+        helper = new TestHelper();
+    }
+
     [Test]
     public void When_creating_a_singleton_Then_it_is_created()
     {
-        var helper = new TestHelper();
         string? stepResult = null;
 
         Step step = new Step(helper.RndName)
@@ -25,23 +32,18 @@ public class AdoSingletonStepTests
 
         stepResult.Should().Be("hello");
 
-        helper.Persister.CountTables(helper.FlowId).Should().BeEquivalentTo(new Dictionary<StepStatus, int>{
-            { StepStatus.Ready, 0},
-            { StepStatus.Done, 1},
-            { StepStatus.Failed, 0},
-        });
+        helper.AssertTableCounts(helper.FlowId, ready: 0, done: 1, failed: 0);
     }
 
     [Test]
     public void When_creating_two_identical_singleton_Then_fail()
     {
-        var helper = new TestHelper();
         var engine = helper.CreateEngine();
 
         var step = new Step(helper.RndName) { Singleton = true, };
         var step2 = new Step(helper.RndName) { Singleton = true, };
 
-        Action act = () => engine.Runtime.Data.AddSteps(step, step2);
+        Action act = () => engine.Runtime.Data.AddSteps(new[] { step, step2 });
 
         act.Should()
             .Throw<SqlException>()

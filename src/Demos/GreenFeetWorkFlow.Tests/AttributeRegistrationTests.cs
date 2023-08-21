@@ -1,6 +1,4 @@
-﻿using FluentAssertions;
-
-namespace GreenFeetWorkflow.Tests;
+﻿namespace GreenFeetWorkflow.Tests;
 
 public class AttributeRegistrationTests
 {
@@ -15,11 +13,7 @@ public class AttributeRegistrationTests
 
         StepResult[testhelper.FlowId].Should().Be(testhelper.FlowId);
 
-        testhelper.Persister.CountTables(testhelper.FlowId).Should().BeEquivalentTo(new Dictionary<StepStatus, int>{
-            { StepStatus.Ready, 0},
-            { StepStatus.Done, 2},
-            { StepStatus.Failed, 0},
-        });
+        testhelper.AssertTableCounts(testhelper.FlowId, ready: 0, done: 2, failed: 0);
     }
 
     [StepName(Name)]
