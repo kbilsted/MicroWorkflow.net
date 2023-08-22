@@ -99,10 +99,9 @@ public class WorkerTests
 
         helper.AssertTableCounts(helper.FlowId, ready: 1, done: 0, failed: 0);
 
-        var row = helper.Persister.Go((p) => 
-        p.SearchSteps(new SearchModel() { Id = dbid!.Value, FetchLevel = new SearchModel.FetchLevels() { IncludeReady = true } })
-        [StepStatus.Ready]
-        .Single());
+        var row = helper.Persister.Go((p) =>
+        p.SearchSteps(new SearchModel(Id: dbid!.Value) { FetchLevel = new(Ready: true) })
+        [StepStatus.Ready].Single());
         row!.PersistedState.Should().Be("\"hej\"");
         row.FlowId.Should().Be(helper.FlowId);
         row.Name.Should().Be("test-throw-exception");

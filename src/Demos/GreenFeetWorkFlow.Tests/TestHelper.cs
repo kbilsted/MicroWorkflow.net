@@ -51,11 +51,7 @@ public class TestHelper
 
         var builder = new ContainerBuilder();
         builder.RegisterInstances(logger, stepHandlers);
-        builder.Register<IStepPersister>(c =>
-        {
-            Console.WriteLine(Thread.CurrentThread.Name + " **NEW PERSISTER**");
-            return new AdoDbStepPersister(ConnectionString, logger);
-        }).InstancePerDependency();
+        builder.Register<IStepPersister>(c => new AdoDbStepPersister(ConnectionString, logger)).InstancePerDependency();
         iocContainer = new AutofacBinding(builder);
 
         Formatter = new NewtonsoftStateFormatterJson(logger);

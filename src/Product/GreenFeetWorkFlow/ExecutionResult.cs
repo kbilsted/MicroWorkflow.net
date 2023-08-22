@@ -41,13 +41,10 @@ public class ExecutionResult
     public static ExecutionResult Done() => new ExecutionResult(StepStatus.Done);
 
     /// <summary> Mark the step as finished successfully. </summary>
-    public static ExecutionResult Done(Step newStep) => new(StepStatus.Done, new List<Step>(1) { newStep });
-
-    /// <summary> Mark the step as finished successfully. </summary>
     public static ExecutionResult Done(params Step[] newSteps) => new ExecutionResult(StepStatus.Done, newSteps.ToList());
 
     /// <summary> Mark the step as finished successfully. </summary>
-    public static ExecutionResult Done(List<Step> newSteps) => new ExecutionResult(StepStatus.Done, newSteps);
+    public static ExecutionResult Done(string description, params Step[] newSteps) => new ExecutionResult(StepStatus.Done, newSteps.ToList(), description: description);
 
     /// <summary> Mark the step as finished with failure. </summary>
     public static ExecutionResult Fail() => new ExecutionResult(StepStatus.Failed);
@@ -56,10 +53,7 @@ public class ExecutionResult
     public static ExecutionResult Fail(string description) => new ExecutionResult(StepStatus.Failed, description: description);
 
     /// <summary> Mark the step as finished with failure. </summary>
-    public static ExecutionResult Fail(params Step[] newSteps) => new ExecutionResult(StepStatus.Failed, newSteps.ToList());
-
-    /// <summary> Mark the step as finished with failure. </summary>
-    public static ExecutionResult Fail(List<Step> newSteps) => new ExecutionResult(StepStatus.Failed, newSteps);
+    public static ExecutionResult Fail(string description, params Step[] newSteps) => new ExecutionResult(StepStatus.Failed, newSteps.ToList(), description: description);
 
     /// <summary> Throw this exception to tell the step engine that the job has finished with failure </summary>
     /// <returns>an exception to throw</returns>

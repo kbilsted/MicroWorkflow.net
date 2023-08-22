@@ -1,6 +1,4 @@
-﻿using System.ComponentModel;
-
-namespace GreenFeetWorkflow;
+﻿namespace GreenFeetWorkflow;
 
 public interface IStepImplementation
 {
@@ -18,6 +16,11 @@ public interface IWorkflowLogger
     void LogDebug(string? msg, Exception? exception, Dictionary<string, object?>? arguments);
     void LogInfo(string? msg, Exception? exception, Dictionary<string, object?>? arguments);
     void LogError(string? msg, Exception? exception, Dictionary<string, object?>? arguments);
+
+    /// <summary>
+    /// when logging, nested loggers should be called as well
+    /// </summary>
+    IWorkflowLogger AddNestedLogger(IWorkflowLogger logger);
 }
 
 public interface IWorkflowIocContainer
@@ -64,7 +67,7 @@ public interface IStepPersister : IDisposable
     Dictionary<StepStatus, int> CountTables(string? flowId = null);
 }
 
-public interface IStateFormatter
+public interface IWorkflowStepStateFormatter
 {
     public string StateFormatName { get; }
 

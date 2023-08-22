@@ -56,7 +56,6 @@ public class AdoDbStepPersister : IStepPersister
 
             if (transaction == null)
             {
-                Console.WriteLine(Thread.CurrentThread+ " AUTOCOMMIT");
                 Commit();
             }
             return result;
@@ -75,13 +74,13 @@ public class AdoDbStepPersister : IStepPersister
         if (Transaction == null)
             throw new ArgumentException("Missing transaction. Remember to create a transaction before calling");
 
-        List<Step> ready = model.FetchLevel.IncludeReady
+        List<Step> ready = model.FetchLevel.Ready
             ? helper.SearchSteps(TableNameReady, model, Transaction!)
             : new List<Step>();
-        List<Step> done = model.FetchLevel.IncludeDone
+        List<Step> done = model.FetchLevel.Done
             ? helper.SearchSteps(TableNameDone, model, Transaction!)
             : new List<Step>();
-        List<Step> fail = model.FetchLevel.IncludeFail
+        List<Step> fail = model.FetchLevel.Fail
             ? helper.SearchSteps(TableNameFail, model, Transaction!)
             : new List<Step>();
 
@@ -99,7 +98,7 @@ public class AdoDbStepPersister : IStepPersister
             throw new ArgumentException("Missing transaction. Remember to create a transaction before calling");
 
         if (entities.ContainsKey(StepStatus.Ready) && entities[StepStatus.Ready].Any())
-            throw new ArgumentOutOfRangeException("Cannot re-execute ready steps");
+            throw new ArgumentOutOfRangeException("Cannot re-execute ready steps.");
 
         List<int> ids = new List<int>();
 

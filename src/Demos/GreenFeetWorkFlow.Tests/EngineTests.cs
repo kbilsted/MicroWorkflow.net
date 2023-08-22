@@ -17,11 +17,8 @@ public class EngineTests
         Step step = new Step(helper.RndName) { ScheduleTime = DateTime.Now.AddMonths(1) };
         var id = helper.Engine!.Runtime.Data.AddStep(step);
 
-        SearchModel model = new SearchModel() 
-        { 
-            Id = id, 
-            FetchLevel = new SearchModel.FetchLevels() { IncludeReady = true } 
-        };
+        SearchModel model = new(Id: id) { FetchLevel = new(Ready: true) };
+
         var result = helper.Engine.Runtime.Data.SearchSteps(model);
 
         result[StepStatus.Ready].Single().Name.Should().Be(helper.RndName);

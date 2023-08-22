@@ -3,7 +3,7 @@
 namespace GreenFeetWorkflow;
 
 
-public class NewtonsoftStateFormatterJson : IStateFormatter
+public class NewtonsoftStateFormatterJson : IWorkflowStepStateFormatter
 {
     private readonly IWorkflowLogger logger;
 

@@ -19,12 +19,7 @@ public class RuntimeDataTests
         var engine = helper.CreateEngine();
         var steps = engine.Runtime.Data.SearchSteps(new SearchModel()
         {
-            FetchLevel = new SearchModel.FetchLevels()
-            {
-                IncludeDone = true,
-                IncludeFail = true,
-                IncludeReady = true,
-            }
+            FetchLevel = new (true, true, true)
         });
 
         steps.Keys.Count.Should().Be(3);
@@ -42,12 +37,7 @@ public class RuntimeDataTests
         };
         var id = engine.Runtime.Data.AddStep(step, null);
 
-        SearchModel.FetchLevels fetchLevels = new SearchModel.FetchLevels()
-        {
-            IncludeDone = true,
-            IncludeFail = true,
-            IncludeReady = true,
-        };
+        FetchLevels fetchLevels = new (true, true, true);
         var steps = engine.Runtime.Data.SearchSteps(new SearchModel()
         {
             Id = id,
@@ -110,11 +100,11 @@ public class RuntimeDataTests
         await engine.StartAsync(true);
 
         var newId = engine.Runtime.Data
-            .ReExecuteSteps(new SearchModel { Id = id, FetchLevel = new SearchModel.FetchLevels { IncludeFail = true } })
+            .ReExecuteSteps(new SearchModel { Id = id, FetchLevel = new(Fail: true) })
             .Single();
 
         var newStep = helper.Persister.Go(p =>
-p.SearchSteps(new SearchModel() { Id = newId, FetchLevel = new SearchModel.FetchLevels() { IncludeReady = true } })
+p.SearchSteps(new SearchModel() { Id = newId, FetchLevel = new(Ready: true) })
 [StepStatus.Ready]
 .Single());
         newStep.Id.Should().BeGreaterThan(id);

@@ -19,7 +19,11 @@ public abstract class GenericStepLogger : IWorkflowLogger
         Code = code;
     }
 
-    public void AddNestedLogger(IWorkflowLogger logger) => nestedLogger = logger;
+    public IWorkflowLogger AddNestedLogger(IWorkflowLogger logger) 
+    {
+        nestedLogger = logger; 
+        return this;
+    }
     
     // TODO severity parameter??? why
     public static string CreateMessage(string severity, Exception? e, string? msg, Dictionary<string, object?>? arguments)

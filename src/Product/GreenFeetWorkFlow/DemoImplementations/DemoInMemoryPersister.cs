@@ -98,7 +98,7 @@ public class DemoInMemoryPersister : IStepPersister
     public Dictionary<StepStatus, IEnumerable<Step>> SearchSteps(SearchModel model)
     {
         IEnumerable<Step> ready = new List<Step>();
-        if (model.FetchLevel.IncludeReady)
+        if (model.FetchLevel.Ready)
         {
             ready = ReadySteps.Where(x =>
                 (model.CorrelationId != null && x.Value.CorrelationId == model.CorrelationId)

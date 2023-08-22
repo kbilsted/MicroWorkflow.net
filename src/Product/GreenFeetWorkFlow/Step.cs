@@ -66,34 +66,37 @@ public class Step
     public ExecutionResult Done() => ExecutionResult.Done();
 
     /// <summary> Mark the step as finished successfully. </summary>
-    public async Task<ExecutionResult> DoneAsync() => await Task.FromResult(ExecutionResult.Done());
-
-    /// <summary> Mark the step as finished successfully. </summary>
-    public ExecutionResult Done(Step newStep) => ExecutionResult.Done(newStep);
-
-    /// <summary> Mark the step as finished successfully. </summary>
-    public ExecutionResult Done(List<Step> newSteps) => ExecutionResult.Done(newSteps.ToArray());
-
-    /// <summary> Mark the step as finished successfully. </summary>
     public ExecutionResult Done(params Step[] newSteps) => ExecutionResult.Done(newSteps);
 
     /// <summary> Mark the step as finished successfully. </summary>
+    public ExecutionResult Done(string description, params Step[] newSteps) => ExecutionResult.Done(description, newSteps);
+
+    /// <summary> Mark the step as finished successfully. </summary>
+    public async Task<ExecutionResult> DoneAsync() => await Task.FromResult(ExecutionResult.Done());
+
+    /// <summary> Mark the step as finished successfully. </summary>
     public async Task<ExecutionResult> DoneAsync(params Step[] newSteps) => await Task.FromResult(ExecutionResult.Done(newSteps));
+
+    /// <summary> Mark the step as finished successfully. </summary>
+    public async Task<ExecutionResult> DoneAsync(string description, params Step[] newSteps) => await Task.FromResult(ExecutionResult.Done(description, newSteps));
 
     /// <summary> Mark the step as finished with failure. </summary>
     public ExecutionResult Fail() => ExecutionResult.Fail();
 
     /// <summary> Mark the step as finished with failure. </summary>
-    public async Task<ExecutionResult> FailAsync() => await Task.FromResult(ExecutionResult.Fail());
-
-    /// <summary> Mark the step as finished with failure. </summary>
     public ExecutionResult Fail(string description) => ExecutionResult.Fail(description);
 
     /// <summary> Mark the step as finished with failure. </summary>
-    public ExecutionResult Fail(List<Step> newSteps) => ExecutionResult.Fail(newSteps.ToArray());
+    public ExecutionResult Fail(string description, params Step[] newSteps) => ExecutionResult.Fail(description, newSteps);
 
     /// <summary> Mark the step as finished with failure. </summary>
-    public ExecutionResult Fail(params Step[] newSteps) => ExecutionResult.Fail(newSteps);
+    public async Task<ExecutionResult> FailAsync() => await Task.FromResult(ExecutionResult.Fail());
+
+    /// <summary> Mark the step as finished with failure. </summary>
+    public async Task<ExecutionResult> FailAsync(string description) => await Task.FromResult(ExecutionResult.Fail(description));
+
+    /// <summary> Mark the step as finished with failure. </summary>
+    public async Task<ExecutionResult> FailAsync(string description, params Step[] newSteps) => await Task.FromResult(ExecutionResult.Fail(description, newSteps));
 
     /// <summary> Throw this exception to tell the step engine that the job has finished with failure </summary>
     /// <returns>an exception to throw</returns>

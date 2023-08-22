@@ -2,7 +2,7 @@
 
 namespace GreenFeetWorkflow;
 
-public class DotNetStepStateFormatterJson : IStateFormatter
+public class DotNetStepStateFormatterJson : IWorkflowStepStateFormatter
 {
     private readonly IWorkflowLogger logger;
 

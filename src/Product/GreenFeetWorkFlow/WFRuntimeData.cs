@@ -4,9 +4,9 @@
 public class WfRuntimeData
 {
     private readonly IWorkflowIocContainer iocContainer;
-    private readonly IStateFormatter formatter;
+    private readonly IWorkflowStepStateFormatter formatter;
 
-    public WfRuntimeData(IWorkflowIocContainer iocContainer, IStateFormatter formatter)
+    public WfRuntimeData(IWorkflowIocContainer iocContainer, IWorkflowStepStateFormatter formatter)
     {
         this.iocContainer = iocContainer;
         this.formatter = formatter;
@@ -76,8 +76,8 @@ public class WfRuntimeData
     /// <returns>Ids of inserted steps</returns>
     public int[] ReExecuteSteps(SearchModel criterias)
     {
-        if (criterias.FetchLevel.IncludeReady)
-            throw new ArgumentOutOfRangeException("Cannot search the ready queue");
+        if (criterias.FetchLevel.Ready)
+            throw new ArgumentOutOfRangeException("Cannot search the ready queue for steps to re-execute");
 
         IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
 

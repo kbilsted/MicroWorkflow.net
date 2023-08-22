@@ -19,7 +19,7 @@ public class WorkflowEngine
     public WorkflowEngine(
         IWorkflowLogger logger,
         IWorkflowIocContainer iocContainer,
-        IStateFormatter formatter)
+        IWorkflowStepStateFormatter formatter)
     {
         this.logger = logger;
         this.iocContainer = iocContainer;
