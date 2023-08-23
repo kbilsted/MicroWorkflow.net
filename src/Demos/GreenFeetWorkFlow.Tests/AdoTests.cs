@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using Microsoft.Data.SqlClient;
 using Newtonsoft.Json;
+using ReassureTest;
 
 namespace GreenFeetWorkflow.Tests;
 
@@ -80,6 +81,77 @@ public class WorkerTests
                 GenericStepHandler.Create(step => throw step.FailAsException())));
 
         helper.AssertTableCounts(helper.FlowId, ready: 0, done: 0, failed: 1);
+    }
+
+    [Test]
+    public async Task When_executing_step_throwing_special_FailCurrentStepException_and_add_step_Then_fail_current_step_and_add_ready_step()
+    {
+        var name = "test-throw-failstepexception-with-newStep";
+        var nameNewStep = "test-throw-failstepexception-with-newStep-newstepname";
+        var engine = helper.CreateEngine(
+            (
+                name,
+                GenericStepHandler.Create(step => throw step.FailAsException(newSteps: new Step(nameNewStep))))
+            );
+        engine.Runtime.Data.AddStep(new Step(name) { FlowId = helper.FlowId });
+        await engine.StartAsync(true);
+
+        var steps = engine.Runtime.Data.SearchSteps(new SearchModel(FlowId: helper.FlowId) { FetchLevel = new(true, true, true) });
+
+        steps.Is(@" [
+    {
+        Key = Ready
+        Value = [
+            {
+                Id = *
+                Name = `test-throw-failstepexception-with-newStep-newstepname`
+                Singleton = false
+                FlowId = *
+                SearchKey = null
+                InitialState = null
+                PersistedState = null
+                PersistedStateFormat = null
+                ExecutionCount = *
+                ExecutionDurationMillis = null
+                ExecutionStartTime = null
+                ExecutedBy = null
+                CreatedTime = now
+                CreatedByStepId = *
+                ScheduleTime = *
+                CorrelationId = null
+                Description = `Worker: missing step-implementation for step 'test-throw-failstepexception-with-newStep-newstepname'`
+            }
+        ]
+    },
+    {
+        Key = Done
+        Value = []
+    },
+    {
+        Key = Failed
+        Value = [
+            {
+                Id = *
+                Name = `test-throw-failstepexception-with-newStep`
+                Singleton = false
+                FlowId = *
+                SearchKey = null
+                InitialState = null
+                PersistedState = null
+                PersistedStateFormat = null
+                ExecutionCount = 1
+                ExecutionDurationMillis = 0
+                ExecutionStartTime = now
+                ExecutedBy = null
+                CreatedTime = now
+                CreatedByStepId = 0
+                ScheduleTime = now
+                CorrelationId = null
+                Description = `Exception of type 'GreenFeetWorkflow.FailCurrentStepException' was thrown.`
+            }
+        ]
+    }
+]");
     }
 
     [Test]

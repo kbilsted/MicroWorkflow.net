@@ -5,14 +5,21 @@
 /// </summary>
 public class FailCurrentStepException : Exception
 {
-    public FailCurrentStepException() : base(){}
+    public Step[]? NewSteps { get; set; }
 
-    public FailCurrentStepException(string? description) : base(description)
-    {
-    }
+    public FailCurrentStepException() : this(null, null, null) { }
+
+    public FailCurrentStepException(string? description)
+        : this(description, null, null)
+    { }
 
     public FailCurrentStepException(string? description, Exception? innerException)
+        : this(description, innerException, null)
+    { }
+
+    public FailCurrentStepException(string? description, Exception? innerException, params Step[]? newSteps)
         : base(description, innerException)
     {
+        NewSteps = newSteps;
     }
 }

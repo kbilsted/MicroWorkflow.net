@@ -41,24 +41,31 @@ public class ExecutionResult
     public static ExecutionResult Done() => new ExecutionResult(StepStatus.Done);
 
     /// <summary> Mark the step as finished successfully. </summary>
-    public static ExecutionResult Done(params Step[] newSteps) => new ExecutionResult(StepStatus.Done, newSteps.ToList());
+    public static ExecutionResult Done(params Step[]? newSteps) => new ExecutionResult(StepStatus.Done, newSteps?.ToList());
 
     /// <summary> Mark the step as finished successfully. </summary>
-    public static ExecutionResult Done(string description, params Step[] newSteps) => new ExecutionResult(StepStatus.Done, newSteps.ToList(), description: description);
+    public static ExecutionResult Done(string description, params Step[]? newSteps) => new ExecutionResult(StepStatus.Done, newSteps?.ToList(), description: description);
 
     /// <summary> Mark the step as finished with failure. </summary>
     public static ExecutionResult Fail() => new ExecutionResult(StepStatus.Failed);
 
     /// <summary> Mark the step as finished with failure. </summary>
-    public static ExecutionResult Fail(string description) => new ExecutionResult(StepStatus.Failed, description: description);
+    public static ExecutionResult Fail(string description)
+        => new ExecutionResult(StepStatus.Failed, description: description);
 
     /// <summary> Mark the step as finished with failure. </summary>
-    public static ExecutionResult Fail(string description, params Step[] newSteps) => new ExecutionResult(StepStatus.Failed, newSteps.ToList(), description: description);
+    public static ExecutionResult Fail(string description, params Step[]? newSteps)
+        => new ExecutionResult(StepStatus.Failed, newSteps?.ToList(), description: description);
 
     /// <summary> Throw this exception to tell the step engine that the job has finished with failure </summary>
     /// <returns>an exception to throw</returns>
     public static FailCurrentStepException FailAsException(string? description = null, Exception? exception = null)
         => new FailCurrentStepException(description ?? exception?.Message, exception);
+
+    /// <summary> Throw this exception to tell the step engine that the job has finished with failure </summary>
+    /// <returns>an exception to throw</returns>
+    public static FailCurrentStepException FailAsException(string? description = null, Exception? exception = null, params Step[]? newSteps)
+        => new FailCurrentStepException(description ?? exception?.Message, exception, newSteps);
 
     /// <summary> Mark the step for a re-execution </summary>
     public static ExecutionResult Rerun(

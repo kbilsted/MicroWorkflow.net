@@ -205,15 +205,14 @@ public class Worker
             step.ExecutionStartTime = DateTime.Now;
             step.ExecutedBy = this.WorkerName;
 
+            stopwatch.Restart();
             try
             {
-                stopwatch.Restart();
                 result = await implementation.ExecuteAsync(step);
-                step.ExecutionDurationMillis = stopwatch.ElapsedMilliseconds;
             }
             catch (FailCurrentStepException e)
             {
-                result = ExecutionResult.Fail(e.Message);
+                result = ExecutionResult.Fail(e.Message, e.NewSteps);
             }
             catch (Exception e)
             {
@@ -222,9 +221,14 @@ public class Worker
 
                 result = ExecutionResult.Rerun(description: e.Message);
             }
+            // set time both for executions and executions with exception
+            step.ExecutionDurationMillis = stopwatch.ElapsedMilliseconds;
+
 
             if (logger.DebugLoggingEnabled)
-                logger.LogDebug($"{nameof(Worker)}: Executed step. Status: {result.Status}. new steps: {result.NewSteps?.Count()}", null, CreateLogContext(step));
+                logger.LogDebug($"{nameof(Worker)}: Executed step. Status: {result.Status}. new steps: {result.NewSteps?.Count() ?? 0}",
+                    null,
+                    CreateLogContext(step));
 
             FixupAfterExecution(step, result);
 
