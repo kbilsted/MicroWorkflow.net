@@ -5,14 +5,13 @@ public class WorkflowEngine
     private readonly IWorkflowLogger logger;
     private readonly IWorkflowIocContainer iocContainer;
     public string? EngineName { get; set; }
-    public CancellationToken StoppingToken { get; set; }
+    public CancellationToken StoppingToken { get; private set; }
 
     public IReadOnlyList<Worker>? WorkerList { get; private set; }
     public Thread[] Threads { get; private set; } = new Thread[0];
 
-    public EngineRuntime Runtime { get; private set; }
+    public WfRuntime Runtime { get; private set; }
 
-    public bool StopWhenNoWorkLeft { get; set; }
 
     private readonly WfRuntimeData data;
 
@@ -25,7 +24,7 @@ public class WorkflowEngine
         this.iocContainer = iocContainer;
 
         data = new WfRuntimeData(iocContainer, formatter);
-        Runtime = new EngineRuntime(data, new WfRuntimeMetrics(iocContainer));
+        Runtime = new WfRuntime(data, new WfRuntimeMetrics(iocContainer), new WfRuntimeConfiguration(new WorkerConfig(), 0));
     }
 
     static string MakeWorkerName(int i)
@@ -34,28 +33,21 @@ public class WorkflowEngine
     static string MakeEngineName()
         => $"engine/{Environment.MachineName}/processid/{Environment.ProcessId}/instance/{Random.Shared.Next(99999)}";
 
-    void Init(int numberOfWorkers,
-        bool? stopWhenNoWorkLeft = false,
-        CancellationToken? stoppingToken = null,
-        string? engineName = null)
+    void Init(WfRuntimeConfiguration configuration, string? engineName = null)
     {
-        if(logger.InfoLoggingEnabled)
+        if (logger.InfoLoggingEnabled)
             logger.LogInfo($"{nameof(WorkflowEngine)}: starting engine" + engineName, null, null);
 
-        StoppingToken = stoppingToken ?? CancellationToken.None;
+        Runtime.Configuration = configuration;
 
         EngineName = engineName ?? MakeEngineName();
 
-        StopWhenNoWorkLeft = stopWhenNoWorkLeft ?? false;
-
-        var workers = new Worker[numberOfWorkers];
-        for (int i = 0; i < numberOfWorkers; i++)
+        var workers = new Worker[configuration.NumberOfWorkers];
+        for (int i = 0; i < configuration.NumberOfWorkers; i++)
         {
-            workers[i] = new Worker(logger, iocContainer, data)
+            workers[i] = new Worker(logger, iocContainer, data, configuration.WorkerConfig)
             {
                 WorkerName = MakeWorkerName(i),
-                StoppingToken = StoppingToken,
-                StopWhenNoWorkLeft = StopWhenNoWorkLeft
             };
         }
         WorkerList = workers;
@@ -63,17 +55,17 @@ public class WorkflowEngine
 
 
     /// <summary> Starts the engine using 1 or more background threads </summary>
-    public void Start(int numberOfWorkers,
-        bool? stopWhenNoWorkLeft = false,
-        CancellationToken? stoppingToken = null,
-        string? engineName = null)
+    public void Start(
+        WfRuntimeConfiguration configuration,
+        string? engineName = null,
+        CancellationToken? stoppingToken = null)
     {
-        Init(numberOfWorkers, stopWhenNoWorkLeft, stoppingToken, engineName);
+        Init(configuration, engineName);
 
         Threads = WorkerList!
            .Select((x, i) =>
            {
-               var t = new Thread(async () => await x.StartAsync())
+               var t = new Thread(async () => await x.StartAsync(stoppingToken ?? CancellationToken.None))
                {
                    Name = x.WorkerName,
                    IsBackground = true // c# automatically shuts down background threads when all foreground threads are terminated
@@ -90,36 +82,24 @@ public class WorkflowEngine
             thread.Join();
     }
 
-    public async Task StartAsync(int numberOfWorkers,
-        bool? stopWhenNoWorkLeft = false,
-        CancellationToken? stoppingToken = null,
-        string? engineName = null)
+    public async Task StartAsync(
+        WfRuntimeConfiguration configuration,
+        string? engineName = null,
+        CancellationToken? stoppingToken = null)
     {
-        await Task.Run(() => Start(numberOfWorkers, stopWhenNoWorkLeft, stoppingToken, engineName));
+        await Task.Run(() => Start(configuration, engineName, stoppingToken));
     }
 
 
     /// <summary> Start the engine with the current thread as the worker. Also use this if you have trouble debugging weird scenarios </summary>
-    public async Task StartAsync(
-        bool? stopWhenNoWorkLeft = false,
-        CancellationToken? stoppingToken = null,
-        string? engineName = null)
+    public async Task StartAsSingleWorker(
+        WfRuntimeConfiguration configuration,
+        string? engineName = null,
+        CancellationToken? stoppingToken = null)
     {
-        Init(1, stopWhenNoWorkLeft, stoppingToken, engineName);
+        Init(configuration, engineName);
 
-        await WorkerList!.Single().StartAsync();
-    }
-}
-
-public class EngineRuntime
-{
-    public WfRuntimeData Data { get; }
-    public WfRuntimeMetrics Metrics { get; set; }
-
-    public EngineRuntime(WfRuntimeData data, WfRuntimeMetrics metrics)
-    {
-        Data = data;
-        Metrics = metrics;  
+        await WorkerList!.Single().StartAsync(stoppingToken ?? CancellationToken.None);
     }
 }
 

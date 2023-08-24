@@ -7,6 +7,10 @@ public class RuntimeDataTests
 {
     TestHelper helper = new TestHelper();
 
+    private WfRuntimeConfiguration cfg = new WfRuntimeConfiguration(
+        new WorkerConfig() { StopWhenNoWork = true }, 
+        NumberOfWorkers: 1);
+
     [SetUp]
     public void Setup()
     {
@@ -97,7 +101,7 @@ public class RuntimeDataTests
         var stepState = 12345;
         var step = new Step("v1/fail-and-reactivate", stepState) { FlowId = helper.FlowId, CorrelationId = helper.CorrelationId };
         var id = engine.Runtime.Data.AddStep(step);
-        await engine.StartAsync(true);
+        await engine.StartAsSingleWorker(cfg);
 
         var newId = engine.Runtime.Data
             .ReExecuteSteps(new SearchModel { Id = id, FetchLevel = new(Fail: true) })

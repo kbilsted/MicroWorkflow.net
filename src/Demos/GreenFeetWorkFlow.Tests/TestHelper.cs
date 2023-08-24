@@ -61,6 +61,35 @@ public class TestHelper
         return Engine;
     }
 
+    public void CreateAndRunEngineForPerformance(Step[] steps, int workerCount, params (string, IStepImplementation)[] stepHandlers)
+    {
+        logger = new DiagnosticsStepLogger();
+        logger.TraceLoggingEnabled = false;
+        logger.InfoLoggingEnabled = true;
+        logger.DebugLoggingEnabled = true;
+        logger.ErrorLoggingEnabled = true;
+
+        var builder = new ContainerBuilder();
+        builder.RegisterInstances(logger, stepHandlers);
+        builder.Register<IStepPersister>(c => new AdoDbStepPersister(ConnectionString, logger));
+        iocContainer = new AutofacBinding(builder);
+
+        Formatter = new NewtonsoftStateFormatterJson(logger);
+
+        Engine = new WorkflowEngine(logger, iocContainer, Formatter);
+
+        Engine.Runtime.Data.AddSteps(steps);
+
+        var workflowConfiguration = new WfRuntimeConfiguration(new WorkerConfig()
+        {
+            StopWhenNoWork = false
+        }, NumberOfWorkers: workerCount);
+
+        Engine.Start(workflowConfiguration, stoppingToken: cts.Token);
+    }
+
+
+
     public void CreateAndRunEngine(Step[] steps, int workerCount, params (string, IStepImplementation)[] stepHandlers)
     {
         logger = new DiagnosticsStepLogger();
@@ -76,10 +105,15 @@ public class TestHelper
 
         Engine.Runtime.Data.AddSteps(steps);
 
+        var workflowConfiguration = new WfRuntimeConfiguration(new WorkerConfig()
+        {
+            StopWhenNoWork = workerCount == 1,
+        }, NumberOfWorkers: workerCount);
+
         if (workerCount == 1)
-            Engine.StartAsync(true).GetAwaiter().GetResult();
+            Engine.StartAsSingleWorker(workflowConfiguration, stoppingToken: cts.Token).GetAwaiter().GetResult();
         else
-            Engine.Start(numberOfWorkers: workerCount, stopWhenNoWorkLeft: false, cts.Token);
+            Engine.Start(workflowConfiguration, stoppingToken: cts.Token);
     }
 
     public void CreateAndRunEngineWithAttributes(Step[] steps, int workerCount)
@@ -98,7 +132,11 @@ public class TestHelper
 
         Engine.Runtime.Data.AddSteps(steps);
 
-        Engine.Start(numberOfWorkers: workerCount, stopWhenNoWorkLeft: workerCount == 1, cts.Token);
+        var workflowConfiguration = new WfRuntimeConfiguration(new WorkerConfig()
+        { StopWhenNoWork = workerCount == 1 },
+        NumberOfWorkers: workerCount);
+
+        Engine.Start(workflowConfiguration, stoppingToken: cts.Token);
     }
 
     public void CreateAndRunEngineWithAttributes(params Step[] steps)

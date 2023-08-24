@@ -15,7 +15,7 @@ public class Worker
     /// <summary> static field so it is shared among all workers. It ensures if no work and many workers, we don't bombard the persistent storage with request for ready items </summary>
     static DateTime SharedThresholdToReducePollingReadyItems = DateTime.MinValue;
 
-    public CancellationToken StoppingToken { get; set; }
+    public CancellationToken StoppingToken { get; private set; }
 
     /// <summary> The good name for a worker is nice for debugging when multiple workers are executing on the same engine. </summary>
     public string? WorkerName { get; set; }
@@ -23,32 +23,28 @@ public class Worker
     readonly IWorkflowLogger logger;
     readonly IWorkflowIocContainer iocContainer;
     private readonly WfRuntimeData engineRuntimeData;
-
-    /// <summary> nice for unit testing </summary>
-    public bool StopWhenNoWorkLeft { get; set; }
-
-    // TODO make a configuration class - and later make it a DB configuration
-    public TimeSpan DelayNoReadyWork = TimeSpan.FromSeconds(3);
-    public TimeSpan DelayTechnicalTransientError = TimeSpan.FromSeconds(5);
-    public TimeSpan DelayMissingStepHandler = TimeSpan.FromHours(1);
+    private WorkerConfig workerConfig;
+    
     // TODO add timestamp for startup delay - to make webapi solutions easier to debug
     readonly Stopwatch stopwatch = new();
 
-    public Worker(IWorkflowLogger logger, IWorkflowIocContainer iocContainer, WfRuntimeData runtime)
+    public Worker(IWorkflowLogger logger, IWorkflowIocContainer iocContainer, WfRuntimeData runtime, WorkerConfig config)
     {
         this.logger = logger;
         this.iocContainer = iocContainer;
         this.engineRuntimeData = runtime;
+        this.workerConfig = config;
     }
 
     enum WorkerRunStatus { Stop, Continue, NoWorkDone }
 
-    // TODO take as args StopWhenNoWorkLeft,StoppingToken
-    public async Task StartAsync()
+    public async Task StartAsync(CancellationToken stoppingToken)
     {
         if (logger.InfoLoggingEnabled)
             logger.LogInfo($"{nameof(Worker)}: starting worker", null, new Dictionary<string, object?>() {
                 { "workerId", Thread.CurrentThread.Name! } });
+
+        StoppingToken = stoppingToken;
 
         await ExecuteLoop();
 
@@ -71,7 +67,7 @@ public class Worker
             }
 
             if (mustWaitMore)
-                StoppingToken.WaitHandle.WaitOne(DelayNoReadyWork);
+                StoppingToken.WaitHandle.WaitOne(workerConfig.DelayNoReadyWork);
         } while (mustWaitMore);
     }
 
@@ -92,7 +88,7 @@ public class Worker
                     case WorkerRunStatus.Continue:
                         continue;
                     case WorkerRunStatus.NoWorkDone:
-                        if (StopWhenNoWorkLeft)
+                        if (workerConfig.StopWhenNoWork)
                         {
                             if (logger.DebugLoggingEnabled)
                                 logger.LogDebug($"{nameof(Worker)}: Stopping worker thread due to no work",
@@ -104,7 +100,7 @@ public class Worker
                         lock (Lock)
                         {
                             if (SharedThresholdToReducePollingReadyItems < DateTime.Now)
-                                SharedThresholdToReducePollingReadyItems = DateTime.Now + DelayNoReadyWork;
+                                SharedThresholdToReducePollingReadyItems = DateTime.Now + workerConfig.DelayNoReadyWork;
                         }
                         break;
                 }
@@ -123,6 +119,8 @@ public class Worker
 
                 if (logger.ErrorLoggingEnabled)
                     logger.LogError($"{nameof(Worker)}:GreenFeetWorkflow error - unhandled exception", ex, null);
+
+                StoppingToken.WaitHandle.WaitOne(workerConfig.DelayTechnicalTransientError);
             }
         }
     }
@@ -149,7 +147,7 @@ public class Worker
             if (step != null)
                 persister.RollBack();
 
-            StoppingToken.WaitHandle.WaitOne(DelayTechnicalTransientError);
+            StoppingToken.WaitHandle.WaitOne(workerConfig.DelayTechnicalTransientError);
 
             return null;
         }
@@ -178,7 +176,8 @@ public class Worker
     {
         using (var persister = iocContainer.GetInstance<IStepPersister>())
         {
-            persister.CreateTransaction();
+            if (!CreateTransaction(persister))
+                return WorkerRunStatus.NoWorkDone;
 
             Step? step = GetNextStep(persister);
             if (step == null)
@@ -191,7 +190,7 @@ public class Worker
                 if (logger.InfoLoggingEnabled)
                     logger.LogInfo(msg, null, CreateLogContext(step));
 
-                step.ScheduleTime = DateTime.Now + DelayMissingStepHandler;
+                step.ScheduleTime = DateTime.Now + workerConfig.DelayMissingStepHandler;
                 step.Description = msg;
                 step.ExecutionCount++;
                 persister.UpdateExecutedStep(StepStatus.Ready, step);
@@ -246,11 +245,29 @@ public class Worker
                 if (logger.ErrorLoggingEnabled)
                     logger.LogError($"{nameof(Worker)}: exception during saving step execution result and state.", e, CreateLogContext(step));
 
-                StoppingToken.WaitHandle.WaitOne(DelayTechnicalTransientError);
+                StoppingToken.WaitHandle.WaitOne(workerConfig.DelayTechnicalTransientError);
             }
 
             return WorkerRunStatus.Continue;
         }
+    }
+
+    bool CreateTransaction(IStepPersister persister)
+    {
+        try
+        {
+            persister.CreateTransaction();
+        }
+        catch (Exception e)
+        {
+            if (logger.ErrorLoggingEnabled)
+                logger.LogError($"{nameof(Worker)}: Cannot create persistence transaction.", e, CreateLogContext(null));
+
+            StoppingToken.WaitHandle.WaitOne(workerConfig.DelayTechnicalTransientError);
+            return false;
+        }
+
+        return true;
     }
 
     static DateTime CalculateScheduleTime(Step step)

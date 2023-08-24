@@ -14,6 +14,6 @@ public class WorkflowStarter : BackgroundService
     {
         engine.Runtime.Data.AddStep(new Step(StepFetchWeatherForecast.Name) { Singleton = true });
 
-        await engine.StartAsync(1, stoppingToken: stoppingToken);
+        await engine.StartAsync(new WfRuntimeConfiguration(new WorkerConfig(), NumberOfWorkers: 1) , stoppingToken:stoppingToken);
     }
 }

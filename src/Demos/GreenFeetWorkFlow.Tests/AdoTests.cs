@@ -8,6 +8,12 @@ namespace GreenFeetWorkflow.Tests;
 public class WorkerTests
 {
     TestHelper helper = new TestHelper();
+    private WfRuntimeConfiguration cfg = new WfRuntimeConfiguration(
+        new WorkerConfig()
+        {
+            StopWhenNoWork = true
+        },
+        NumberOfWorkers: 1);
 
     [SetUp]
     public void Setup()
@@ -53,7 +59,7 @@ public class WorkerTests
         engine.Runtime.Data.AddStep(new Step(name, 0), tx);
         engine.Runtime.Data.AddStep(new Step(name, 1), tx);
         tx.Commit();
-        engine.Start(1, true);
+        engine.Start(cfg);
 
         stepResults.Should().BeEquivalentTo(new[] { "hello 0", "hello 1" });
     }
@@ -94,7 +100,7 @@ public class WorkerTests
                 GenericStepHandler.Create(step => throw step.FailAsException(newSteps: new Step(nameNewStep))))
             );
         engine.Runtime.Data.AddStep(new Step(name) { FlowId = helper.FlowId });
-        await engine.StartAsync(true);
+        await engine.StartAsSingleWorker(cfg);
 
         var steps = engine.Runtime.Data.SearchSteps(new SearchModel(FlowId: helper.FlowId) { FetchLevel = new(true, true, true) });
 
@@ -344,13 +350,13 @@ public class WorkerTests
             ScheduleTime = DateTime.Now.AddYears(35)
         };
         var id = engine.Runtime.Data.AddStep(futureStep, null);
-        engine.Start(numberOfWorkers: 1, stopWhenNoWorkLeft: true);
+        engine.Start(cfg);
         helper.AssertTableCounts(helper.FlowId, ready: 1, done: 0, failed: 0);
 
         var count = engine.Runtime.Data.ActivateStep(id, null);
         count.Should().Be(1);
 
-        helper.Engine.Start(numberOfWorkers: 1, stopWhenNoWorkLeft: true);
+        helper.Engine.Start(cfg);
 
         stepResult.Should().Be(helper.FlowId.ToString());
 

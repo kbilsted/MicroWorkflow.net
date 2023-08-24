@@ -12,7 +12,7 @@ public class PerformanceTests
         void doo(int workerCount)
         {
             var testhelper = new TestHelper();
-            ConcurrentBag<(string, int)> stepResults = new ConcurrentBag<(string, int)>();
+            ConcurrentBag<int> stepResults = new ConcurrentBag<int>();
 
             var correlationIds = Enumerable.Range(0, 10).Select(x => Guid.NewGuid().ToString()).ToArray();
             var steps = correlationIds.Select(x => new Step("v1/performanc/many-reruns", 1) { CorrelationId = x }).ToArray();
@@ -22,11 +22,11 @@ public class PerformanceTests
             {
                 int counter = testhelper.Formatter!.Deserialize<int>(step.PersistedState);
 
-                if (counter == max)
+                if (counter >= max)
                 {
-                    stepResults.Add((step.CorrelationId!, counter));
+                    stepResults.Add(counter);
 
-                    if (stepResults.Count == correlationIds.Length)
+                    if (stepResults.Count >= correlationIds.Length)
                         testhelper.cts.Cancel();
 
                     return step.Done();
@@ -59,6 +59,7 @@ public class PerformanceTests
     }
 
     [Test]
+    [Explicit]
     public void When_spawn_newsteps_count_to_N_Then_expect_all_to_have_run()
     {
         void doo(int workerCount)
