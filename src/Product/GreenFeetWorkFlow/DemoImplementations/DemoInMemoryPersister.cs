@@ -84,7 +84,7 @@ public class DemoInMemoryPersister : IStepPersister
     {
     }
 
-    public int UpdateStep(int id, string? activationData, DateTime scheduleTime)
+    public int UpdateStep(int id, string? activationArgs, DateTime scheduleTime)
     {
         throw new NotImplementedException();
     }

@@ -52,15 +52,16 @@ public class AdoHelper
         return ReadStepRow(cmd);
     }
 
-    // TODO mangler activationData
-    public int UpdateStep(string tableName, int id, DateTime scheduleTime, string? activationData, SqlTransaction tx)
+    public int UpdateStep(string tableName, int id, DateTime scheduleTime, string? activationArgs, SqlTransaction tx)
     {
-        Sql sql = new Sql(@$"UPDATE {tableName} 
-        SET [ScheduleTime] = @scheduleTime")
-        .Where("[Id] = @Id");
+        Sql sql = new Sql(@$"UPDATE {tableName}")
+            .Set("[ScheduleTime] = @scheduleTime")
+            .Set(activationArgs, "[ActivationArgs] = @activationArgs")
+            .Where("[Id] = @Id");
 
         using var cmd = new SqlCommand(sql, tx.Connection, tx);
         cmd.Parameters.Add(new SqlParameter("scheduleTime", scheduleTime));
+        cmd.Parameters.Add(new SqlParameter("activationArgs", activationArgs));
         cmd.Parameters.Add(new SqlParameter("Id", id));
 
         return cmd.ExecuteNonQuery();
@@ -97,8 +98,9 @@ public class AdoHelper
         step.SearchKey = GetNullString(reader, "SearchKey");
         step.ExecutionCount = reader.GetInt32(reader.GetOrdinal("ExecutionCount"));
         step.ScheduleTime = reader.GetDateTime(reader.GetOrdinal("ScheduleTime"));
-        step.PersistedState = GetNullString(reader, "PersistedState");
-        step.PersistedStateFormat = GetNullString(reader, "PersistedStateFormat");
+        step.State = GetNullString(reader, "State");
+        step.StateFormat = GetNullString(reader, "StateFormat");
+        step.ActivationArgs = GetNullString(reader, "ActivationArgs");
         step.ExecutionDurationMillis = GetNullLong(reader, "ExecutionDurationMillis");
         step.ExecutionStartTime = GetNullDatetime(reader, "ExecutionStartTime");
         step.CreatedTime = reader.GetDateTime(reader.GetOrdinal("CreatedTime"));
@@ -155,8 +157,9 @@ public class AdoHelper
         var sql = @$"UPDATE {ReadyTableName}
 SET
 [SearchKey] = @SearchKey
-,[PersistedState] = @PersistedState
-,[PersistedStateFormat] = @PersistedStateFormat
+,[State] = @State
+,[StateFormat] = @StateFormat
+,[ActivationArgs] = @ActivationArgs
 ,[Description] = @Description
 ,[ExecutionCount] = @ExecutionCount
 ,[ScheduleTime] = @ScheduleTime
@@ -169,8 +172,9 @@ SET
         var cmd = new SqlCommand(sql, tx.Connection, tx);
         cmd.Parameters.Add(new SqlParameter("@Id", step.Id));
         cmd.Parameters.Add(new SqlParameter("@SearchKey", step.SearchKey ?? (object)DBNull.Value));
-        cmd.Parameters.Add(new SqlParameter("@PersistedState", step.PersistedState ?? (object)DBNull.Value));
-        cmd.Parameters.Add(new SqlParameter("@PersistedStateFormat", step.PersistedStateFormat ?? (object)DBNull.Value));
+        cmd.Parameters.Add(new SqlParameter("@State", step.State ?? (object)DBNull.Value));
+        cmd.Parameters.Add(new SqlParameter("@StateFormat", step.StateFormat ?? (object)DBNull.Value));
+        cmd.Parameters.Add(new SqlParameter("@ActivationArgs", step.ActivationArgs ?? (object)DBNull.Value));
         cmd.Parameters.Add(new SqlParameter("@Description", step.Description ?? (object)DBNull.Value));
         cmd.Parameters.Add(new SqlParameter("@ExecutionCount", step.ExecutionCount));
         cmd.Parameters.Add(new SqlParameter("@ScheduleTime", step.ScheduleTime));
@@ -219,8 +223,9 @@ SET
             cmd.Parameters.AddWithValue("@Description", step.Description ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@ExecutionCount", step.ExecutionCount);
             cmd.Parameters.AddWithValue("@ScheduleTime", step.ScheduleTime);
-            cmd.Parameters.AddWithValue("@PersistedState", step.PersistedState ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@PersistedStateFormat", step.PersistedStateFormat ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@State", step.State ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@StateFormat", step.StateFormat ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@ActivationArgs", step.ActivationArgs ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@ExecutionStartTime", step.ExecutionStartTime ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@ExecutionDurationMillis", step.ExecutionDurationMillis ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@ExecutedBy", step.ExecutedBy ?? (object)DBNull.Value);
@@ -240,8 +245,9 @@ SET
            ,[Description]
            ,[ExecutionCount]
            ,[ScheduleTime]
-           ,[PersistedState]
-           ,[PersistedStateFormat]
+           ,[State]
+           ,[StateFormat]
+           ,[ActivationArgs]
            ,[CorrelationId]
            ,[CreatedTime]
            ,[CreatedByStepId])
@@ -253,8 +259,9 @@ SET
            ,@Description
            ,@ExecutionCount
            ,@ScheduleTime
-           ,@PersistedState
-           ,@PersistedStateFormat
+           ,@State
+           ,@StateFormat
+           ,@ActivationArgs
            ,@CorrelationId
            ,@CreatedTime
            ,@CreatedByStepId) 
@@ -279,8 +286,9 @@ SET
            ,[Description]
            ,[ExecutionCount]
            ,[ScheduleTime]
-           ,[PersistedState]
-           ,[PersistedStateFormat]
+           ,[State]
+           ,[StateFormat]
+           ,[ActivationArgs]
            ,[ExecutionStartTime]
            ,[ExecutionDurationMillis]
            ,[ExecutedBy]
@@ -296,8 +304,9 @@ SET
            ,@Description
            ,@ExecutionCount
            ,@ScheduleTime
-           ,@PersistedState
-           ,@PersistedStateFormat
+           ,@State
+           ,@StateFormat
+           ,@ActivationArgs
            ,@ExecutionStartTime
            ,@ExecutionDurationMillis
            ,@ExecutedBy

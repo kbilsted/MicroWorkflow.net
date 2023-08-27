@@ -19,10 +19,32 @@ public class Sql
         return Add(sql);
     }
 
+
+    Sql AddSet(string sql)
+    {
+        if (AnySet)
+        {
+            sb.Append(" ,");
+        }
+        else
+        {
+            sb.Append("\nSET ");
+            AnySet = true;
+        }
+
+        return Add(sql);
+    }
+
+
+
     public readonly StringBuilder sb = new();
     public bool AnyWhere = false;
+    public bool AnySet = false;
 
     public Sql(string sql) => sb.Append(sql);
+
+    public Sql Set(string sql) => AddSet(sql);
+    public Sql Set(object? value, string sql) => value == null ? this : AddSet(sql);
 
     public Sql Where(string sql) => AddWhere(sql);
     public Sql Where(bool value, string sql) => value ? AddWhere(sql) : this;

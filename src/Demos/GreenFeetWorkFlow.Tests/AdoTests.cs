@@ -30,7 +30,7 @@ public class WorkerTests
             new[] { new Step("OneStep") { InitialState = 1234, FlowId = helper.FlowId } },
             ("OneStep", new GenericStepHandler(step =>
             {
-                int counter = helper.Formatter!.Deserialize<int>(step.PersistedState);
+                int counter = helper.Formatter!.Deserialize<int>(step.State);
                 stepResult = $"hello {counter}";
                 return ExecutionResult.Done();
             })));
@@ -48,7 +48,7 @@ public class WorkerTests
         var engine = helper.CreateEngine(
             (name, new GenericStepHandler(step =>
             {
-                int counter = helper.Formatter!.Deserialize<int>(step.PersistedState);
+                int counter = helper.Formatter!.Deserialize<int>(step.State);
                 stepResults[counter] = $"hello {counter}";
                 return ExecutionResult.Done();
             })));
@@ -115,8 +115,9 @@ public class WorkerTests
                 FlowId = *
                 SearchKey = null
                 InitialState = null
-                PersistedState = null
-                PersistedStateFormat = null
+                State = null
+                StateFormat = null
+                ActivationArgs = null
                 ExecutionCount = *
                 ExecutionDurationMillis = null
                 ExecutionStartTime = null
@@ -143,10 +144,11 @@ public class WorkerTests
                 FlowId = *
                 SearchKey = null
                 InitialState = null
-                PersistedState = null
-                PersistedStateFormat = null
+                State = null
+                StateFormat = null
+                ActivationArgs = null
                 ExecutionCount = 1
-                ExecutionDurationMillis = 0
+                ExecutionDurationMillis = *
                 ExecutionStartTime = now
                 ExecutedBy = null
                 CreatedTime = now
@@ -180,7 +182,7 @@ public class WorkerTests
         var row = helper.Persister.Go((p) =>
         p.SearchSteps(new SearchModel(Id: dbid!.Value) { FetchLevel = new(Ready: true) })
         [StepStatus.Ready].Single());
-        row!.PersistedState.Should().Be("\"hej\"");
+        row!.State.Should().Be("\"hej\"");
         row.FlowId.Should().Be(helper.FlowId);
         row.Name.Should().Be("test-throw-exception");
     }
@@ -211,7 +213,7 @@ public class WorkerTests
 
         var stepHandler = ("repeating_step", new GenericStepHandler(step =>
         {
-            int counter = helper.Formatter!.Deserialize<int>(step.PersistedState);
+            int counter = helper.Formatter!.Deserialize<int>(step.State);
 
             stepResult = $"hello {counter}";
 
@@ -324,7 +326,7 @@ public class WorkerTests
             ("check-future-step/eat",
             stepToExecute =>
             {
-                var food = helper.Formatter!.Deserialize<string>(stepToExecute.PersistedState);
+                var food = helper.Formatter!.Deserialize<string>(stepToExecute.State);
                 stepResult = $"eating {food}";
                 return ExecutionResult.Done();
             }
@@ -333,6 +335,28 @@ public class WorkerTests
         stepResult.Should().Be($"cooking potatoes");
 
         helper.AssertTableCounts(helper.FlowId, ready: 1, done: 1, failed: 0);
+    }
+
+
+    [Test]
+    public void When_step_is_in_the_future_Then_it_wont_execute()
+    {
+        string? stepResult = null;
+
+        var name = "When_step_is_in_the_future_Then_it_wont_execute";
+
+        var engine = helper.CreateEngine((name, GenericStepHandler.Create(step => { stepResult = step.FlowId; return step.Done(); })));
+        Step futureStep = new()
+        {
+            Name = name,
+            FlowId = helper.FlowId,
+            ScheduleTime = DateTime.Now.AddYears(35)
+        };
+        var id = engine.Runtime.Data.AddStep(futureStep, null);
+        engine.Start(cfg);
+        helper.AssertTableCounts(helper.FlowId, ready: 1, done: 0, failed: 0);
+
+        stepResult.Should().BeNull();
     }
 
     [Test]
@@ -350,18 +374,38 @@ public class WorkerTests
             ScheduleTime = DateTime.Now.AddYears(35)
         };
         var id = engine.Runtime.Data.AddStep(futureStep, null);
-        engine.Start(cfg);
-        helper.AssertTableCounts(helper.FlowId, ready: 1, done: 0, failed: 0);
-
         var count = engine.Runtime.Data.ActivateStep(id, null);
         count.Should().Be(1);
 
-        helper.Engine.Start(cfg);
+        engine.Start(cfg);
 
         stepResult.Should().Be(helper.FlowId.ToString());
 
         helper.AssertTableCounts(helper.FlowId, ready: 0, done: 1, failed: 0);
     }
+
+    [Test]
+    public void When_step_is_in_the_future_Then_it_can_be_activated_to_execute_now_with_args()
+    {
+        string? stepResult = null;
+        string args = "1234";
+        var name = "When_step_is_in_the_future_Then_it_can_be_activated_to_execute_now_with_args";
+
+        var engine = helper.CreateEngine((name, GenericStepHandler.Create(step => { stepResult = step.ActivationArgs; return step.Done(); })));
+        Step futureStep = new()
+        {
+            Name = name,
+            FlowId = helper.FlowId,
+            ScheduleTime = DateTime.Now.AddYears(35)
+        };
+        var id = engine.Runtime.Data.AddStep(futureStep, null);
+        var count = engine.Runtime.Data.ActivateStep(id, args);
+        engine.Start(cfg);
+
+        stepResult.Should().Be(JsonConvert.SerializeObject(args));
+        helper.AssertTableCounts(helper.FlowId, ready: 0, done: 1, failed: 0);
+    }
+
 
     [Test]
     public void TwoSteps_flow_with_last_step_undefined_stephandler__so_test_terminate()
@@ -404,7 +448,7 @@ public class WorkerTests
 
         var checkout = ("v1/forkjoin/pay-for-all", GenericStepHandler.Create(step =>
         {
-            (int count, Guid id, DateTime maxWait) = helper.Formatter!.Deserialize<(int, Guid, DateTime)>(step.PersistedState);
+            (int count, Guid id, DateTime maxWait) = helper.Formatter!.Deserialize<(int, Guid, DateTime)>(step.State);
             var sales = GroceryBuyer.SalesDb.Where(x => x.id == id).ToArray();
             if (sales.Length != 2 && DateTime.Now <= maxWait)
                 return ExecutionResult.Rerun(scheduleTime: DateTime.Now.AddSeconds(0.1));
@@ -445,7 +489,7 @@ public class WorkerTests
             Debug.WriteLine("Picking up stuff");
             Thread.Sleep(100);
 
-            var instruction = JsonConvert.DeserializeObject<BuyInstructions>(step.PersistedState!);
+            var instruction = JsonConvert.DeserializeObject<BuyInstructions>(step.State!);
 
             lock (SalesDb)
             {

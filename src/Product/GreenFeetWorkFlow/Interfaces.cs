@@ -57,7 +57,7 @@ public interface IStepPersister : IDisposable
     int[] AddSteps(Step[] steps);
 
     /// <summary> Reschedule a ready step to 'now' and send it activation data </summary>
-    int UpdateStep(int id, string? activationData, DateTime scheduleTime);
+    int UpdateStep(int id, string? activationArgs, DateTime scheduleTime);
 
     Dictionary<StepStatus, IEnumerable<Step>> SearchSteps(SearchModel model);
 

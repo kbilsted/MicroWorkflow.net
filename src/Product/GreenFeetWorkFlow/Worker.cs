@@ -55,7 +55,7 @@ public class Worker
                 { "IsCancellationRequested", StoppingToken.IsCancellationRequested }
             });
     }
-   
+
     async Task ExecuteLoop()
     {
         while (!StoppingToken.IsCancellationRequested)
@@ -298,7 +298,7 @@ public class Worker
         }
 
         step.Description = result.Description ?? step.Description;
-        step.PersistedStateFormat = result.PersistedStateFormat ?? step.PersistedStateFormat;
+        step.StateFormat = result.PersistedStateFormat ?? step.StateFormat;
 
         if (result.NewSteps != null)
         {

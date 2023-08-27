@@ -20,7 +20,7 @@ public class PerformanceTests
 
             var runner = ("v1/performanc/many-reruns", GenericStepHandler.Create(step =>
             {
-                int counter = testhelper.Formatter!.Deserialize<int>(step.PersistedState);
+                int counter = testhelper.Formatter!.Deserialize<int>(step.State);
 
                 if (counter >= max)
                 {
@@ -73,7 +73,7 @@ public class PerformanceTests
 
             var runner = ("v1/performanc/many-new-steps", GenericStepHandler.Create(step =>
             {
-                int counter = testhelper.Formatter!.Deserialize<int>(step.PersistedState);
+                int counter = testhelper.Formatter!.Deserialize<int>(step.State);
 
                 if (counter == max)
                 {

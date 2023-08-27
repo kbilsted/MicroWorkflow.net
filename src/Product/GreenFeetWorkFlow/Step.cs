@@ -37,11 +37,13 @@ public class Step
     public object? InitialState { get; set; }
 
     /// <summary> the state as it is formatted and persisted in the persistencelayer </summary>
-    public string? PersistedState { get; set; }
+    public string? State { get; set; }
 
     /// <summary> the name of the formatter used to serialize/deserialize state </summary>
-    public string? PersistedStateFormat { get; set; }
+    public string? StateFormat { get; set; }
 
+    /// <summary> the arguments for an activation as it is formatted and persisted in the persistencelayer </summary>
+    public string? ActivationArgs { get; set; }
 
     public int ExecutionCount { get; set; }
     public long? ExecutionDurationMillis { get; set; }

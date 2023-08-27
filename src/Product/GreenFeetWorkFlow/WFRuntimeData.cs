@@ -102,17 +102,17 @@ public class WfRuntimeData
     {
         if (step.InitialState == null)
         {
-            step.PersistedState = null;
+            step.State = null;
             return;
         }
 
-        if (step.PersistedStateFormat == null || step.PersistedStateFormat == formatter.StateFormatName)
+        if (step.StateFormat == null || step.StateFormat == formatter.StateFormatName)
         {
-            step.PersistedState = formatter.Serialize(step.InitialState);
+            step.State = formatter.Serialize(step.InitialState);
         }
         else
         {
-            throw new Exception($"No formatter registered for format name '{step.PersistedStateFormat}'");
+            throw new Exception($"No formatter registered for format name '{step.StateFormat}'");
         }
     }
 }

@@ -118,8 +118,9 @@ public class AdoDbStepPersister : IStepPersister
                         CreatedByStepId = step.CreatedByStepId,
                         CreatedTime = now,
                         Description = $"Re-execution of step {nameof(id)} " + step.Id,
-                        PersistedState = step.PersistedState,
-                        PersistedStateFormat = step.PersistedStateFormat,
+                        State = step.State,
+                        StateFormat = step.StateFormat,
+                        ActivationArgs = step.ActivationArgs,
                         ScheduleTime = now,
                         Singleton = step.Singleton,
                         SearchKey = step.SearchKey,
@@ -240,12 +241,12 @@ public class AdoDbStepPersister : IStepPersister
     }
 
     // TODO lav test case på at man aktiverer et eksekverende step - som dermed er skrive-låst - skal nok anvende en 2s timeout
-    public int UpdateStep(int id, string? activationData, DateTime scheduleTime)
+    public int UpdateStep(int id, string? activationArgs, DateTime scheduleTime)
     {
         if (Transaction == null)
             throw new ArgumentException("Missing transaction. Remember to create a transaction before calling");
 
-        int rows = helper.UpdateStep(TableNameReady, id, scheduleTime, activationData, Transaction!);
+        int rows = helper.UpdateStep(TableNameReady, id, scheduleTime, activationArgs, Transaction!);
         return rows;
     }
 

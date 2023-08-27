@@ -112,7 +112,7 @@ p.SearchSteps(new SearchModel() { Id = newId, FetchLevel = new(Ready: true) })
 [StepStatus.Ready]
 .Single());
         newStep.Id.Should().BeGreaterThan(id);
-        newStep.PersistedState.Should().Be(stepState.ToString());
+        newStep.State.Should().Be(stepState.ToString());
         newStep.CorrelationId.Should().Be(step.CorrelationId);
         newStep.FlowId.Should().Be(step.FlowId);
         newStep.CreatedByStepId.Should().Be(step.Id);
