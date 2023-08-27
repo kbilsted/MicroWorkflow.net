@@ -35,7 +35,7 @@ public class PerformanceTests
             }));
 
             var stopwach = Stopwatch.StartNew();
-            testhelper.CreateAndRunEngine(steps, workerCount, runner);
+            testhelper.CreateAndRunEngineForPerformance(steps, workerCount, runner);
             stopwach.Stop();
 
             int noElements = correlationIds.Length * max;

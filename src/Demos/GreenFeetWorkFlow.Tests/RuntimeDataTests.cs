@@ -7,8 +7,8 @@ public class RuntimeDataTests
 {
     TestHelper helper = new TestHelper();
 
-    private WfRuntimeConfiguration cfg = new WfRuntimeConfiguration(
-        new WorkerConfig() { StopWhenNoWork = true }, 
+    private readonly WfRuntimeConfiguration cfg = new WfRuntimeConfiguration(
+        new WorkerConfig() { StopWhenNoWork = true },
         NumberOfWorkers: 1);
 
     [SetUp]
@@ -23,7 +23,7 @@ public class RuntimeDataTests
         var engine = helper.CreateEngine();
         var steps = engine.Runtime.Data.SearchSteps(new SearchModel()
         {
-            FetchLevel = new (true, true, true)
+            FetchLevel = new(true, true, true)
         });
 
         steps.Keys.Count.Should().Be(3);
@@ -41,7 +41,7 @@ public class RuntimeDataTests
         };
         var id = engine.Runtime.Data.AddStep(step, null);
 
-        FetchLevels fetchLevels = new (true, true, true);
+        FetchLevels fetchLevels = new(true, true, true);
         var steps = engine.Runtime.Data.SearchSteps(new SearchModel()
         {
             Id = id,

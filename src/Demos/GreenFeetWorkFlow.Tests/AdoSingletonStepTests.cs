@@ -1,5 +1,4 @@
-﻿using FluentAssertions;
-using Microsoft.Data.SqlClient;
+﻿using Microsoft.Data.SqlClient;
 
 namespace GreenFeetWorkflow.Tests;
 

@@ -1,5 +1,5 @@
-﻿using System.Reflection;
-using KbgSoft.LineCounter;
+﻿using KbgSoft.LineCounter;
+using System.Reflection;
 
 namespace GreenFeetWorkflow.Tests;
 
@@ -9,7 +9,7 @@ public class LineCounterUpdateReadme
     [Explicit]
     public void UpdateReadme()
     {
-        var basePath = Path.Combine(Assembly.GetExecutingAssembly().Location, "..", "..", "..", "..", "..","..");
+        var basePath = Path.Combine(Assembly.GetExecutingAssembly().Location, "..", "..", "..", "..", "..", "..");
         Console.WriteLine(basePath);
         var linecounter = new LineCounting();
         linecounter.ReplaceWebshieldsInFile(basePath, Path.Combine(basePath, "README.md"));

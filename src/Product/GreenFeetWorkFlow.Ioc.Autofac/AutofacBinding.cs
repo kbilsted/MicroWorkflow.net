@@ -4,7 +4,7 @@ namespace GreenFeetWorkflow.Ioc.Autofac;
 
 public class AutofacBinding : IWorkflowIocContainer
 {
-    IComponentContext container;
+    readonly IComponentContext container;
 
     public AutofacBinding(IComponentContext container)
     {
@@ -16,7 +16,7 @@ public class AutofacBinding : IWorkflowIocContainer
 
     public T GetInstance<T>() where T : notnull
     {
-        var v = container.Resolve<T>() 
+        var v = container.Resolve<T>()
             ?? throw new Exception($"Cannot find steppersister registered as {typeof(IStepPersister)}");
         return v;
     }

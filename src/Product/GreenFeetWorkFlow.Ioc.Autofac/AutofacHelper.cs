@@ -1,5 +1,5 @@
-﻿using System.Reflection;
-using Autofac;
+﻿using Autofac;
+using System.Reflection;
 
 namespace GreenFeetWorkflow.Ioc.Autofac;
 

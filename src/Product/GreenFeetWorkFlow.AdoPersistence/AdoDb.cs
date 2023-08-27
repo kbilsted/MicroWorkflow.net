@@ -15,7 +15,7 @@ public class AdoDbStepPersister : IStepPersister
 
     SqlTransaction? Transaction;
 
-    Guid PersisterId = Guid.NewGuid();
+    readonly Guid PersisterId = Guid.NewGuid();
 
     public void SetTransaction(object transaction)
     {
@@ -109,8 +109,8 @@ public class AdoDbStepPersister : IStepPersister
             foreach (var step in steps.Value)
             {
                 int id = helper.InsertStep(
-                    StepStatus.Ready, 
-                    TableNameReady, 
+                    StepStatus.Ready,
+                    TableNameReady,
                     new Step()
                     {
                         FlowId = step.FlowId,
@@ -176,7 +176,7 @@ public class AdoDbStepPersister : IStepPersister
     public void Commit()
     {
         if (logger.TraceLoggingEnabled)
-            logger.LogTrace($"{nameof(AdoDbStepPersister)}: Commit Transaction", null, new Dictionary<string, object?>() { 
+            logger.LogTrace($"{nameof(AdoDbStepPersister)}: Commit Transaction", null, new Dictionary<string, object?>() {
                 { "PersisterId", PersisterId } ,
                 { "Stack", new StackTrace().ToString()} ,
             });
@@ -197,7 +197,7 @@ public class AdoDbStepPersister : IStepPersister
     public void RollBack()
     {
         if (logger.TraceLoggingEnabled)
-            logger.LogTrace($"{nameof(AdoDbStepPersister)}: Rollback Transaction", null, 
+            logger.LogTrace($"{nameof(AdoDbStepPersister)}: Rollback Transaction", null,
                 new Dictionary<string, object?>() { { "PersisterId", PersisterId } });
 
         if (Transaction == null)

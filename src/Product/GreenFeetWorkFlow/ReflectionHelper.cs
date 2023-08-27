@@ -17,7 +17,7 @@ public class StepNameAttribute : Attribute
             throw new ArgumentNullException(nameof(name));
         if (name.StartsWith(" ") || name.EndsWith(" "))
             throw new Exception($"{nameof(StepNameAttribute)} instance with Name '{name}' may not start or end with ' '.");
-        
+
         Name = name;
     }
 }

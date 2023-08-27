@@ -31,7 +31,7 @@ public class DotNetStepStateFormatterJson : IWorkflowStepStateFormatter
     {
         try
         {
-            if (state == null) 
+            if (state == null)
                 return default;
             return JsonSerializer.Deserialize<T>(state);
         }

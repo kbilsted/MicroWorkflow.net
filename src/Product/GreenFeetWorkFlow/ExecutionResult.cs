@@ -88,9 +88,9 @@ public class ExecutionResult
     {
         if (NewSteps == null)
             NewSteps = new List<Step>();
-     
+
         NewSteps.Add(newstep);
-        
+
         return this;
     }
 

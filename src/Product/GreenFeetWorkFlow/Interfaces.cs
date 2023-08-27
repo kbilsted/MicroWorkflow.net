@@ -45,7 +45,7 @@ public interface IStepPersister : IDisposable
     void SetTransaction(object transaction);
     void Commit();
     void RollBack();
-    
+
     void UpdateExecutedStep(StepStatus status, Step executedStep);
 
     /// <summary>

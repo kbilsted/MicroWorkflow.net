@@ -20,13 +20,13 @@ public class DemoIocContainer : IWorkflowIocContainer
 
     public T GetInstance<T>()
     {
-        return (T) Entries.First(x => x.Key == typeof(T).FullName).Value;
+        return (T)Entries.First(x => x.Key == typeof(T).FullName).Value;
     }
 
     public IStepImplementation? GetNamedInstance(string stepName)
     {
         if (Entries.TryGetValue(stepName, out var x))
-            return (IStepImplementation) x;
+            return (IStepImplementation)x;
 
         return null;
     }

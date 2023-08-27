@@ -23,8 +23,8 @@ public class Worker
     readonly IWorkflowLogger logger;
     readonly IWorkflowIocContainer iocContainer;
     private readonly WfRuntimeData engineRuntimeData;
-    private WorkerConfig workerConfig;
-    
+    private readonly WorkerConfig workerConfig;
+
     // TODO add timestamp for startup delay - to make webapi solutions easier to debug
     readonly Stopwatch stopwatch = new();
 
@@ -55,22 +55,7 @@ public class Worker
                 { "IsCancellationRequested", StoppingToken.IsCancellationRequested }
             });
     }
-
-    void Delay()
-    {
-        bool mustWaitMore;
-        do
-        {
-            lock (Lock)
-            {
-                mustWaitMore = DateTime.Now < SharedThresholdToReducePollingReadyItems;
-            }
-
-            if (mustWaitMore)
-                StoppingToken.WaitHandle.WaitOne(workerConfig.DelayNoReadyWork);
-        } while (mustWaitMore);
-    }
-
+   
     async Task ExecuteLoop()
     {
         while (!StoppingToken.IsCancellationRequested)
@@ -123,6 +108,21 @@ public class Worker
                 StoppingToken.WaitHandle.WaitOne(workerConfig.DelayTechnicalTransientError);
             }
         }
+    }
+
+    void Delay()
+    {
+        bool mustWaitMore;
+        do
+        {
+            lock (Lock)
+            {
+                mustWaitMore = DateTime.Now < SharedThresholdToReducePollingReadyItems;
+            }
+
+            if (mustWaitMore)
+                StoppingToken.WaitHandle.WaitOne(workerConfig.DelayNoReadyWork);
+        } while (mustWaitMore);
     }
 
     Step? GetNextStep(IStepPersister persister)

@@ -1,14 +1,14 @@
-﻿using System.Diagnostics;
-using Microsoft.Data.SqlClient;
+﻿using Microsoft.Data.SqlClient;
 using Newtonsoft.Json;
 using ReassureTest;
+using System.Diagnostics;
 
 namespace GreenFeetWorkflow.Tests;
 
 public class WorkerTests
 {
     TestHelper helper = new TestHelper();
-    private WfRuntimeConfiguration cfg = new WfRuntimeConfiguration(
+    private readonly WfRuntimeConfiguration cfg = new WfRuntimeConfiguration(
         new WorkerConfig()
         {
             StopWhenNoWork = true

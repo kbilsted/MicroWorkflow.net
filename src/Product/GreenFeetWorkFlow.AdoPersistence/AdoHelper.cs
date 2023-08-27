@@ -323,7 +323,7 @@ SET
                 .Where(flowId, "[FlowId] = @FlowId");
 
             var cmd = new SqlCommand(sql, tx.Connection, tx);
-            if(cmd.CommandText.Contains("FlowId"))
+            if (cmd.CommandText.Contains("FlowId"))
                 cmd.Parameters.AddWithValue("@FlowId", flowId);
 
             using var reader = cmd.ExecuteReader();
