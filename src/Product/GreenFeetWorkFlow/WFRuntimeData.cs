@@ -18,7 +18,7 @@ public class WfRuntimeData
         string? serializedArguments = formatter.Serialize(activationArguments);
         var persister = iocContainer.GetInstance<IStepPersister>();
 
-        int rows = persister.Go((persister) => persister.UpdateStep(id, serializedArguments, TrimToSeconds(DateTime.Now)));
+        int rows = persister.InTransaction((persister) => persister.UpdateStep(id, serializedArguments, TrimToSeconds(DateTime.Now)));
         return rows;
     }
 
@@ -38,7 +38,7 @@ public class WfRuntimeData
         }
 
         IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
-        return persister.Go((persister) => persister.AddSteps(steps), transaction);
+        return persister.InTransaction((persister) => persister.AddSteps(steps), transaction);
     }
 
     internal void FixupNewStep(Step? originStep, Step step, DateTime now)
@@ -63,7 +63,7 @@ public class WfRuntimeData
     {
         IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
 
-        var result = persister.Go((persister) => persister.SearchSteps(model));
+        var result = persister.InTransaction((persister) => persister.SearchSteps(model));
         return result;
     }
 
@@ -81,7 +81,7 @@ public class WfRuntimeData
 
         IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
 
-        int[] rows = persister.Go((persister) =>
+        int[] rows = persister.InTransaction((persister) =>
         {
             var entries = persister.SearchSteps(criterias);
             return persister.ReExecuteSteps(entries);

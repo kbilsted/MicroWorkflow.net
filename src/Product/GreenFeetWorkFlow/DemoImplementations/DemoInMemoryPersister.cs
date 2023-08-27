@@ -140,7 +140,7 @@ public class DemoInMemoryPersister : IStepPersister
     {
     }
 
-    public T Go<T>(Func<IStepPersister, T> code, object? transaction = null)
+    public T InTransaction<T>(Func<IStepPersister, T> code, object? transaction = null)
     {
         return code(this);
     }

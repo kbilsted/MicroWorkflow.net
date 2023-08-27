@@ -39,7 +39,7 @@ public interface IWorkflowIocContainer
 public interface IStepPersister : IDisposable
 {
 
-    T Go<T>(Func<IStepPersister, T> code, object? transaction = null);
+    T InTransaction<T>(Func<IStepPersister, T> code, object? transaction = null);
     object CreateTransaction();
     /// <summary> You can either set the transaction explicitly or create one using <see cref="CreateTransaction"/> </summary>
     void SetTransaction(object transaction);

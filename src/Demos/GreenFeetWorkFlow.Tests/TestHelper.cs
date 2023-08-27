@@ -147,7 +147,7 @@ public class TestHelper
     public void AssertTableCounts(string flowId, int ready, int done, int failed)
     {
         iocContainer.GetInstance<IStepPersister>()
-            .Go((persister) => ((AdoDbStepPersister)persister).CountTables(flowId))
+            .InTransaction((persister) => ((AdoDbStepPersister)persister).CountTables(flowId))
             .Should().BeEquivalentTo(
             new Dictionary<StepStatus, int>
             {
