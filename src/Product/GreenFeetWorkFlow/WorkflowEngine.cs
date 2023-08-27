@@ -28,10 +28,10 @@ public class WorkflowEngine
     }
 
     static string MakeWorkerName(int i)
-        => $"worker/{Environment.MachineName}/processid/{Environment.ProcessId}/instance/{i}";
+        => $"worker/{Environment.MachineName}/process/{Environment.ProcessId}/{i}";
 
     static string MakeEngineName()
-        => $"engine/{Environment.MachineName}/processid/{Environment.ProcessId}/instance/{Random.Shared.Next(99999)}";
+        => $"engine/{Environment.MachineName}/process/{Environment.ProcessId}/{Random.Shared.Next(99999)}";
 
     void Init(WfRuntimeConfiguration configuration, string? engineName = null)
     {
