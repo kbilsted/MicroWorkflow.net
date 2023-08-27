@@ -7,6 +7,22 @@ namespace GreenFeetWorkflow.Tests;
 public class PerformanceTests
 {
     [Test]
+    public void Inserting_1000_steps_timing()
+    {
+        var helper = new TestHelper();
+
+        var engine = helper.CreateEngine();
+        var watch = Stopwatch.StartNew();
+        var name = "inserttest";
+
+        var steps= Enumerable.Range(0, 1000).Select(x => new Step(name)).ToArray();
+        engine.Runtime.Data.AddSteps(steps);
+
+        watch.Stop();
+        Console.WriteLine(watch);
+    }
+
+    [Test]
     public void When_rerun_10_steps_Then_expect_all_to_have_run()
     {
         void doo(int workerCount)
