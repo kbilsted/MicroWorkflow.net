@@ -1,6 +1,5 @@
 ﻿namespace GreenFeetWorkflow;
 
-// TODO alle metoder bør tage en tx som parameter - evt optionel
 public class WfRuntimeData
 {
     private readonly IWorkflowIocContainer iocContainer;
@@ -13,12 +12,14 @@ public class WfRuntimeData
     }
 
     /// <summary> Reschedule a ready step to 'now' and send it activation data </summary>
-    public int ActivateStep(int id, object? activationArguments)
+    public int ActivateStep(int id, object? activationArguments, object? transaction = null)
     {
         string? serializedArguments = formatter.Serialize(activationArguments);
         var persister = iocContainer.GetInstance<IStepPersister>();
 
-        int rows = persister.InTransaction((persister) => persister.UpdateStep(id, serializedArguments, TrimToSeconds(DateTime.Now)));
+        int rows = persister.InTransaction(
+            (persister) => persister.UpdateStep(id, serializedArguments, TrimToSeconds(DateTime.Now)),
+            transaction);
         return rows;
     }
 
@@ -59,11 +60,11 @@ public class WfRuntimeData
         FormatStateForSerialization(step);
     }
 
-    public Dictionary<StepStatus, IEnumerable<Step>> SearchSteps(SearchModel model)
+    public Dictionary<StepStatus, IEnumerable<Step>> SearchSteps(SearchModel model, object transaction = null)
     {
         IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
 
-        var result = persister.InTransaction((persister) => persister.SearchSteps(model));
+        var result = persister.InTransaction((persister) => persister.SearchSteps(model), transaction);
         return result;
     }
 
@@ -74,18 +75,20 @@ public class WfRuntimeData
 
     /// <summary> Re-execute steps that are 'done' or 'failed' by inserting a clone into the 'ready' queue </summary>
     /// <returns>Ids of inserted steps</returns>
-    public int[] ReExecuteSteps(SearchModel criterias)
+    public int[] ReExecuteSteps(SearchModel criterias, object? transaction = null)
     {
         if (criterias.FetchLevel.Ready)
             throw new ArgumentOutOfRangeException("Cannot search the ready queue for steps to re-execute");
 
         IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
 
-        int[] rows = persister.InTransaction((persister) =>
-        {
-            var entries = persister.SearchSteps(criterias);
-            return persister.ReExecuteSteps(entries);
-        });
+        int[] rows = persister.InTransaction(
+            (persister) =>
+            {
+                var entries = persister.SearchSteps(criterias);
+                return persister.ReExecuteSteps(entries);
+            },
+            transaction);
 
         return rows;
     }
@@ -96,7 +99,6 @@ public class WfRuntimeData
 
     /// <summary> we round down to ensure a worker can pick up the step/rerun-step. if in unittest mode it may exit if not rounded. </summary>
     internal static DateTime TrimToSeconds(DateTime now) => new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second);
-
 
     internal void FormatStateForSerialization(Step step)
     {

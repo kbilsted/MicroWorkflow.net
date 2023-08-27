@@ -10,7 +10,7 @@ public class DemoInMemoryPersister : IStepPersister
 
     static readonly Dictionary<int, Step> ReadySteps = new();
     static readonly HashSet<int> Locked = new();
-    HashSet<int>? LockedLocal = new();
+    HashSet<int> LockedLocal = new();
 
     public object? Transaction { get; set; }
 
