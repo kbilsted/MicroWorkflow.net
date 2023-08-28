@@ -13,5 +13,4 @@ public record SearchModel
     public FetchLevels FetchLevel { get; set; } = new();
 };
 
-// TODO use MaxRows in sql
 public record FetchLevels(bool Ready = false, bool Done = false, bool Fail = false, int MaxRows = 100);

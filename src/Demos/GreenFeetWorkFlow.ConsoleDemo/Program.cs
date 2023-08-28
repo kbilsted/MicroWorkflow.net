@@ -13,10 +13,10 @@ var formatter = new DotNetStepStateFormatterJson(logger);
 var engine = new WorkflowEngine(logger, iocContainer, formatter);
 
 // step 3. add a step to be executed - this step will spawn new steps during processing
-engine.Runtime.Data.AddSteps(new Step(FetchData.Name, 0));
+engine.Runtime.Data.AddStep(new Step(FetchData.Name, 0));
 
 // step 4. GO!
-engine.Start(numberOfWorkers: 1, stopWhenNoWorkLeft: true);
+engine.Start(new WfRuntimeConfiguration(new WorkerConfig() { StopWhenNoWork = true }, NumberOfWorkers: 1));
 
 // don't close the window yet
 Console.ReadLine();
@@ -30,7 +30,7 @@ class FetchData : IStepImplementation
 
     public async Task<ExecutionResult> ExecuteAsync(Step step)
     {
-        var count = JsonSerializer.Deserialize<int>(step.PersistedState!);
+        var count = JsonSerializer.Deserialize<int>(step.State!);
 
         if (count >= 3)
             return ExecutionResult.Fail(description: "Too many retries");
@@ -51,7 +51,7 @@ class AnalyzeWords : IStepImplementation
 
     public async Task<ExecutionResult> ExecuteAsync(Step step)
     {
-        var content = JsonSerializer.Deserialize<string>(step.PersistedState!);
+        var content = JsonSerializer.Deserialize<string>(step.State!);
         var topWords = content!
             .Split(' ', StringSplitOptions.RemoveEmptyEntries)
             .Where(x => x.Length > 3)
@@ -75,7 +75,7 @@ class SendEmail : IStepImplementation
 
     public async Task<ExecutionResult> ExecuteAsync(Step step)
     {
-        var topWords = JsonSerializer.Deserialize<string[]>(step.PersistedState!);
+        var topWords = JsonSerializer.Deserialize<string[]>(step.State!);
         var words = string.Join(", ", topWords!);
         await sender.SendEmail(to: "demos@demoland.com", from: "some@one.cool", $"Top 3 words: {words}");
 

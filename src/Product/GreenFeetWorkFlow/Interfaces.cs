@@ -17,9 +17,7 @@ public interface IWorkflowLogger
     void LogInfo(string? msg, Exception? exception, Dictionary<string, object?>? arguments);
     void LogError(string? msg, Exception? exception, Dictionary<string, object?>? arguments);
 
-    /// <summary>
-    /// when logging, nested loggers should be called as well
-    /// </summary>
+    /// <summary> when logging, nested loggers should be called as well </summary>
     IWorkflowLogger AddNestedLogger(IWorkflowLogger logger);
 }
 
@@ -45,22 +43,15 @@ public interface IStepPersister : IDisposable
     void Commit();
     void RollBack();
 
-    void UpdateExecutedStep(StepStatus status, Step executedStep);
-
-    /// <summary>
-    /// Return a row and lock the row so other workers cannot pick it.
-    /// </summary>
+    /// <summary> Return a row and lock the row so other workers cannot pick it. </summary>
     Step? GetAndLockReadyStep();
 
-    /// <summary> Persist one or more steps. </summary>
-    int[] AddSteps(Step[] steps);
-
-    /// <summary> Reschedule a ready step to 'now' and send it activation data </summary>
-    int UpdateStep(int id, string? activationArgs, DateTime scheduleTime);
-
     Dictionary<StepStatus, IEnumerable<Step>> SearchSteps(SearchModel model);
-
     Dictionary<StepStatus, int> CountTables(string? flowId = null);
+    int Delete(StepStatus target, int id);
+    int Insert(StepStatus target, Step step);
+    int[] Insert(StepStatus target, Step[] steps);
+    int Update(StepStatus target, Step step);
 }
 
 public interface IWorkflowStepStateFormatter

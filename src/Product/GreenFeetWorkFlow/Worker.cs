@@ -193,7 +193,7 @@ public class Worker
                 step.ScheduleTime = DateTime.Now + workerConfig.DelayMissingStepHandler;
                 step.Description = msg;
                 step.ExecutionCount++;
-                persister.UpdateExecutedStep(StepStatus.Ready, step);
+                persister.Update(StepStatus.Ready, step);
                 persister.Commit();
                 return WorkerRunStatus.Continue;
             }
@@ -233,10 +233,25 @@ public class Worker
 
             try
             {
-                persister.UpdateExecutedStep(result.Status, step);
+                switch (result.Status)
+                {
+                    case StepStatus.Done:
+                        persister.Delete(StepStatus.Ready, step.Id);
+                        persister.Insert(StepStatus.Done, step);
+                        break;
+
+                    case StepStatus.Failed:
+                        persister.Delete(StepStatus.Ready, step.Id);
+                        persister.Insert(StepStatus.Failed, step);
+                        break;
+
+                    case StepStatus.Ready:
+                        persister.Update(StepStatus.Ready, step);
+                        break;
+                }
 
                 if (result.NewSteps != null)
-                    persister.AddSteps(result.NewSteps.ToArray());
+                    persister.Insert(StepStatus.Ready, result.NewSteps.ToArray());
 
                 persister.Commit();
             }
@@ -273,7 +288,9 @@ public class Worker
     static DateTime CalculateScheduleTime(Step step)
     {
         var now = DateTime.Now;
-        var future = now + Min(TimeSpan.FromHours(2), TimeSpan.FromSeconds(step.ExecutionCount * step.ExecutionCount * step.ExecutionCount));
+        var future = now + Min(
+            TimeSpan.FromHours(2),
+            TimeSpan.FromSeconds(step.ExecutionCount * step.ExecutionCount * step.ExecutionCount));
         return WfRuntimeData.TrimToSeconds(future);
     }
 

@@ -25,7 +25,6 @@ public abstract class GenericStepLogger : IWorkflowLogger
         return this;
     }
 
-    // TODO severity parameter??? why
     public static string CreateMessage(string severity, Exception? e, string? msg, Dictionary<string, object?>? arguments)
     {
         msg ??= "";
