@@ -15,7 +15,7 @@ public class PerformanceTests
         var watch = Stopwatch.StartNew();
         var name = "inserttest";
 
-        var steps= Enumerable.Range(0, 10000).Select(x => new Step(name)).ToArray();
+        var steps = Enumerable.Range(0, 10000).Select(x => new Step(name)).ToArray();
         engine.Runtime.Data.AddSteps(steps);
 
         watch.Stop();

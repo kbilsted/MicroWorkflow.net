@@ -179,8 +179,9 @@ public class WorkerTests
 
         helper.AssertTableCounts(helper.FlowId, ready: 1, done: 0, failed: 0);
 
-        var row = helper.Persister.InTransaction((p) =>
-        p.SearchSteps(new SearchModel(Id: dbid!.Value) { FetchLevel = new(Ready: true) })
+        var persister = helper.Persister;
+        var row = persister.InTransaction(() =>
+        persister.SearchSteps(new SearchModel(Id: dbid!.Value) { FetchLevel = new(Ready: true) })
         [StepStatus.Ready].Single());
         row!.State.Should().Be("\"hej\"");
         row.FlowId.Should().Be(helper.FlowId);

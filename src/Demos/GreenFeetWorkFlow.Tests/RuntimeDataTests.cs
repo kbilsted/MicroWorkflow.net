@@ -107,8 +107,10 @@ public class RuntimeDataTests
             .ReExecuteSteps(new SearchModel { Id = id, FetchLevel = new(Fail: true) })
             .Single();
 
-        var newStep = helper.Persister.InTransaction(p =>
-p.SearchSteps(new SearchModel() { Id = newId, FetchLevel = new(Ready: true) })
+        var persister = helper.Persister;
+
+        var newStep = persister.InTransaction(() =>
+persister.SearchSteps(new SearchModel() { Id = newId, FetchLevel = new(Ready: true) })
 [StepStatus.Ready]
 .Single());
         newStep.Id.Should().BeGreaterThan(id);

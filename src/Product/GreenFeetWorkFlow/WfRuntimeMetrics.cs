@@ -12,6 +12,6 @@ public class WfRuntimeMetrics
     public Dictionary<StepStatus, int> CountSteps()
     {
         using var persister = container.GetInstance<IStepPersister>();
-        return persister.InTransaction((persister) => persister.CountTables());
+        return persister.InTransaction(() => persister.CountTables());
     }
 }

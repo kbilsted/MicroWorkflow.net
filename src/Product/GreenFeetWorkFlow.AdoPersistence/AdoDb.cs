@@ -43,31 +43,6 @@ public class AdoDbStepPersister : IStepPersister
         return Transaction;
     }
 
-    public T InTransaction<T>(Func<IStepPersister, T> code, object? transaction = null)
-    {
-        try
-        {
-            if (transaction == null)
-                CreateTransaction();
-            else
-                SetTransaction(transaction);
-
-            T result = code(this);
-
-            if (transaction == null)
-            {
-                Commit();
-            }
-            return result;
-        }
-        catch (Exception)
-        {
-            if (transaction == null)
-                RollBack();
-            throw;
-        }
-    }
-
     public T InTransaction<T>(Func<T> code, object? transaction = null)
     {
         try

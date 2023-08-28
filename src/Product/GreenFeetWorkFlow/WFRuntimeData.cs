@@ -1,6 +1,4 @@
-﻿using System.Transactions;
-
-namespace GreenFeetWorkflow;
+﻿namespace GreenFeetWorkflow;
 
 public class WfRuntimeData
 {
@@ -20,7 +18,7 @@ public class WfRuntimeData
         var persister = iocContainer.GetInstance<IStepPersister>();
 
         int rows = persister.InTransaction(
-            (persister) => persister.UpdateStep(id, serializedArguments, TrimToSeconds(DateTime.Now)),
+            () => persister.UpdateStep(id, serializedArguments, TrimToSeconds(DateTime.Now)),
             transaction);
         return rows;
     }
@@ -41,7 +39,7 @@ public class WfRuntimeData
         }
 
         IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
-        return persister.InTransaction((persister) => persister.AddSteps(steps), transaction);
+        return persister.InTransaction(() => persister.AddSteps(steps), transaction);
     }
 
     internal void FixupNewStep(Step? originStep, Step step, DateTime now)
@@ -66,7 +64,7 @@ public class WfRuntimeData
     {
         IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
 
-        var result = persister.InTransaction((persister) => persister.SearchSteps(model), transaction);
+        var result = persister.InTransaction(() => persister.SearchSteps(model), transaction);
         return result;
     }
 
@@ -88,7 +86,7 @@ public class WfRuntimeData
             () =>
             {
                 var now = DateTime.Now;
-                
+
                 var entities = persister.SearchSteps(criterias);
 
                 if (entities.ContainsKey(StepStatus.Ready) && entities[StepStatus.Ready].Any())
