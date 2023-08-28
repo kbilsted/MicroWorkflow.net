@@ -31,7 +31,7 @@ public interface IWorkflowIocContainer
     T GetInstance<T>() where T : notnull;
 }
 
-// TODO NICE for testing tillad at der kun hentes et bestemt flowid  og rename to GetReadyStep()
+// TODO NICE for testing tillad at der kun hentes et bestemt flowid 
 
 /// <summary>
 /// This interface is disposable such that connections/transactions may be cleaned up by the dispose method
@@ -39,6 +39,7 @@ public interface IWorkflowIocContainer
 public interface IStepPersister : IDisposable
 {
 
+    T InTransaction<T>(Func<T> code, object? transaction = null);
     T InTransaction<T>(Func<IStepPersister, T> code, object? transaction = null);
     object CreateTransaction();
     /// <summary> You can either set the transaction explicitly or create one using <see cref="CreateTransaction"/> </summary>
@@ -61,9 +62,6 @@ public interface IStepPersister : IDisposable
 
     Dictionary<StepStatus, IEnumerable<Step>> SearchSteps(SearchModel model);
 
-    /// <summary> Move rows from done and fail columns </summary>
-    /// <returns>number of rows moved</returns>
-    int[] ReExecuteSteps(Dictionary<StepStatus, IEnumerable<Step>> entities);
     Dictionary<StepStatus, int> CountTables(string? flowId = null);
 }
 

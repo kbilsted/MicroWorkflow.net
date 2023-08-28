@@ -116,11 +116,6 @@ public class DemoInMemoryPersister : IStepPersister
         };
     }
 
-    public int[] ReExecuteSteps(Dictionary<StepStatus, IEnumerable<Step>> entities)
-    {
-        throw new NotImplementedException();
-    }
-
     public Dictionary<StepStatus, int> CountTables(string? flowId)
     {
         lock (GlobalLock)
@@ -148,5 +143,10 @@ public class DemoInMemoryPersister : IStepPersister
     public Step? GetStep(int id)
     {
         throw new NotImplementedException();
+    }
+
+    public T InTransaction<T>(Func<T> code, object? transaction = null)
+    {
+        return code();
     }
 }

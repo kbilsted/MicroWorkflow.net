@@ -68,6 +68,31 @@ public class AdoDbStepPersister : IStepPersister
         }
     }
 
+    public T InTransaction<T>(Func<T> code, object? transaction = null)
+    {
+        try
+        {
+            if (transaction == null)
+                CreateTransaction();
+            else
+                SetTransaction(transaction);
+
+            T result = code();
+
+            if (transaction == null)
+            {
+                Commit();
+            }
+            return result;
+        }
+        catch (Exception)
+        {
+            if (transaction == null)
+                RollBack();
+            throw;
+        }
+    }
+
 
     public Dictionary<StepStatus, IEnumerable<Step>> SearchSteps(SearchModel model)
     {
@@ -91,49 +116,6 @@ public class AdoDbStepPersister : IStepPersister
             { StepStatus.Failed, fail },
         };
     }
-
-    public int[] ReExecuteSteps(Dictionary<StepStatus, IEnumerable<Step>> entities)
-    {
-        if (Transaction == null)
-            throw new ArgumentException("Missing transaction. Remember to create a transaction before calling");
-
-        if (entities.ContainsKey(StepStatus.Ready) && entities[StepStatus.Ready].Any())
-            throw new ArgumentOutOfRangeException("Cannot re-execute ready steps.");
-
-        List<int> ids = new List<int>();
-
-        var now = DateTime.Now;
-
-        foreach (KeyValuePair<StepStatus, IEnumerable<Step>> steps in entities)
-        {
-            foreach (var step in steps.Value)
-            {
-                int id = helper.InsertStep(
-                    StepStatus.Ready,
-                    TableNameReady,
-                    new Step()
-                    {
-                        FlowId = step.FlowId,
-                        CorrelationId = step.CorrelationId,
-                        CreatedByStepId = step.CreatedByStepId,
-                        CreatedTime = now,
-                        Description = $"Re-execution of step {nameof(id)} " + step.Id,
-                        State = step.State,
-                        StateFormat = step.StateFormat,
-                        ActivationArgs = step.ActivationArgs,
-                        ScheduleTime = now,
-                        Singleton = step.Singleton,
-                        SearchKey = step.SearchKey,
-                        Name = step.Name,
-                    }, Transaction!);
-
-                ids.Add(id);
-            }
-        }
-
-        return ids.ToArray();
-    }
-
 
     public Step? GetAndLockReadyStep()
     {

@@ -1,4 +1,6 @@
-﻿namespace GreenFeetWorkflow;
+﻿using System.Transactions;
+
+namespace GreenFeetWorkflow;
 
 public class WfRuntimeData
 {
@@ -82,15 +84,40 @@ public class WfRuntimeData
 
         IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
 
-        int[] rows = persister.InTransaction(
-            (persister) =>
+        int[] ids = persister.InTransaction(
+            () =>
             {
-                var entries = persister.SearchSteps(criterias);
-                return persister.ReExecuteSteps(entries);
+                var now = DateTime.Now;
+                
+                var entities = persister.SearchSteps(criterias);
+
+                if (entities.ContainsKey(StepStatus.Ready) && entities[StepStatus.Ready].Any())
+                    throw new ArgumentOutOfRangeException("Cannot re-execute ready steps.");
+
+                var steps = entities
+                .SelectMany(x => x.Value)
+                .Select(step => new Step()
+                {
+                    FlowId = step.FlowId,
+                    CorrelationId = step.CorrelationId,
+                    CreatedByStepId = step.CreatedByStepId,
+                    CreatedTime = now,
+                    Description = $"Re-execution of step id: " + step.Id,
+                    State = step.State,
+                    StateFormat = step.StateFormat,
+                    ActivationArgs = step.ActivationArgs,
+                    ScheduleTime = now,
+                    Singleton = step.Singleton,
+                    SearchKey = step.SearchKey,
+                    Name = step.Name,
+                })
+                .ToArray();
+
+                return persister.AddSteps(steps);
             },
             transaction);
 
-        return rows;
+        return ids;
     }
 
 
