@@ -16,6 +16,13 @@ public class TestHelper
     private IWorkflowLogger? logger;
     public WorkflowEngine? Engine;
 
+    readonly ContainerBuilder builder = new ContainerBuilder();
+
+    public TestHelper()
+    {
+        iocContainer = new AutofacBinding(builder);
+    }
+
     public void CreateAndRunEngine(Step[] steps, params (string name, Func<Step, ExecutionResult> code)[] stepHandlers)
         => CreateAndRunEngine(
             steps,
@@ -49,10 +56,8 @@ public class TestHelper
         logger.ErrorLoggingEnabled = true;
         ((DiagnosticsStepLogger)logger).AddNestedLogger(new ConsoleStepLogger());
 
-        var builder = new ContainerBuilder();
         builder.RegisterInstances(logger, stepHandlers);
         builder.Register<IStepPersister>(c => new AdoDbStepPersister(ConnectionString, logger)).InstancePerDependency();
-        iocContainer = new AutofacBinding(builder);
 
         Formatter = new NewtonsoftStateFormatterJson(logger);
 
@@ -69,10 +74,8 @@ public class TestHelper
         logger.DebugLoggingEnabled = true;
         logger.ErrorLoggingEnabled = true;
 
-        var builder = new ContainerBuilder();
         builder.RegisterInstances(logger, stepHandlers);
         builder.Register<IStepPersister>(c => new AdoDbStepPersister(ConnectionString, logger));
-        iocContainer = new AutofacBinding(builder);
 
         Formatter = new NewtonsoftStateFormatterJson(logger);
 
@@ -94,10 +97,8 @@ public class TestHelper
     {
         logger = new DiagnosticsStepLogger();
 
-        var builder = new ContainerBuilder();
         builder.RegisterInstances(logger, stepHandlers);
         builder.Register<IStepPersister>(c => new AdoDbStepPersister(ConnectionString, logger));
-        iocContainer = new AutofacBinding(builder);
 
         Formatter = new NewtonsoftStateFormatterJson(logger);
 
@@ -120,11 +121,8 @@ public class TestHelper
     {
         logger = new DiagnosticsStepLogger();
 
-        var builder = new ContainerBuilder();
         builder.RegisterStepImplementations(logger, typeof(TestHelper).Assembly);
         builder.Register<IStepPersister>(c => new AdoDbStepPersister(ConnectionString, logger));
-        iocContainer = new AutofacBinding(builder);
-
 
         Formatter = new NewtonsoftStateFormatterJson(logger);
 

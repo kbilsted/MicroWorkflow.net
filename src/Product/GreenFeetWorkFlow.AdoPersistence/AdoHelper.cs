@@ -8,7 +8,9 @@ public class AdoHelper
 {
     public List<Step> SearchSteps(string table, SearchModel model, SqlTransaction tx)
     {
-        var sql = new Sql($"SELECT * FROM {table} WITH (NOLOCK)")
+        var sql = new Sql(
+            $@"SELECT TOP {model.FetchLevel.MaxRows} * 
+                FROM {table} WITH (NOLOCK)")
             .Where(model.Id, "[Id] = @Id")
             .Where(model.CorrelationId, "[CorrelationId] = @CorrelationId")
             .Where(model.Name, "[Name] = @Name")
@@ -16,15 +18,15 @@ public class AdoHelper
             .Where(model.FlowId, "[FlowId] = @FlowId");
 
         using var cmd = new SqlCommand(sql, tx.Connection, tx);
-        if (cmd.CommandText.Contains("@Id"))
+        if (model.Id != null)
             cmd.Parameters.Add(new SqlParameter("Id", model.Id));
-        if (cmd.CommandText.Contains("@CorrelationId"))
+        if (model.CorrelationId != null)
             cmd.Parameters.Add(new SqlParameter("CorrelationId", model.CorrelationId));
-        if (cmd.CommandText.Contains("@Name"))
+        if (model.Name != null)
             cmd.Parameters.Add(new SqlParameter("Name", model.Name));
-        if (cmd.CommandText.Contains("@SearchKey"))
+        if (model.SearchKey != null)
             cmd.Parameters.Add(new SqlParameter("SearchKey", model.SearchKey));
-        if (cmd.CommandText.Contains("@FlowId"))
+        if (model.FlowId != null)
             cmd.Parameters.Add(new SqlParameter("FlowId", model.FlowId));
 
         using SqlDataReader reader = cmd.ExecuteReader();
@@ -43,28 +45,14 @@ public class AdoHelper
 
     public Step? GetStep(string tableName, int id, SqlTransaction tx)
     {
-        var sql = @$"SELECT TOP 1 * 
-         FROM {tableName} WITH(ROWLOCK, UPDLOCK) 
-         WHERE [Id] = @id";
+        var sql =
+        @$"SELECT TOP 1 * 
+        FROM {tableName} WITH(ROWLOCK, UPDLOCK) 
+        WHERE [Id] = @id";
         var cmd = new SqlCommand(sql, tx.Connection, tx);
         cmd.Parameters.Add(new SqlParameter("id", id));
 
         return ReadStepRow(cmd);
-    }
-
-    public int UpdateStep(string tableName, int id, DateTime scheduleTime, string? activationArgs, SqlTransaction tx)
-    {
-        Sql sql = new Sql(@$"UPDATE {tableName}")
-            .Set("[ScheduleTime] = @scheduleTime")
-            .Set(activationArgs, "[ActivationArgs] = @activationArgs")
-            .Where("[Id] = @Id");
-
-        using var cmd = new SqlCommand(sql, tx.Connection, tx);
-        cmd.Parameters.Add(new SqlParameter("scheduleTime", scheduleTime));
-        cmd.Parameters.Add(new SqlParameter("activationArgs", activationArgs));
-        cmd.Parameters.Add(new SqlParameter("Id", id));
-
-        return cmd.ExecuteNonQuery();
     }
 
     public Step? GetAndLockReadyStep(string tableName, SqlTransaction tx)
@@ -152,9 +140,9 @@ public class AdoHelper
     }
 
 
-    public int UpdateReady(Step step, string ReadyTableName, SqlTransaction tx)
+    public int Update(Step step, string tableName, SqlTransaction tx)
     {
-        var sql = @$"UPDATE {ReadyTableName}
+        var sql = @$"UPDATE {tableName}
 SET
 [SearchKey] = @SearchKey
 ,[State] = @State
@@ -186,22 +174,11 @@ SET
         return cmd.ExecuteNonQuery();
     }
 
-
-    public int DeleteStep(int id, string tableName, SqlTransaction tx)
+    public int Delete(int id, string tableName, SqlTransaction tx)
     {
         var sql = @$"DELETE FROM {tableName} WHERE Id = @Id";
         using var cmd = new SqlCommand(sql, tx.Connection, tx);
         cmd.Parameters.Add(new SqlParameter("Id", id));
-
-        return cmd.ExecuteNonQuery();
-    }
-
-
-    public int DeleteReady(Step step, string ReadyTableName, SqlTransaction tx)
-    {
-        var sql = @$"DELETE FROM {ReadyTableName} WHERE Id = @Id";
-        using var cmd = new SqlCommand(sql, tx.Connection, tx);
-        cmd.Parameters.Add(new SqlParameter("Id", step.Id));
 
         return cmd.ExecuteNonQuery();
     }

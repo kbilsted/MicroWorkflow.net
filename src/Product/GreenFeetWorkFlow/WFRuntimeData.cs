@@ -17,17 +17,27 @@ public class WfRuntimeData
         string? serializedArguments = formatter.Serialize(activationArguments);
         var persister = iocContainer.GetInstance<IStepPersister>();
 
-        int rows = persister.InTransaction(
-            () => persister.UpdateStep(id, serializedArguments, TrimToSeconds(DateTime.Now)),
+        int rows = persister.InTransaction(() =>
+            {
+                var step = persister
+                            .SearchSteps(new SearchModel(Id: id) { FetchLevel = new(Ready: true) })[StepStatus.Ready]
+                            .FirstOrDefault();
+                if (step == null)
+                    return 0;
+
+                step.ScheduleTime = TrimToSeconds(DateTime.Now);
+                step.ActivationArgs = formatter.Serialize(activationArguments);
+                return persister.Update(StepStatus.Ready, step);
+            },
             transaction);
         return rows;
     }
 
-    /// <summary> Add step to be executed </summary>
-    /// <returns>the identity of the steps</returns>
+    /// <summary> Add step to be executed. May throw exception if persistence layer fails. For example when inserting multiple singleton elements </summary>
+    /// <returns>the identity of the step</returns>
     public int AddStep(Step step, object? transaction = null) => AddSteps(new[] { step }, transaction).Single();
 
-    /// <summary> Add steps to be executed </summary>
+    /// <summary> Add steps to be executed. May throw exception if persistence layer fails. For example when inserting multiple singleton elements </summary>
     /// <returns>the identity of the steps</returns>
     public int[] AddSteps(Step[] steps, object? transaction = null)
     {
@@ -39,7 +49,7 @@ public class WfRuntimeData
         }
 
         IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
-        return persister.InTransaction(() => persister.AddSteps(steps), transaction);
+        return persister.InTransaction(() => persister.Insert(StepStatus.Ready, steps), transaction);
     }
 
     internal void FixupNewStep(Step? originStep, Step step, DateTime now)
@@ -50,17 +60,17 @@ public class WfRuntimeData
         step.CreatedTime = now;
         step.CreatedByStepId = originStep?.Id ?? 0;
 
-        step.FlowId ??= (originStep == null) ? Guid.NewGuid().ToString() : originStep.FlowId;
+        step.FlowId ??= originStep?.FlowId ?? Guid.NewGuid().ToString();
 
         step.CorrelationId ??= originStep?.CorrelationId;
 
         if (step.ScheduleTime == default)
-            step.ScheduleTime = TrimToSeconds(now); // TODO MÅSKE else trim to second since it can be called from a stepresult
+            step.ScheduleTime = TrimToSeconds(now);
 
         FormatStateForSerialization(step);
     }
 
-    public Dictionary<StepStatus, IEnumerable<Step>> SearchSteps(SearchModel model, object transaction = null)
+    public Dictionary<StepStatus, IEnumerable<Step>> SearchSteps(SearchModel model, object? transaction = null)
     {
         IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
 
@@ -82,8 +92,7 @@ public class WfRuntimeData
 
         IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
 
-        int[] ids = persister.InTransaction(
-            () =>
+        int[] ids = persister.InTransaction(() =>
             {
                 var now = DateTime.Now;
 
@@ -111,7 +120,7 @@ public class WfRuntimeData
                 })
                 .ToArray();
 
-                return persister.AddSteps(steps);
+                return persister.Insert(StepStatus.Ready, steps);
             },
             transaction);
 

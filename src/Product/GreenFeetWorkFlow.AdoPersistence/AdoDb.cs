@@ -68,7 +68,6 @@ public class AdoDbStepPersister : IStepPersister
         }
     }
 
-
     public Dictionary<StepStatus, IEnumerable<Step>> SearchSteps(SearchModel model)
     {
         if (Transaction == null)
@@ -108,29 +107,6 @@ public class AdoDbStepPersister : IStepPersister
         return helper.GetStep(TableNameReady, id, Transaction!);
     }
 
-    public void UpdateExecutedStep(StepStatus status, Step executedStep)
-    {
-        if (Transaction == null)
-            throw new ArgumentException("Missing transaction. Remember to create a transaction before calling");
-
-        switch (status)
-        {
-            case StepStatus.Done:
-                helper.DeleteReady(executedStep, TableNameReady, Transaction!);
-                helper.InsertStep(StepStatus.Done, TableNameDone, executedStep, Transaction!);
-                break;
-
-            case StepStatus.Failed:
-                helper.DeleteReady(executedStep, TableNameReady, Transaction!);
-                helper.InsertStep(StepStatus.Failed, TableNameFail, executedStep, Transaction!);
-                break;
-
-            case StepStatus.Ready:
-                helper.UpdateReady(executedStep, TableNameReady, Transaction!);
-                break;
-        }
-    }
-
     public void Commit()
     {
         if (logger.TraceLoggingEnabled)
@@ -147,7 +123,6 @@ public class AdoDbStepPersister : IStepPersister
 
         if (connection == null)
             throw new InvalidOperationException("There is no open connection to close");
-
         connection.Dispose();
         connection = null;
     }
@@ -170,24 +145,6 @@ public class AdoDbStepPersister : IStepPersister
         connection = null;
     }
 
-    public int[] AddSteps(Step[] steps)
-    {
-        if (Transaction == null)
-            throw new ArgumentException("Missing transaction. Remember to create a transaction before calling");
-
-        if (!steps.Any())
-            return new int[0];
-
-        var result = new List<int>();
-
-        foreach (var x in steps)
-        {
-            result.Add(helper.InsertStep(StepStatus.Ready, TableNameReady, x, Transaction!));
-        }
-
-        return result.ToArray();
-    }
-
     public Dictionary<StepStatus, int> CountTables(string? flowId = null)
     {
         if (Transaction == null)
@@ -197,16 +154,62 @@ public class AdoDbStepPersister : IStepPersister
         return result;
     }
 
+
     // TODO lav test case på at man aktiverer et eksekverende step - som dermed er skrive-låst - skal nok anvende en 2s timeout
-    public int UpdateStep(int id, string? activationArgs, DateTime scheduleTime)
+    public int Update(StepStatus target, Step step)
     {
         if (Transaction == null)
             throw new ArgumentException("Missing transaction. Remember to create a transaction before calling");
 
-        int rows = helper.UpdateStep(TableNameReady, id, scheduleTime, activationArgs, Transaction!);
-        return rows;
+        var name = GetTableName(target);
+        return helper.Update(step, name, Transaction!);
     }
 
+    public int Insert(StepStatus target, Step step)
+    {
+        if (Transaction == null)
+            throw new ArgumentException("Missing transaction. Remember to create a transaction before calling");
+
+        return helper.InsertStep(target, GetTableName(target), step, Transaction!);
+    }
+
+    public int[] Insert(StepStatus target, Step[] steps)
+    {
+        if (Transaction == null)
+            throw new ArgumentException("Missing transaction. Remember to create a transaction before calling");
+
+        var result = new List<int>(steps.Length);
+
+        foreach (var x in steps)
+        {
+            result.Add(helper.InsertStep(target, TableNameReady, x, Transaction!));
+        }
+
+        return result.ToArray();
+    }
+
+    public int Delete(StepStatus target, int id)
+    {
+        if (Transaction == null)
+            throw new ArgumentException("Missing transaction. Remember to create a transaction before calling");
+
+        var name = GetTableName(target);
+        return helper.Delete(id, name, Transaction!);
+    }
+
+    private string GetTableName(StepStatus target)
+    {
+        switch (target)
+        {
+            case StepStatus.Done:
+                return TableNameDone;
+            case StepStatus.Failed:
+                return TableNameFail;
+            case StepStatus.Ready:
+                return TableNameReady;
+            default: throw new NotImplementedException($"{target}");
+        }
+    }
     public void Dispose()
     {
         if (logger.TraceLoggingEnabled)
