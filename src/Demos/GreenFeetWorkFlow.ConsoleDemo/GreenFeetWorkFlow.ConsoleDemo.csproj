@@ -10,7 +10,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="GreenFeetWorkFlow" Version="0.0.0.3" />
+		<PackageReference Include="GreenFeetWorkFlow" Version="0.0.0.7" />
 <!--
 		<ProjectReference Include="..\..\Product\GreenFeetWorkFlow.AdoPersistence\GreenFeetWorkFlow.AdoMsSql.csproj" />
 		<ProjectReference Include="..\..\Product\GreenFeetWorkFlow\GreenFeetWorkFlow.csproj" />
