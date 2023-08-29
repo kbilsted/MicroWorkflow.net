@@ -25,7 +25,6 @@ public class Worker
     private readonly WfRuntimeData engineRuntimeData;
     private readonly WorkerConfig workerConfig;
 
-    // TODO add timestamp for startup delay - to make webapi solutions easier to debug
     readonly Stopwatch stopwatch = new();
 
     public Worker(IWorkflowLogger logger, IWorkflowIocContainer iocContainer, WfRuntimeData runtime, WorkerConfig config)

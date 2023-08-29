@@ -183,7 +183,6 @@ SET
         return cmd.ExecuteNonQuery();
     }
 
-    // TODO NICE optimize to enable multiple inserts in one call
     public int InsertStep(StepStatus target, string tablename, Step step, SqlTransaction tx)
     {
         if (target == StepStatus.Ready)

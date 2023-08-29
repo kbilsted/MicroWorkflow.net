@@ -78,11 +78,6 @@ public class WfRuntimeData
         return result;
     }
 
-    // TODO implement CRUD step operations
-    // done ready task - spawn new task to ensure we perform the operaton in case the tast is rerunning and is long to execute - worst case a direct call would time out waiting 
-    // fail ready task - spawn new task to ensure we perform the operaton in case the tast is rerunning and is long to execute - worst case a direct call would time out waiting 
-    // activateWaitingReadyTask
-
     /// <summary> Re-execute steps that are 'done' or 'failed' by inserting a clone into the 'ready' queue </summary>
     /// <returns>Ids of inserted steps</returns>
     public int[] ReExecuteSteps(SearchModel criterias, object? transaction = null)
