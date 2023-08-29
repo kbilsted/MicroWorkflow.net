@@ -155,7 +155,6 @@ public class AdoDbStepPersister : IStepPersister
     }
 
 
-    // TODO lav test case på at man aktiverer et eksekverende step - som dermed er skrive-låst - skal nok anvende en 2s timeout
     public int Update(StepStatus target, Step step)
     {
         if (Transaction == null)

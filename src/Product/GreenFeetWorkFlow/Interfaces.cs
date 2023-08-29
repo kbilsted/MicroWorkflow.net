@@ -29,8 +29,6 @@ public interface IWorkflowIocContainer
     T GetInstance<T>() where T : notnull;
 }
 
-// TODO NICE for testing tillad at der kun hentes et bestemt flowid 
-
 /// <summary>
 /// This interface is disposable such that connections/transactions may be cleaned up by the dispose method
 /// </summary>
