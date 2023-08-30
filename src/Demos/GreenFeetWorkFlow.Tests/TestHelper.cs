@@ -141,7 +141,7 @@ public class TestHelper
 
     public void AssertTableCounts(string flowId, int ready, int done, int failed)
     {
-        IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
+        IStepPersister persister = iocContainer!.GetInstance<IStepPersister>();
         persister
             .InTransaction(() => ((SqlServerPersister)persister).CountTables(flowId))
             .Should().BeEquivalentTo(

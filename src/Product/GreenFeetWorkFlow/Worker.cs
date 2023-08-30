@@ -2,12 +2,6 @@
 
 namespace GreenFeetWorkflow;
 
-// why we dont store the raw type from step state objects. will be serialized eg into
-// System.Collections.Generic.Dictionary`2[[System.String, System.Private.CoreLib, Version=6.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Object, System.Private.CoreLib, Version=6.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]
-//or
-// GreenFeetWorkflow.Tests+BuyInstructions
-// we dont want to rely on corelib in v6 or that we use very specific private classes
-//
 public class Worker
 {
     private static readonly object Lock = new();

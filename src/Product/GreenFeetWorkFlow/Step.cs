@@ -45,10 +45,15 @@ public class Step
     /// <summary> the arguments for an activation as it is formatted and persisted in the persistencelayer </summary>
     public string? ActivationArgs { get; set; }
 
+    /// <summary> The number of times a step has been executed. On the first execution this has value 1.</summary>
     public int ExecutionCount { get; set; }
+    /// <summary> The elapsed time of the latest execution </summary>
     public long? ExecutionDurationMillis { get; set; }
+    /// <summary> The time when the latest execution took place </summary>
     public DateTime? ExecutionStartTime { get; set; }
+    /// <summary> The worker name executing the step </summary>
     public string? ExecutedBy { get; set; }
+    /// <summary> The time the step was created </summary>
     public DateTime CreatedTime { get; set; }
     /// <summary> The 'parent', i.e. the step which created this step. If there is no parent, 0 is used.
     /// Steps created from a step will have its parent set (unless you overwrite it). 
@@ -59,8 +64,9 @@ public class Step
     public DateTime ScheduleTime { get; set; }
 
     /// <summary>
-    /// The CorrelationId usually denote in what 'context' a given step is created to be able to connect log entries across system boundaries.
-    /// Thus steps may share the same FlowId, but not share the same CorrelationId.
+    /// An id of the context in which the step was created. Usually this is used to connect log entries across system boundaries.
+    /// Thus, steps may share the same FlowId, but not share the same CorrelationId.
+    /// Steps created from a step will inherit the correlationId (unless you overwrite it). 
     /// </summary>
     public string? CorrelationId { get; set; }
 

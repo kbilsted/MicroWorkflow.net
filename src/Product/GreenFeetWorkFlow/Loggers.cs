@@ -73,7 +73,7 @@ public abstract class GenericStepLogger : IWorkflowLogger
 
 /// <summary>
 /// Writes to the console in colors. Less useful in visual studio as the output window
-/// does not hold console printouts. Consider using <see cref="DiagnosticsStepLogger"/>
+/// does not show console colors. Consider using <see cref="DiagnosticsStepLogger"/>
 /// </summary>
 public class ConsoleStepLogger : GenericStepLogger
 {
@@ -104,7 +104,6 @@ public class ConsoleStepLogger : GenericStepLogger
 
 /// <summary>
 /// Writes to the debug, useful in visual studio as is shown in the output window.
-/// can also be used for unittest as it collects all logged lines
 /// </summary>
 public class DiagnosticsStepLogger : GenericStepLogger
 {
@@ -119,7 +118,9 @@ public class DiagnosticsStepLogger : GenericStepLogger
 }
 
 
-
+/// <summary>
+/// Collect log messages in a collection for testing purposes
+/// </summary>
 public class CollectingLoggerForUnittest : GenericStepLogger
 {
     protected readonly object Lock = new();

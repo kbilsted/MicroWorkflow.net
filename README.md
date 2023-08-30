@@ -41,25 +41,3 @@ Simplicify is the focus of the code base. Performance is simply a side-effect of
 On my 2020 mid-tier computer we execute 10.000/sec steps using a single computer, 8 threads and SQL Server. 
 
 
-
-
-# TODOs
-
-### nice to have's
-* create singleton job that monitors the engine activity and add simple performance counters
-* for testing tillad at der kun hentes et bestemt flowid 
-* add a delay to worker start so when used in eg a webapi, you can debug the api without greensteps
-* RuntimeData add CRUD step operations
-    * done ready task - spawn new task to ensure we perform the operaton in case the tast is rerunning and is long to execute - worst case a direct call would time out waiting 
-    * fail ready task - spawn new task to ensure we perform the operaton in case the tast is rerunning and is long to execute - worst case a direct call would time out waiting 
-    *  activateWaitingReadyTask
-
-
-
-### tests
-* add test case på at man aktiverer et eksekverende step - som dermed er skrive-låst - skal nok anvende en 2s timeout
-
-
-### Performance todo's
-* Add steps to insert using prepared sql and possibly multiple values
-* Hardcode column over GetOrdinal()
