@@ -9,7 +9,7 @@ public class TestHelper
     public string RndName = "test" + Guid.NewGuid().ToString();
     public NewtonsoftStateFormatterJson? Formatter;
     public CancellationTokenSource cts = new();
-    public AutofacBinding iocContainer;
+    public AutofacAdaptor? iocContainer;
     public AdoDbStepPersister Persister => (AdoDbStepPersister)iocContainer!.GetInstance<IStepPersister>();
     public readonly string CorrelationId = Guid.NewGuid().ToString();
     public readonly string FlowId = Guid.NewGuid().ToString();
@@ -17,11 +17,6 @@ public class TestHelper
     public WorkflowEngine? Engine;
 
     readonly ContainerBuilder builder = new ContainerBuilder();
-
-    public TestHelper()
-    {
-        iocContainer = new AutofacBinding(builder);
-    }
 
     public void CreateAndRunEngine(Step[] steps, params (string name, Func<Step, ExecutionResult> code)[] stepHandlers)
         => CreateAndRunEngine(
@@ -61,6 +56,7 @@ public class TestHelper
 
         Formatter = new NewtonsoftStateFormatterJson(logger);
 
+        iocContainer = new AutofacAdaptor(builder.Build());
         Engine = new WorkflowEngine(logger, iocContainer, Formatter);
 
         return Engine;
@@ -79,6 +75,7 @@ public class TestHelper
 
         Formatter = new NewtonsoftStateFormatterJson(logger);
 
+        iocContainer = new AutofacAdaptor(builder.Build());
         Engine = new WorkflowEngine(logger, iocContainer, Formatter);
 
         Engine.Runtime.Data.AddSteps(steps);
@@ -91,8 +88,6 @@ public class TestHelper
         Engine.Start(workflowConfiguration, stoppingToken: cts.Token);
     }
 
-
-
     public void CreateAndRunEngine(Step[] steps, int workerCount, params (string, IStepImplementation)[] stepHandlers)
     {
         logger = new DiagnosticsStepLogger();
@@ -102,6 +97,7 @@ public class TestHelper
 
         Formatter = new NewtonsoftStateFormatterJson(logger);
 
+        iocContainer = new AutofacAdaptor(builder.Build());
         Engine = new WorkflowEngine(logger, iocContainer, Formatter);
 
         Engine.Runtime.Data.AddSteps(steps);
@@ -126,6 +122,7 @@ public class TestHelper
 
         Formatter = new NewtonsoftStateFormatterJson(logger);
 
+        iocContainer = new AutofacAdaptor(builder.Build());
         Engine = new WorkflowEngine(logger, iocContainer, Formatter);
 
         Engine.Runtime.Data.AddSteps(steps);

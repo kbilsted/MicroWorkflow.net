@@ -2,17 +2,14 @@
 
 namespace GreenFeetWorkflow.Ioc.Autofac;
 
-public class AutofacBinding : IWorkflowIocContainer
+public class AutofacAdaptor : IWorkflowIocContainer
 {
     readonly IComponentContext container;
 
-    public AutofacBinding(IComponentContext container)
+    public AutofacAdaptor(IComponentContext container)
     {
         this.container = container;
     }
-
-    public AutofacBinding(ContainerBuilder builder) : this(builder.Build())
-    { }
 
     public T GetInstance<T>() where T : notnull
     {
