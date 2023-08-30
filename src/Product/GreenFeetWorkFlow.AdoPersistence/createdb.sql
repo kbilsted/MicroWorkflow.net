@@ -1,32 +1,3 @@
-
-/* 
-
--- move rows to fail
-begin transaction
-insert into dbo.[Steps_Fail]
-select * FROM dbo.[Steps_Ready]
-WHERE executionCount>6
-
-DELETE FROM dbo.[Steps_Ready]
-WHERE executionCount>6
-commit
-
-
-drop view [Steps]
-drop table [Steps_Ready]
-drop table [Steps_Done]
-drop table [Steps_Fail]
-delete from [Steps_Ready]
-delete from [Steps_Done]
-
-select * from [Steps_Ready]
-select * from [Steps_Done]
-select * from [Steps_Fail]
-
-
-*/
-
-/****** Object: Table [dbo].[Steps_Done] Script Date: 21-07-2023 14:31:46 ******/
 SET ANSI_NULLS ON
 GO
 
@@ -187,3 +158,29 @@ SELECT 'failed' as 'ExecutionState',
    f.Description          
 FROM [Steps_Fail] f
 GO
+
+
+
+/* 
+-- move rows to fail
+begin transaction
+insert into dbo.[Steps_Fail]
+select * FROM dbo.[Steps_Ready]
+WHERE executionCount>6
+
+DELETE FROM dbo.[Steps_Ready]
+WHERE executionCount>6
+commit
+
+drop view [Steps]
+drop table [Steps_Ready]
+drop table [Steps_Done]
+drop table [Steps_Fail]
+delete from [Steps_Ready]
+delete from [Steps_Done]
+
+select * from [Steps_Ready]
+select * from [Steps_Done]
+select * from [Steps_Fail]
+
+*/

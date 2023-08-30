@@ -10,7 +10,7 @@ public class TestHelper
     public NewtonsoftStateFormatterJson? Formatter;
     public CancellationTokenSource cts = new();
     public AutofacAdaptor? iocContainer;
-    public AdoDbStepPersister Persister => (AdoDbStepPersister)iocContainer!.GetInstance<IStepPersister>();
+    public SqlServerPersister Persister => (SqlServerPersister)iocContainer!.GetInstance<IStepPersister>();
     public readonly string CorrelationId = Guid.NewGuid().ToString();
     public readonly string FlowId = Guid.NewGuid().ToString();
     private IWorkflowLogger? logger;
@@ -52,7 +52,7 @@ public class TestHelper
         ((DiagnosticsStepLogger)logger).AddNestedLogger(new ConsoleStepLogger());
 
         builder.RegisterInstances(logger, stepHandlers);
-        builder.Register<IStepPersister>(c => new AdoDbStepPersister(ConnectionString, logger)).InstancePerDependency();
+        builder.Register<IStepPersister>(c => new SqlServerPersister(ConnectionString, logger)).InstancePerDependency();
 
         Formatter = new NewtonsoftStateFormatterJson(logger);
 
@@ -71,7 +71,7 @@ public class TestHelper
         logger.ErrorLoggingEnabled = true;
 
         builder.RegisterInstances(logger, stepHandlers);
-        builder.Register<IStepPersister>(c => new AdoDbStepPersister(ConnectionString, logger));
+        builder.Register<IStepPersister>(c => new SqlServerPersister(ConnectionString, logger));
 
         Formatter = new NewtonsoftStateFormatterJson(logger);
 
@@ -93,7 +93,7 @@ public class TestHelper
         logger = new DiagnosticsStepLogger();
 
         builder.RegisterInstances(logger, stepHandlers);
-        builder.Register<IStepPersister>(c => new AdoDbStepPersister(ConnectionString, logger));
+        builder.Register<IStepPersister>(c => new SqlServerPersister(ConnectionString, logger));
 
         Formatter = new NewtonsoftStateFormatterJson(logger);
 
@@ -118,7 +118,7 @@ public class TestHelper
         logger = new DiagnosticsStepLogger();
 
         builder.RegisterStepImplementations(logger, typeof(TestHelper).Assembly);
-        builder.Register<IStepPersister>(c => new AdoDbStepPersister(ConnectionString, logger));
+        builder.Register<IStepPersister>(c => new SqlServerPersister(ConnectionString, logger));
 
         Formatter = new NewtonsoftStateFormatterJson(logger);
 
@@ -143,7 +143,7 @@ public class TestHelper
     {
         IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
         persister
-            .InTransaction(() => ((AdoDbStepPersister)persister).CountTables(flowId))
+            .InTransaction(() => ((SqlServerPersister)persister).CountTables(flowId))
             .Should().BeEquivalentTo(
             new Dictionary<StepStatus, int>
             {

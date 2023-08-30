@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace GreenFeetWorkflow.AdoPersistence;
 
-public class AdoDbStepPersister : IStepPersister
+public class SqlServerPersister : IStepPersister
 {
     public string TableNameReady { get; set; } = "[dbo].[Steps_Ready]";
     public string TableNameFail { get; set; } = "[dbo].[Steps_Fail]";
@@ -24,7 +24,7 @@ public class AdoDbStepPersister : IStepPersister
 
     readonly AdoHelper helper = new();
 
-    public AdoDbStepPersister(string connectionString, IWorkflowLogger logger)
+    public SqlServerPersister(string connectionString, IWorkflowLogger logger)
     {
         this.connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
         this.logger = logger;
@@ -110,7 +110,7 @@ public class AdoDbStepPersister : IStepPersister
     public void Commit()
     {
         if (logger.TraceLoggingEnabled)
-            logger.LogTrace($"{nameof(AdoDbStepPersister)}: Commit Transaction", null, new Dictionary<string, object?>() {
+            logger.LogTrace($"{nameof(SqlServerPersister)}: Commit Transaction", null, new Dictionary<string, object?>() {
                 { "PersisterId", PersisterId } ,
                 { "Stack", new StackTrace().ToString()} ,
             });
@@ -130,7 +130,7 @@ public class AdoDbStepPersister : IStepPersister
     public void RollBack()
     {
         if (logger.TraceLoggingEnabled)
-            logger.LogTrace($"{nameof(AdoDbStepPersister)}: Rollback Transaction", null,
+            logger.LogTrace($"{nameof(SqlServerPersister)}: Rollback Transaction", null,
                 new Dictionary<string, object?>() { { "PersisterId", PersisterId } });
 
         if (Transaction == null)
@@ -212,7 +212,7 @@ public class AdoDbStepPersister : IStepPersister
     public void Dispose()
     {
         if (logger.TraceLoggingEnabled)
-            logger.LogTrace($"{nameof(AdoDbStepPersister)}: DISPOSE()", null, new Dictionary<string, object?>() { { "PersisterId", PersisterId } });
+            logger.LogTrace($"{nameof(SqlServerPersister)}: DISPOSE()", null, new Dictionary<string, object?>() { { "PersisterId", PersisterId } });
 
         if (Transaction != null)
         {

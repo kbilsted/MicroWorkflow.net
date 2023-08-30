@@ -2,6 +2,9 @@
 
 namespace GreenFeetWorkflow.AdoPersistence;
 
+/// <summary>
+/// Dynamic SQL builder
+/// </summary>
 public class Sql
 {
     Sql AddWhere(string sql)
