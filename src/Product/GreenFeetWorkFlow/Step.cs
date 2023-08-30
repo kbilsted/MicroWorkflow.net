@@ -50,7 +50,10 @@ public class Step
     public DateTime? ExecutionStartTime { get; set; }
     public string? ExecutedBy { get; set; }
     public DateTime CreatedTime { get; set; }
-    public int? CreatedByStepId { get; set; }
+    /// <summary> The 'parent', i.e. the step which created this step. If there is no parent, 0 is used.
+    /// Steps created from a step will have its parent set (unless you overwrite it). 
+    /// </summary>
+    public int CreatedByStepId { get; set; } 
 
     /// <summary> The earliest point in time the step will be executed </summary>
     public DateTime ScheduleTime { get; set; }
@@ -123,5 +126,5 @@ public class Step
        List<Step>? newSteps = null,
        DateTime? scheduleTime = null,
        string? persistedStateFormat = null,
-       string? description = null) => await Task.FromResult(Rerun(newStateForRerun, newSteps, scheduleTime, persistedStateFormat, description));
+       string? description = null) => await Task.FromResult(ExecutionResult.Rerun(newStateForRerun, newSteps, scheduleTime, persistedStateFormat, description));
 }

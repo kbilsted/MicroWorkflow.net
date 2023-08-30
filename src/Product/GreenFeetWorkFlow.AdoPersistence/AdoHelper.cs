@@ -92,7 +92,7 @@ public class AdoHelper
         step.ExecutionDurationMillis = GetNullLong(reader, "ExecutionDurationMillis");
         step.ExecutionStartTime = GetNullDatetime(reader, "ExecutionStartTime");
         step.CreatedTime = reader.GetDateTime(reader.GetOrdinal("CreatedTime"));
-        step.CreatedByStepId = GetNullInt(reader, "CreatedByStepId");
+        step.CreatedByStepId = reader.GetInt32(reader.GetOrdinal("CreatedByStepId"));
         step.CorrelationId = GetNullString(reader, "CorrelationId");
         step.Description = GetNullString(reader, "Description");
 #pragma warning restore IDE0017 // Simplify object initialization
@@ -207,7 +207,7 @@ SET
             cmd.Parameters.AddWithValue("@ExecutedBy", step.ExecutedBy ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@CorrelationId", step.CorrelationId ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@CreatedTime", step.CreatedTime);
-            cmd.Parameters.AddWithValue("@CreatedByStepId", step.CreatedByStepId ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@CreatedByStepId", step.CreatedByStepId);
         }
 
         int InsertReady()
