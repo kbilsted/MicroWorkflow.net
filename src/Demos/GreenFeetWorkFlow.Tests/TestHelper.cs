@@ -1,7 +1,6 @@
 ﻿using Autofac;
-using GreenFeetWorkFlow.AdoMsSql;
-using GreenFeetWorkflow.AdoPersistence;
 using GreenFeetWorkflow.Ioc.Autofac;
+using GreenFeetWorkFlow.AdoMsSql;
 
 namespace GreenFeetWorkflow.Tests;
 
@@ -158,7 +157,8 @@ public class TestHelper
     {
         IStepPersister persister = iocContainer!.GetInstance<IStepPersister>();
         return persister
-        .InTransaction(() => persister.SearchSteps(new SearchModel { FlowId = flowId, FetchLevel = new(true, true, true) }))
+        .InTransaction(() =>
+            persister.SearchSteps(new SearchModel(FlowId: flowId, FetchLevel: FetchLevels.ALL)))
         .SelectMany(x => x.Value)
         .First();
     }

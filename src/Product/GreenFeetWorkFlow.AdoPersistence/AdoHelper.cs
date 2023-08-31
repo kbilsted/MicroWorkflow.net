@@ -8,6 +8,13 @@ namespace GreenFeetWorkFlow.AdoMsSql;
 
 public class AdoHelper
 {
+    private readonly IWorkflowLogger logger;
+
+    public AdoHelper(IWorkflowLogger logger)
+    {
+        this.logger = logger;
+    }
+
     public List<Step> SearchSteps(string table, SearchModel model, SqlTransaction tx)
     {
         var sql = new Sql(
@@ -17,7 +24,11 @@ public class AdoHelper
             .Where(model.CorrelationId, "[CorrelationId] = @CorrelationId")
             .Where(model.Name, "[Name] = @Name")
             .Where(model.SearchKey, "[SearchKey] LIKE @SearchKey")
-            .Where(model.FlowId, "[FlowId] = @FlowId");
+            .Where(model.FlowId, "[FlowId] = @FlowId")
+            .Where(model.Description, "[Description] LIKE @Description");
+
+        if (logger.InfoLoggingEnabled)
+            logger.LogTrace($"{nameof(SearchSteps)}: Sql: {(string)sql}", null, null);
 
         using var cmd = new SqlCommand(sql, tx.Connection, tx);
         if (model.Id != null)
@@ -30,6 +41,8 @@ public class AdoHelper
             cmd.Parameters.Add(new SqlParameter("SearchKey", model.SearchKey));
         if (model.FlowId != null)
             cmd.Parameters.Add(new SqlParameter("FlowId", model.FlowId));
+        if (model.Description != null)
+            cmd.Parameters.Add(new SqlParameter("Description", model.Description));
 
         using SqlDataReader reader = cmd.ExecuteReader();
 
@@ -51,6 +64,10 @@ public class AdoHelper
         @$"SELECT TOP 1 * 
         FROM {tableName} WITH(ROWLOCK, UPDLOCK) 
         WHERE [Id] = @id";
+
+        if (logger.InfoLoggingEnabled)
+            logger.LogTrace($"{nameof(GetStep)}: Sql: {(string)sql}", null, null);
+
         var cmd = new SqlCommand(sql, tx.Connection, tx);
         cmd.Parameters.Add(new SqlParameter("id", id));
 
@@ -62,6 +79,10 @@ public class AdoHelper
         var sql = @$"SELECT TOP 1 * 
          FROM {tableName} WITH(ROWLOCK, UPDLOCK, READPAST) 
          WHERE [ScheduleTime] <= @earliest";
+
+        if (logger.InfoLoggingEnabled)
+            logger.LogTrace($"{nameof(GetAndLockReadyStep)}: Sql: {(string)sql}", null, null);
+
         using var cmd = new SqlCommand(sql, tx.Connection, tx);
         cmd.Parameters.Add(new SqlParameter("earliest", DateTime.Now));
 
@@ -159,6 +180,9 @@ SET
 ,[CorrelationId] = @CorrelationId
  WHERE Id = @Id";
 
+        if (logger.InfoLoggingEnabled)
+            logger.LogTrace($"{nameof(Update)}: Sql: {(string)sql}", null, null);
+
         var cmd = new SqlCommand(sql, tx.Connection, tx);
         cmd.Parameters.Add(new SqlParameter("@Id", step.Id));
         cmd.Parameters.Add(new SqlParameter("@SearchKey", step.SearchKey ?? (object)DBNull.Value));
@@ -245,6 +269,9 @@ SET
            ,@CreatedByStepId) 
  select cast(scope_identity() as int)";
 
+            if (logger.InfoLoggingEnabled)
+                logger.LogTrace($"{nameof(InsertReady)}: Sql: {(string)sql}", null, null);
+
             using SqlCommand cmd = new(sql, tx.Connection, tx);
             AddParamaters(step, cmd);
 
@@ -292,6 +319,10 @@ SET
            ,@CreatedTime
            ,@CreatedByStepId) ";
 
+            if (logger.InfoLoggingEnabled)
+                logger.LogTrace($"{nameof(InsertDoneFail)}: Sql: {(string)sql}", null, null);
+
+
             using SqlCommand cmd = new(sql, tx.Connection, tx);
             cmd.Parameters.AddWithValue("@Id", step.Id);
             AddParamaters(step, cmd);
@@ -308,6 +339,9 @@ SET
             string sql = new Sql(@$"SELECT COUNT(*)
                 FROM {name} WITH (NOLOCK)")
                 .Where(flowId, "[FlowId] = @FlowId");
+
+            if (logger.InfoLoggingEnabled)
+                logger.LogTrace($"{nameof(CountTables)}: Sql: {(string)sql}", null, null);
 
             var cmd = new SqlCommand(sql, tx.Connection, tx);
             if (cmd.CommandText.Contains("FlowId"))

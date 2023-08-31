@@ -4,11 +4,13 @@ public class WfRuntimeData
 {
     private readonly IWorkflowIocContainer iocContainer;
     private readonly IWorkflowStepStateFormatter formatter;
+    private readonly IWorkflowLogger logger;
 
-    public WfRuntimeData(IWorkflowIocContainer iocContainer, IWorkflowStepStateFormatter formatter)
+    public WfRuntimeData(IWorkflowIocContainer iocContainer, IWorkflowStepStateFormatter formatter, IWorkflowLogger logger)
     {
         this.iocContainer = iocContainer;
         this.formatter = formatter;
+        this.logger = logger;
     }
 
     /// <summary> Reschedule a ready step to 'now' and send it activation data </summary>
@@ -20,7 +22,7 @@ public class WfRuntimeData
         int rows = persister.InTransaction(() =>
             {
                 var step = persister
-                            .SearchSteps(new SearchModel(Id: id) { FetchLevel = new(Ready: true) })[StepStatus.Ready]
+                            .SearchSteps(new SearchModel(Id: id, FetchLevel: FetchLevels.READY))[StepStatus.Ready]
                             .FirstOrDefault();
                 if (step == null)
                     return 0;
@@ -114,6 +116,9 @@ public class WfRuntimeData
                     Name = step.Name,
                 })
                 .ToArray();
+
+                if (logger.InfoLoggingEnabled)
+                    logger.LogInfo("Reexecuting ids", null, new Dictionary<string, object?>() { { "ids", steps.Select(x => x.Id).ToArray() } });
 
                 return persister.Insert(StepStatus.Ready, steps);
             },

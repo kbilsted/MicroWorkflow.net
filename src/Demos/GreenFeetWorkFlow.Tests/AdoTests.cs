@@ -105,7 +105,7 @@ public class WorkerTests
         engine.Runtime.Data.AddStep(new Step(name) { FlowId = helper.FlowId });
         await engine.StartAsSingleWorker(cfg);
 
-        var steps = engine.Runtime.Data.SearchSteps(new SearchModel(FlowId: helper.FlowId) { FetchLevel = new(true, true, true) });
+        var steps = engine.Runtime.Data.SearchSteps(new SearchModel(FlowId: helper.FlowId, FetchLevel: new(true, true, true)));
 
         steps.Is(@" [
     {
@@ -184,7 +184,7 @@ public class WorkerTests
 
         var persister = helper.Persister;
         var row = persister.InTransaction(() =>
-        persister.SearchSteps(new SearchModel(Id: dbid!.Value) { FetchLevel = new(Ready: true) })
+        persister.SearchSteps(new SearchModel(Id: dbid!.Value, FetchLevel: FetchLevels.READY))
         [StepStatus.Ready].Single());
         row!.State.Should().Be("\"hej\"");
         row.FlowId.Should().Be(helper.FlowId);

@@ -23,7 +23,7 @@ public class WorkflowEngine
         this.logger = logger;
         this.iocContainer = iocContainer;
 
-        data = new WfRuntimeData(iocContainer, formatter);
+        data = new WfRuntimeData(iocContainer, formatter, logger);
         Runtime = new WfRuntime(data, new WfRuntimeMetrics(iocContainer), new WfRuntimeConfiguration(new WorkerConfig(), 0));
     }
 

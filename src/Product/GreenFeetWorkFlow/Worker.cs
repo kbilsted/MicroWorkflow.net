@@ -134,7 +134,6 @@ public class Worker
         {
             if (logger.ErrorLoggingEnabled)
                 logger.LogError($"{nameof(Worker)}: exception while fetching next step to execute.", e, null);
-
             return (null, WorkerRunStatus.Error);
         }
     }
@@ -166,7 +165,10 @@ public class Worker
 
             (Step? step, WorkerRunStatus? status) = GetNextStep(persister);
             if (step == null)
+            {
+                persister.RollBack();
                 return status!.Value;
+            }
 
             IStepImplementation? implementation = iocContainer.GetNamedInstance(step.Name);
             if (implementation == null)

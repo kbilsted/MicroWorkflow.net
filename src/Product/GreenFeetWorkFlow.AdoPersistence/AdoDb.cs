@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using GreenFeetWorkflow;
+﻿using GreenFeetWorkflow;
 using Microsoft.Data.SqlClient;
 
 namespace GreenFeetWorkFlow.AdoMsSql;
@@ -17,13 +16,14 @@ public class SqlServerPersister : IStepPersister
     SqlTransaction? transaction;
 
     readonly Guid persisterId = Guid.NewGuid();
-  
-    readonly AdoHelper helper = new();
+
+    readonly AdoHelper helper;
 
     public SqlServerPersister(string connectionString, IWorkflowLogger logger)
     {
         this.connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
         this.logger = logger;
+        helper = new(logger);
     }
 
     public void SetTransaction(object transaction)
@@ -69,19 +69,19 @@ public class SqlServerPersister : IStepPersister
         }
     }
 
-    public Dictionary<StepStatus, IEnumerable<Step>> SearchSteps(SearchModel model)
+    public Dictionary<StepStatus, IEnumerable<Step>> SearchSteps(SearchModel criteria)
     {
         if (transaction == null)
             throw new ArgumentException("Missing transaction. Remember to create a transaction before calling");
 
-        List<Step> ready = model.FetchLevel.Ready
-            ? helper.SearchSteps(TableNameReady, model, transaction!)
+        List<Step> ready = criteria.FetchLevel.Ready
+            ? helper.SearchSteps(TableNameReady, criteria, transaction!)
             : new List<Step>();
-        List<Step> done = model.FetchLevel.Done
-            ? helper.SearchSteps(TableNameDone, model, transaction!)
+        List<Step> done = criteria.FetchLevel.Done
+            ? helper.SearchSteps(TableNameDone, criteria, transaction!)
             : new List<Step>();
-        List<Step> fail = model.FetchLevel.Fail
-            ? helper.SearchSteps(TableNameFail, model, transaction!)
+        List<Step> fail = criteria.FetchLevel.Fail
+            ? helper.SearchSteps(TableNameFail, criteria, transaction!)
             : new List<Step>();
 
         return new Dictionary<StepStatus, IEnumerable<Step>>()
@@ -111,9 +111,11 @@ public class SqlServerPersister : IStepPersister
     public void Commit()
     {
         if (logger.TraceLoggingEnabled)
-            logger.LogTrace($"{nameof(SqlServerPersister)}: Commit Transaction", null, new Dictionary<string, object?>() {
+            logger.LogTrace($"{nameof(SqlServerPersister)}: Commit Transaction",
+                null,
+                new Dictionary<string, object?>() {
                 { "PersisterId", persisterId } ,
-                { "Stack", new StackTrace().ToString()} ,
+                //{ "Stack", new StackTrace().ToString()} ,
             });
 
         if (transaction == null)
@@ -131,7 +133,8 @@ public class SqlServerPersister : IStepPersister
     public void RollBack()
     {
         if (logger.TraceLoggingEnabled)
-            logger.LogTrace($"{nameof(SqlServerPersister)}: Rollback Transaction", null,
+            logger.LogTrace($"{nameof(SqlServerPersister)}: Rollback Transaction",
+                null,
                 new Dictionary<string, object?>() { { "PersisterId", persisterId } });
 
         if (transaction == null)
@@ -212,7 +215,6 @@ public class SqlServerPersister : IStepPersister
     }
     public void Dispose()
     {
-
         if (transaction != null)
         {
             if (logger.TraceLoggingEnabled)
