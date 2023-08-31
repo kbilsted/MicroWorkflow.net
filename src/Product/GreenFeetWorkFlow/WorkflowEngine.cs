@@ -10,10 +10,6 @@ public class WorkflowEngine
     public IReadOnlyList<Worker>? WorkerList { get; private set; }
     public Thread[] Threads { get; private set; } = new Thread[0];
 
-    public WfRuntime Runtime { get; private set; }
-
-
-    private readonly WfRuntimeData data;
 
     public WorkflowEngine(
         IWorkflowLogger logger,
@@ -27,6 +23,14 @@ public class WorkflowEngine
         Runtime = new WfRuntime(data, new WfRuntimeMetrics(iocContainer), new WfRuntimeConfiguration(new WorkerConfig(), 0));
     }
 
+    /// <summary> Access the steps </summary>
+    public WfRuntimeData Data { get; }
+
+    /// <summary> Performance metrics </summary>
+    public WfRuntimeMetrics Metrics { get; set; }
+
+    /// <summary> Engine configuration </summary>
+    public WorkflowConfiguration Configuration { get; set; }
     static string MakeWorkerName(int i)
         => $"worker/{Environment.MachineName}/process/{Environment.ProcessId}/{i}";
 
@@ -38,7 +42,7 @@ public class WorkflowEngine
         if (logger.InfoLoggingEnabled)
             logger.LogInfo($"{nameof(WorkflowEngine)}: starting engine" + engineName, null, null);
 
-        Runtime.Configuration = configuration;
+        Configuration = configuration;
 
         EngineName = engineName ?? MakeEngineName();
 

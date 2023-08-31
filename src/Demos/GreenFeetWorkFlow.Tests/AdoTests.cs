@@ -56,8 +56,8 @@ public class WorkerTests
         using var connection = new SqlConnection(helper.ConnectionString);
         connection.Open();
         using var tx = connection.BeginTransaction(System.Data.IsolationLevel.ReadCommitted);
-        engine.Runtime.Data.AddStep(new Step(name, 0), tx);
-        engine.Runtime.Data.AddStep(new Step(name, 1), tx);
+        engine.Data.AddStep(new Step(name, 0), tx);
+        engine.Data.AddStep(new Step(name, 1), tx);
         tx.Commit();
         engine.Start(cfg);
 
@@ -102,10 +102,10 @@ public class WorkerTests
                 name,
                 GenericImplementation.Create(step => throw step.FailAsException(newSteps: new Step(nameNewStep))))
             );
-        engine.Runtime.Data.AddStep(new Step(name) { FlowId = helper.FlowId });
+        engine.Data.AddStep(new Step(name) { FlowId = helper.FlowId });
         await engine.StartAsSingleWorker(cfg);
 
-        var steps = engine.Runtime.Data.SearchSteps(new SearchModel(FlowId: helper.FlowId, FetchLevel: new(true, true, true)));
+        var steps = engine.Data.SearchSteps(new SearchModel(FlowId: helper.FlowId, FetchLevel: new(true, true, true)));
 
         steps.Is(@" [
     {
@@ -361,7 +361,7 @@ public class WorkerTests
             FlowId = helper.FlowId,
             ScheduleTime = DateTime.Now.AddYears(35)
         };
-        var id = engine.Runtime.Data.AddStep(futureStep, null);
+        var id = engine.Data.AddStep(futureStep, null);
         engine.Start(cfg);
         helper.AssertTableCounts(helper.FlowId, ready: 1, done: 0, failed: 0);
 
@@ -382,8 +382,8 @@ public class WorkerTests
             FlowId = helper.FlowId,
             ScheduleTime = DateTime.Now.AddYears(35)
         };
-        var id = engine.Runtime.Data.AddStep(futureStep, null);
-        var count = engine.Runtime.Data.ActivateStep(id, null);
+        var id = engine.Data.AddStep(futureStep, null);
+        var count = engine.Data.ActivateStep(id, null);
         count.Should().Be(1);
 
         engine.Start(cfg);
@@ -407,8 +407,7 @@ public class WorkerTests
             FlowId = helper.FlowId,
             ScheduleTime = DateTime.Now.AddYears(35)
         };
-        var id = engine.Runtime.Data.AddStep(futureStep, null);
-        var count = engine.Runtime.Data.ActivateStep(id, args);
+        var id = engine.Data.AddStep(futureStep, null);
         engine.Start(cfg);
 
         stepResult.Should().Be(JsonConvert.SerializeObject(args));

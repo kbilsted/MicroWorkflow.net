@@ -14,7 +14,7 @@ public class RuntimeMetricsTests
     public void When_searching_with_no_parameters_Then_success()
     {
         var engine = helper.CreateEngine();
-        var steps = engine.Runtime.Metrics.CountSteps();
+        var steps = engine.Metrics.CountSteps();
 
         steps.Keys.Count.Should().Be(3);
     }

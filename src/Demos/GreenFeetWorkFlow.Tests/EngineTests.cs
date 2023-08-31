@@ -15,11 +15,11 @@ public class EngineTests
     {
         helper.CreateEngine();
         Step step = new Step(helper.RndName) { ScheduleTime = DateTime.Now.AddMonths(1) };
-        var id = helper.Engine!.Runtime.Data.AddStep(step);
+        var id = helper.Engine!.Data.AddStep(step);
 
         SearchModel model = new(FetchLevel: new(Ready: true), Id: id);
 
-        var result = helper.Engine.Runtime.Data.SearchSteps(model);
+        var result = helper.Engine.Data.SearchSteps(model);
 
         result[StepStatus.Ready].Single().Name.Should().Be(helper.RndName);
     }

@@ -78,7 +78,7 @@ public class TestHelper
         iocContainer = new AutofacAdaptor(builder.Build());
         Engine = new WorkflowEngine(logger, iocContainer, Formatter);
 
-        Engine.Runtime.Data.AddSteps(steps);
+        Engine.Data.AddSteps(steps);
 
         var workflowConfiguration = new WfRuntimeConfiguration(new WorkerConfig()
         {
@@ -100,7 +100,7 @@ public class TestHelper
         iocContainer = new AutofacAdaptor(builder.Build());
         Engine = new WorkflowEngine(logger, iocContainer, Formatter);
 
-        Engine.Runtime.Data.AddSteps(steps);
+        Engine.Data.AddSteps(steps);
 
         var workflowConfiguration = new WfRuntimeConfiguration(new WorkerConfig()
         {
@@ -125,7 +125,7 @@ public class TestHelper
         iocContainer = new AutofacAdaptor(builder.Build());
         Engine = new WorkflowEngine(logger, iocContainer, Formatter);
 
-        Engine.Runtime.Data.AddSteps(steps);
+        Engine.Data.AddSteps(steps);
 
         var workflowConfiguration = new WfRuntimeConfiguration(new WorkerConfig()
         { StopWhenNoWork = workerCount == 1 },

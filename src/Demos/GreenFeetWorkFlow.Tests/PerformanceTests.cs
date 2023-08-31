@@ -16,7 +16,7 @@ public class PerformanceTests
         var name = "inserttest";
 
         var steps = Enumerable.Range(0, 10000).Select(x => new Step(name)).ToArray();
-        engine.Runtime.Data.AddSteps(steps);
+        engine.Data.AddSteps(steps);
 
         watch.Stop();
         watch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(3));
