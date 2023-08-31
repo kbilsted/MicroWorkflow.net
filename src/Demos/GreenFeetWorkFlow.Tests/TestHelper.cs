@@ -152,4 +152,13 @@ public class TestHelper
                 { StepStatus.Failed, failed},
             });
     }
+
+    public Step GetByFlowId(string flowId)
+    {
+        IStepPersister persister = iocContainer!.GetInstance<IStepPersister>();
+        return persister
+        .InTransaction(() => persister.SearchSteps(new SearchModel { FlowId = flowId, FetchLevel = new(true, true, true) }))
+        .SelectMany(x => x.Value)
+        .First();
+    }
 }

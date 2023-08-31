@@ -22,7 +22,7 @@ public class WorkerTests
     }
 
     [Test]
-    public void When_executing_OneStep_with_no_state_Then_succeed()
+    public void When_executing_OneStep_with_state_Then_succeed()
     {
         string? stepResult = null;
 
@@ -75,18 +75,21 @@ public class WorkerTests
             ));
 
         helper.AssertTableCounts(helper.FlowId, ready: 0, done: 0, failed: 1);
+        helper.GetByFlowId(helper.FlowId).Description.Should().Be("some description");
     }
 
     [Test]
-    public void When_executing_step_throwing_special_FailCurrentStepException_from_step_Then_fail_current_step()
+    public void When_executing_step_throwing_special_FailCurrentStepException_using_step_Then_fail_current_step()
     {
         helper.CreateAndRunEngine(
             new Step("test-throw-failstepexception_from_step_variable") { FlowId = helper.FlowId },
             (
                 "test-throw-failstepexception_from_step_variable",
-                GenericStepHandler.Create(step => throw step.FailAsException())));
+                GenericStepHandler.Create(step => throw step.FailAsException("some description"))
+            ));
 
         helper.AssertTableCounts(helper.FlowId, ready: 0, done: 0, failed: 1);
+        helper.GetByFlowId(helper.FlowId).Description.Should().Be("some description");
     }
 
     [Test]
@@ -191,41 +194,49 @@ public class WorkerTests
     [Test]
     public void OneStep_fail()
     {
-        string? stepResult = null;
+        var impl = ("onestep_fails", new GenericStepHandler(step => step.Fail()));
 
-        var stepHandler = ("onestep_fails", new GenericStepHandler(stepToExecute =>
+        helper.CreateAndRunEngine(new Step("onestep_fails") { FlowId = helper.FlowId }, impl);
+
+        helper.AssertTableCounts(helper.FlowId, ready: 0, done: 0, failed: 1);
+    }
+
+    [Test]
+    public void When_executing_step_for_the_first_time_Then_execution_count_is_1()
+    {
+        int? stepResult = null;
+
+        var impl = (helper.RndName, new GenericStepHandler(step =>
         {
-            if (stepToExecute.ExecutionCount == 0)
-                return ExecutionResult.Fail();
-
-            stepResult = "hello";
+            stepResult = step.ExecutionCount;
             return ExecutionResult.Done();
         }));
 
-        new TestHelper().CreateAndRunEngine(new[] { new Step("onestep_fails") }, stepHandler);
+        helper.CreateAndRunEngine(new[] { new Step(helper.RndName) }, impl);
 
-        stepResult.Should().BeNull();
+        stepResult.Should().Be(1);
     }
+
 
     [Test]
     public void OneStep_Repeating_Thrice()
     {
         string? stepResult = null;
 
-        var stepHandler = ("repeating_step", new GenericStepHandler(step =>
+        var impl = ("OneStep_Repeating_Thrice", new GenericStepHandler(step =>
         {
             int counter = helper.Formatter!.Deserialize<int>(step.State);
 
-            stepResult = $"hello {counter}";
+            stepResult = $"counter {counter} executionCount {step.ExecutionCount}";
 
             if (counter < 3)
                 return ExecutionResult.Rerun(stateForRerun: counter + 1, scheduleTime: step.ScheduleTime);
             return ExecutionResult.Done();
         }));
 
-        helper.CreateAndRunEngine(new Step("repeating_step") { InitialState = 1, FlowId = helper.FlowId }, stepHandler);
+        helper.CreateAndRunEngine(new Step("OneStep_Repeating_Thrice") { InitialState = 1, FlowId = helper.FlowId }, impl);
 
-        stepResult.Should().Be("hello 3");
+        stepResult.Should().Be("counter 3 executionCount 3");
 
         helper.AssertTableCounts(helper.FlowId, ready: 0, done: 1, failed: 0);
     }
@@ -304,9 +315,6 @@ public class WorkerTests
         stepResult.Should().Be(newId);
     }
 
-
-
-
     [Test]
     public void TwoSteps_flow_last_step_starting_in_the_future_so_test_terminate_before_its_executions()
     {
@@ -316,7 +324,7 @@ public class WorkerTests
         helper.CreateAndRunEngine(
             new[] { new Step() { Name = "check-future-step/cookFood", FlowId = helper.FlowId } },
             ("check-future-step/cookFood",
-            stepToExecute =>
+            step =>
             {
                 string food = "potatoes";
                 stepResult = $"cooking {food}";
@@ -325,9 +333,9 @@ public class WorkerTests
             }
         ),
             ("check-future-step/eat",
-            stepToExecute =>
+            step =>
             {
-                var food = helper.Formatter!.Deserialize<string>(stepToExecute.State);
+                var food = helper.Formatter!.Deserialize<string>(step.State);
                 stepResult = $"eating {food}";
                 return ExecutionResult.Done();
             }
@@ -497,7 +505,7 @@ public class WorkerTests
                 SalesDb.Add((instruction!.PurchaseId, instruction.Item!, prices[instruction.Item!] * instruction.Count));
             }
 
-            return await Task.FromResult(ExecutionResult.Done());
+            return await step.DoneAsync();
         }
     }
 }

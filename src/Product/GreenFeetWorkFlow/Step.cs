@@ -58,7 +58,7 @@ public class Step
     /// <summary> The 'parent', i.e. the step which created this step. If there is no parent, 0 is used.
     /// Steps created from a step will have its parent set (unless you overwrite it). 
     /// </summary>
-    public int CreatedByStepId { get; set; } 
+    public int CreatedByStepId { get; set; }
 
     /// <summary> The earliest point in time the step will be executed </summary>
     public DateTime ScheduleTime { get; set; }
