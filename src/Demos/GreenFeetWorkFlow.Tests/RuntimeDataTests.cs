@@ -96,7 +96,7 @@ public class RuntimeDataTests
     {
         Dictionary<int, int> results = new();
 
-        var engine = helper.CreateEngine(("v1/fail-and-reactivate", GenericStepHandler.Create(_ => throw new FailCurrentStepException())));
+        var engine = helper.CreateEngine(("v1/fail-and-reactivate", GenericImplementation.Create(_ => throw new FailCurrentStepException())));
 
         var stepState = 12345;
         var step = new Step("v1/fail-and-reactivate", stepState) { FlowId = helper.FlowId, CorrelationId = helper.CorrelationId };

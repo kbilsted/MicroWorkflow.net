@@ -28,7 +28,7 @@ public class WorkerTests
 
         helper.CreateAndRunEngine(
             new[] { new Step("OneStep") { InitialState = 1234, FlowId = helper.FlowId } },
-            ("OneStep", new GenericStepHandler(step =>
+            ("OneStep", new GenericImplementation(step =>
             {
                 int counter = helper.Formatter!.Deserialize<int>(step.State);
                 stepResult = $"hello {counter}";
@@ -46,7 +46,7 @@ public class WorkerTests
         const string name = "v1/When_adding_two_steps_in_the_same_transaction_Then_succeed";
 
         var engine = helper.CreateEngine(
-            (name, new GenericStepHandler(step =>
+            (name, new GenericImplementation(step =>
             {
                 int counter = helper.Formatter!.Deserialize<int>(step.State);
                 stepResults[counter] = $"hello {counter}";
@@ -71,7 +71,7 @@ public class WorkerTests
              new Step() { Name = "test-throw-failstepexception", FlowId = helper.FlowId },
             (
                 "test-throw-failstepexception",
-                GenericStepHandler.Create(step => throw new FailCurrentStepException("some description"))
+                GenericImplementation.Create(step => throw new FailCurrentStepException("some description"))
             ));
 
         helper.AssertTableCounts(helper.FlowId, ready: 0, done: 0, failed: 1);
@@ -85,7 +85,7 @@ public class WorkerTests
             new Step("test-throw-failstepexception_from_step_variable") { FlowId = helper.FlowId },
             (
                 "test-throw-failstepexception_from_step_variable",
-                GenericStepHandler.Create(step => throw step.FailAsException("some description"))
+                GenericImplementation.Create(step => throw step.FailAsException("some description"))
             ));
 
         helper.AssertTableCounts(helper.FlowId, ready: 0, done: 0, failed: 1);
@@ -100,7 +100,7 @@ public class WorkerTests
         var engine = helper.CreateEngine(
             (
                 name,
-                GenericStepHandler.Create(step => throw step.FailAsException(newSteps: new Step(nameNewStep))))
+                GenericImplementation.Create(step => throw step.FailAsException(newSteps: new Step(nameNewStep))))
             );
         engine.Runtime.Data.AddStep(new Step(name) { FlowId = helper.FlowId });
         await engine.StartAsSingleWorker(cfg);
@@ -174,7 +174,7 @@ public class WorkerTests
             new Step("test-throw-exception", "hej") { FlowId = helper.FlowId },
             (
                 "test-throw-exception",
-                GenericStepHandler.Create(step =>
+                GenericImplementation.Create(step =>
                 {
                     dbid = step.Id;
                     throw new Exception("exception message");
@@ -194,7 +194,7 @@ public class WorkerTests
     [Test]
     public void OneStep_fail()
     {
-        var impl = ("onestep_fails", new GenericStepHandler(step => step.Fail()));
+        var impl = ("onestep_fails", new GenericImplementation(step => step.Fail()));
 
         helper.CreateAndRunEngine(new Step("onestep_fails") { FlowId = helper.FlowId }, impl);
 
@@ -206,7 +206,7 @@ public class WorkerTests
     {
         int? stepResult = null;
 
-        var impl = (helper.RndName, new GenericStepHandler(step =>
+        var impl = (helper.RndName, new GenericImplementation(step =>
         {
             stepResult = step.ExecutionCount;
             return ExecutionResult.Done();
@@ -223,7 +223,7 @@ public class WorkerTests
     {
         string? stepResult = null;
 
-        var impl = ("OneStep_Repeating_Thrice", new GenericStepHandler(step =>
+        var impl = ("OneStep_Repeating_Thrice", new GenericImplementation(step =>
         {
             int counter = helper.Formatter!.Deserialize<int>(step.State);
 
@@ -246,8 +246,8 @@ public class WorkerTests
     {
         string? stepResult = null;
 
-        var implA = ("check-flowid/a", new GenericStepHandler(step => step.Done(new Step("check-flowid/b"))));
-        var implB = ("check-flowid/b", new GenericStepHandler(step =>
+        var implA = ("check-flowid/a", new GenericImplementation(step => step.Done(new Step("check-flowid/b"))));
+        var implB = ("check-flowid/b", new GenericImplementation(step =>
         {
             stepResult = step.FlowId;
             return ExecutionResult.Done();
@@ -265,8 +265,8 @@ public class WorkerTests
     {
         string? stepResult = null;
 
-        var implA = ("check-correlationid/a", new GenericStepHandler(step => step.Done(new Step("check-correlationid/b"))));
-        var implB = ("check-correlationid/b", new GenericStepHandler(step =>
+        var implA = ("check-correlationid/a", new GenericImplementation(step => step.Done(new Step("check-correlationid/b"))));
+        var implB = ("check-correlationid/b", new GenericImplementation(step =>
         {
             stepResult = step.CorrelationId;
             return ExecutionResult.Done();
@@ -291,7 +291,7 @@ public class WorkerTests
         string oldId = Guid.NewGuid().ToString();
         string newId = Guid.NewGuid().ToString();
 
-        var cookHandler = ("check-correlationidchange/cookFood", new GenericStepHandler(step =>
+        var cookHandler = ("check-correlationidchange/cookFood", new GenericImplementation(step =>
         {
             return step.Done()
                 .With(new Step("check-correlationidchange/eat")
@@ -299,7 +299,7 @@ public class WorkerTests
                     CorrelationId = newId,
                 });
         }));
-        var eatHandler = ("check-correlationidchange/eat", new GenericStepHandler(step =>
+        var eatHandler = ("check-correlationidchange/eat", new GenericImplementation(step =>
         {
             stepResult = step.CorrelationId;
             return step.Done();
@@ -354,7 +354,7 @@ public class WorkerTests
 
         var name = "When_step_is_in_the_future_Then_it_wont_execute";
 
-        var engine = helper.CreateEngine((name, GenericStepHandler.Create(step => { stepResult = step.FlowId; return step.Done(); })));
+        var engine = helper.CreateEngine((name, GenericImplementation.Create(step => { stepResult = step.FlowId; return step.Done(); })));
         Step futureStep = new()
         {
             Name = name,
@@ -375,7 +375,7 @@ public class WorkerTests
 
         var name = "When_step_is_in_the_future_Then_it_can_be_activated_to_execute_now";
 
-        var engine = helper.CreateEngine((name, GenericStepHandler.Create(step => { stepResult = step.FlowId; return step.Done(); })));
+        var engine = helper.CreateEngine((name, GenericImplementation.Create(step => { stepResult = step.FlowId; return step.Done(); })));
         Step futureStep = new()
         {
             Name = name,
@@ -400,7 +400,7 @@ public class WorkerTests
         string args = "1234";
         var name = "When_step_is_in_the_future_Then_it_can_be_activated_to_execute_now_with_args";
 
-        var engine = helper.CreateEngine((name, GenericStepHandler.Create(step => { stepResult = step.ActivationArgs; return step.Done(); })));
+        var engine = helper.CreateEngine((name, GenericImplementation.Create(step => { stepResult = step.ActivationArgs; return step.Done(); })));
         Step futureStep = new()
         {
             Name = name,
@@ -421,7 +421,7 @@ public class WorkerTests
     {
         string? stepResult = null;
 
-        var cookHandler = ("undefined-next-step/cookFood", new GenericStepHandler((step) =>
+        var cookHandler = ("undefined-next-step/cookFood", new GenericImplementation((step) =>
         {
             stepResult = $"cooking {"potatoes"}";
             return step.Done(new Step("undefined-next-step/eat", "potatoes"));
@@ -445,7 +445,7 @@ public class WorkerTests
         var stepDriveToShop = new Step("v1/forkjoin/drive-to-shop", new[] { "milk", "cookies" });
         var payForStuff = new Step("v1/forkjoin/pay");
 
-        var drive = ("v1/forkjoin/drive-to-shop", GenericStepHandler.Create(step =>
+        var drive = ("v1/forkjoin/drive-to-shop", GenericImplementation.Create(step =>
         {
             stepResult = $"driving";
             var id = Guid.NewGuid();
@@ -455,7 +455,7 @@ public class WorkerTests
             return step.Done(milk, cookies, pay);
         }));
 
-        var checkout = ("v1/forkjoin/pay-for-all", GenericStepHandler.Create(step =>
+        var checkout = ("v1/forkjoin/pay-for-all", GenericImplementation.Create(step =>
         {
             (int count, Guid id, DateTime maxWait) = helper.Formatter!.Deserialize<(int, Guid, DateTime)>(step.State);
             var sales = GroceryBuyer.SalesDb.Where(x => x.id == id).ToArray();

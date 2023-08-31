@@ -35,7 +35,7 @@ public class PerformanceTests
             var steps = correlationIds.Select(x => new Step("v1/performanc/many-reruns", 1) { CorrelationId = x }).ToArray();
             const int max = 1000;
 
-            var runner = ("v1/performanc/many-reruns", GenericStepHandler.Create(step =>
+            var runner = ("v1/performanc/many-reruns", GenericImplementation.Create(step =>
             {
                 int counter = testhelper.Formatter!.Deserialize<int>(step.State);
 
@@ -88,7 +88,7 @@ public class PerformanceTests
             var steps = correlationIds.Select(x => new Step("v1/performanc/many-new-steps", 1) { CorrelationId = x }).ToArray();
             const int max = 100;
 
-            var runner = ("v1/performanc/many-new-steps", GenericStepHandler.Create(step =>
+            var runner = ("v1/performanc/many-new-steps", GenericImplementation.Create(step =>
             {
                 int counter = testhelper.Formatter!.Deserialize<int>(step.State);
 

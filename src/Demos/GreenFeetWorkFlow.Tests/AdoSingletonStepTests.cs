@@ -23,7 +23,7 @@ public class AdoSingletonStepTests
             FlowId = helper.FlowId
         };
         helper.CreateAndRunEngine(step,
-            ((string, IStepImplementation))(helper.RndName, new GenericStepHandler(step =>
+            ((string, IStepImplementation))(helper.RndName, new GenericImplementation(step =>
             {
                 stepResult = $"hello";
                 return ExecutionResult.Done();

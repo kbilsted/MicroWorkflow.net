@@ -22,7 +22,7 @@ public class TestHelper
         => CreateAndRunEngine(
             steps,
             1,
-            stepHandlers.Select(x => (x.name, (IStepImplementation)new GenericStepHandler(x.code))).ToArray());
+            stepHandlers.Select(x => (x.name, (IStepImplementation)new GenericImplementation(x.code))).ToArray());
 
     public void CreateAndRunEngine(Step step, params (string, IStepImplementation)[] stepHandlers)
     => CreateAndRunEngine(new[] { step }, 1, stepHandlers);
