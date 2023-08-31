@@ -1,7 +1,8 @@
-﻿using Microsoft.Data.SqlClient;
-using System.Diagnostics;
+﻿using System.Diagnostics;
+using GreenFeetWorkflow;
+using Microsoft.Data.SqlClient;
 
-namespace GreenFeetWorkflow.AdoPersistence;
+namespace GreenFeetWorkFlow.AdoMsSql;
 
 public class SqlServerPersister : IStepPersister
 {
@@ -13,15 +14,10 @@ public class SqlServerPersister : IStepPersister
     private readonly IWorkflowLogger logger;
     SqlConnection? connection = null;
 
-    SqlTransaction? Transaction;
+    SqlTransaction? transaction;
 
-    readonly Guid PersisterId = Guid.NewGuid();
-
-    public void SetTransaction(object transaction)
-    {
-        Transaction = (SqlTransaction?)transaction;
-    }
-
+    readonly Guid persisterId = Guid.NewGuid();
+  
     readonly AdoHelper helper = new();
 
     public SqlServerPersister(string connectionString, IWorkflowLogger logger)
@@ -30,17 +26,22 @@ public class SqlServerPersister : IStepPersister
         this.logger = logger;
     }
 
+    public void SetTransaction(object transaction)
+    {
+        this.transaction = (SqlTransaction?)transaction;
+    }
+
     public object CreateTransaction()
     {
-        if (Transaction != null)
+        if (transaction != null)
             throw new InvalidOperationException("Cannot make a new transaction when a transaction is executing");
 
         connection = new SqlConnection(connectionString);
 
         connection.Open();
 
-        Transaction = connection.BeginTransaction(System.Data.IsolationLevel.ReadCommitted);
-        return Transaction;
+        transaction = connection.BeginTransaction(System.Data.IsolationLevel.ReadCommitted);
+        return transaction;
     }
 
     public T InTransaction<T>(Func<T> code, object? transaction = null)
@@ -70,17 +71,17 @@ public class SqlServerPersister : IStepPersister
 
     public Dictionary<StepStatus, IEnumerable<Step>> SearchSteps(SearchModel model)
     {
-        if (Transaction == null)
+        if (transaction == null)
             throw new ArgumentException("Missing transaction. Remember to create a transaction before calling");
 
         List<Step> ready = model.FetchLevel.Ready
-            ? helper.SearchSteps(TableNameReady, model, Transaction!)
+            ? helper.SearchSteps(TableNameReady, model, transaction!)
             : new List<Step>();
         List<Step> done = model.FetchLevel.Done
-            ? helper.SearchSteps(TableNameDone, model, Transaction!)
+            ? helper.SearchSteps(TableNameDone, model, transaction!)
             : new List<Step>();
         List<Step> fail = model.FetchLevel.Fail
-            ? helper.SearchSteps(TableNameFail, model, Transaction!)
+            ? helper.SearchSteps(TableNameFail, model, transaction!)
             : new List<Step>();
 
         return new Dictionary<StepStatus, IEnumerable<Step>>()
@@ -93,33 +94,33 @@ public class SqlServerPersister : IStepPersister
 
     public Step? GetAndLockReadyStep()
     {
-        if (Transaction == null)
+        if (transaction == null)
             throw new ArgumentException("Missing transaction. Remember to create a transaction before calling");
 
-        return helper.GetAndLockReadyStep(TableNameReady, Transaction!);
+        return helper.GetAndLockReadyStep(TableNameReady, transaction!);
     }
 
     public Step? GetStep(int id)
     {
-        if (Transaction == null)
+        if (transaction == null)
             throw new ArgumentException("Missing transaction. Remember to create a transaction before calling");
 
-        return helper.GetStep(TableNameReady, id, Transaction!);
+        return helper.GetStep(TableNameReady, id, transaction!);
     }
 
     public void Commit()
     {
         if (logger.TraceLoggingEnabled)
             logger.LogTrace($"{nameof(SqlServerPersister)}: Commit Transaction", null, new Dictionary<string, object?>() {
-                { "PersisterId", PersisterId } ,
+                { "PersisterId", persisterId } ,
                 { "Stack", new StackTrace().ToString()} ,
             });
 
-        if (Transaction == null)
+        if (transaction == null)
             throw new InvalidOperationException("There is no transaction to commit");
-        Transaction.Commit();
-        Transaction.Dispose();
-        Transaction = null;
+        transaction.Commit();
+        transaction.Dispose();
+        transaction = null;
 
         if (connection == null)
             throw new InvalidOperationException("There is no open connection to close");
@@ -131,13 +132,13 @@ public class SqlServerPersister : IStepPersister
     {
         if (logger.TraceLoggingEnabled)
             logger.LogTrace($"{nameof(SqlServerPersister)}: Rollback Transaction", null,
-                new Dictionary<string, object?>() { { "PersisterId", PersisterId } });
+                new Dictionary<string, object?>() { { "PersisterId", persisterId } });
 
-        if (Transaction == null)
+        if (transaction == null)
             throw new InvalidOperationException("There is no transaction to rollback");
-        Transaction.Rollback();
-        Transaction.Dispose();
-        Transaction = null;
+        transaction.Rollback();
+        transaction.Dispose();
+        transaction = null;
 
         if (connection == null)
             throw new InvalidOperationException("There is no open connection");
@@ -147,41 +148,41 @@ public class SqlServerPersister : IStepPersister
 
     public Dictionary<StepStatus, int> CountTables(string? flowId = null)
     {
-        if (Transaction == null)
+        if (transaction == null)
             throw new ArgumentException("Missing transaction. Remember to create a transaction before calling");
 
-        var result = helper.CountTables(flowId, TableNameReady, TableNameDone, TableNameFail, Transaction!);
+        var result = helper.CountTables(flowId, TableNameReady, TableNameDone, TableNameFail, transaction!);
         return result;
     }
 
 
     public int Update(StepStatus target, Step step)
     {
-        if (Transaction == null)
+        if (transaction == null)
             throw new ArgumentException("Missing transaction. Remember to create a transaction before calling");
 
         var name = GetTableName(target);
-        return helper.Update(step, name, Transaction!);
+        return helper.Update(step, name, transaction!);
     }
 
     public int Insert(StepStatus target, Step step)
     {
-        if (Transaction == null)
+        if (transaction == null)
             throw new ArgumentException("Missing transaction. Remember to create a transaction before calling");
 
-        return helper.InsertStep(target, GetTableName(target), step, Transaction!);
+        return helper.InsertStep(target, GetTableName(target), step, transaction!);
     }
 
     public int[] Insert(StepStatus target, Step[] steps)
     {
-        if (Transaction == null)
+        if (transaction == null)
             throw new ArgumentException("Missing transaction. Remember to create a transaction before calling");
 
         var result = new List<int>(steps.Length);
 
         foreach (var x in steps)
         {
-            result.Add(helper.InsertStep(target, TableNameReady, x, Transaction!));
+            result.Add(helper.InsertStep(target, TableNameReady, x, transaction!));
         }
 
         return result.ToArray();
@@ -189,11 +190,11 @@ public class SqlServerPersister : IStepPersister
 
     public int Delete(StepStatus target, int id)
     {
-        if (Transaction == null)
+        if (transaction == null)
             throw new ArgumentException("Missing transaction. Remember to create a transaction before calling");
 
         var name = GetTableName(target);
-        return helper.Delete(id, name, Transaction!);
+        return helper.Delete(id, name, transaction!);
     }
 
     private string GetTableName(StepStatus target)
@@ -211,17 +212,21 @@ public class SqlServerPersister : IStepPersister
     }
     public void Dispose()
     {
-        if (logger.TraceLoggingEnabled)
-            logger.LogTrace($"{nameof(SqlServerPersister)}: DISPOSE()", null, new Dictionary<string, object?>() { { "PersisterId", PersisterId } });
 
-        if (Transaction != null)
+        if (transaction != null)
         {
-            Transaction.Dispose();
-            Transaction = null;
+            if (logger.TraceLoggingEnabled)
+                logger.LogTrace($"{nameof(SqlServerPersister)}: Dispose() unclosed transaction", null, new Dictionary<string, object?>() { { "persisterId", persisterId } });
+
+            transaction.Dispose();
+            transaction = null;
         }
 
         if (connection != null)
         {
+            if (logger.TraceLoggingEnabled)
+                logger.LogTrace($"{nameof(SqlServerPersister)}: Dispose() unclosed connection", null, new Dictionary<string, object?>() { { "persisterId", persisterId } });
+
             connection.Dispose();
             connection = null;
         }
