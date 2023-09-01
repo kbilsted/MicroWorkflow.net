@@ -13,6 +13,8 @@
 		<Title>Newtonsoft Json integration</Title>
 		<PackageTags>NewtonsoftJson</PackageTags>
 		<PackageReadmeFile>readme.md</PackageReadmeFile>
+		<GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 	</PropertyGroup>
 
 	<ItemGroup>

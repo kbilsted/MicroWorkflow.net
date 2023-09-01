@@ -12,6 +12,9 @@
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<Title>Ado Microsoft SQL Server Integration</Title>
 		<PackageReadmeFile>readme.md</PackageReadmeFile>
+
+		<GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 	</PropertyGroup>
 
 	<ItemGroup>

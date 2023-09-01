@@ -31,6 +31,7 @@
 
 		<GeneratePackageOnBuild>False</GeneratePackageOnBuild>
 
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 		<PackageId>$(AssemblyName)</PackageId>
 	</PropertyGroup>
 
