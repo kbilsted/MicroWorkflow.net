@@ -8,7 +8,7 @@ namespace GreenFeetWorkflow.Tests;
 public class WorkerTests
 {
     TestHelper helper = new TestHelper();
-    private readonly WfRuntimeConfiguration cfg = new WfRuntimeConfiguration(
+    private readonly WorkflowConfiguration cfg = new WorkflowConfiguration(
         new WorkerConfig()
         {
             StopWhenNoWork = true
@@ -408,6 +408,8 @@ public class WorkerTests
             ScheduleTime = DateTime.Now.AddYears(35)
         };
         var id = engine.Data.AddStep(futureStep, null);
+        var count = engine.Data.ActivateStep(id, args);
+        count.Should().Be(1);
         engine.Start(cfg);
 
         stepResult.Should().Be(JsonConvert.SerializeObject(args));

@@ -18,6 +18,14 @@ public class TestHelper
 
     readonly ContainerBuilder builder = new ContainerBuilder();
 
+    readonly LoggerConfiguration loggerConfiguration = new LoggerConfiguration()
+    {
+        ErrorLoggingEnabledUntil = DateTime.MaxValue,
+        InfoLoggingEnabledUntil = DateTime.MaxValue,
+        DebugLoggingEnabledUntil = DateTime.MaxValue,
+        TraceLoggingEnabledUntil = DateTime.MaxValue,
+    };
+
     public void CreateAndRunEngine(Step[] steps, params (string name, Func<Step, ExecutionResult> code)[] stepHandlers)
         => CreateAndRunEngine(
             steps,
@@ -31,24 +39,12 @@ public class TestHelper
     public void CreateAndRunEngine(Step[] steps, params (string, IStepImplementation)[] stepHandlers)
         => CreateAndRunEngine(steps, 1, stepHandlers);
 
-    public void TurnOffLogging()
-    {
-        logger!.TraceLoggingEnabled = true;
-        logger.DebugLoggingEnabled = true;
-        logger.InfoLoggingEnabled = true;
-        logger.ErrorLoggingEnabled = true;
-    }
-
     public readonly string ConnectionString = "Server=localhost;Database=adotest;Integrated Security=True;TrustServerCertificate=True";
 
 
     public WorkflowEngine CreateEngine(params (string, IStepImplementation)[] stepHandlers)
     {
         logger = new DiagnosticsStepLogger();
-        logger.TraceLoggingEnabled = true;
-        logger.DebugLoggingEnabled = true;
-        logger.InfoLoggingEnabled = true;
-        logger.ErrorLoggingEnabled = true;
         ((DiagnosticsStepLogger)logger).AddNestedLogger(new ConsoleStepLogger());
 
         builder.RegisterInstances(logger, stepHandlers);
@@ -65,10 +61,10 @@ public class TestHelper
     public void CreateAndRunEngineForPerformance(Step[] steps, int workerCount, params (string, IStepImplementation)[] stepHandlers)
     {
         logger = new DiagnosticsStepLogger();
-        logger.TraceLoggingEnabled = false;
-        logger.InfoLoggingEnabled = true;
-        logger.DebugLoggingEnabled = true;
-        logger.ErrorLoggingEnabled = true;
+        logger.Configuration.TraceLoggingEnabledUntil = DateTime.MinValue;
+        logger.Configuration.DebugLoggingEnabledUntil = DateTime.MinValue;
+        logger.Configuration.InfoLoggingEnabledUntil = DateTime.MinValue;
+        logger.Configuration.ErrorLoggingEnabledUntil = DateTime.MinValue;
 
         builder.RegisterInstances(logger, stepHandlers);
         builder.Register<IStepPersister>(c => new SqlServerPersister(ConnectionString, logger));
@@ -80,7 +76,7 @@ public class TestHelper
 
         Engine.Data.AddSteps(steps);
 
-        var workflowConfiguration = new WfRuntimeConfiguration(new WorkerConfig()
+        var workflowConfiguration = new WorkflowConfiguration(new WorkerConfig()
         {
             StopWhenNoWork = false
         }, NumberOfWorkers: workerCount);
@@ -102,7 +98,7 @@ public class TestHelper
 
         Engine.Data.AddSteps(steps);
 
-        var workflowConfiguration = new WfRuntimeConfiguration(new WorkerConfig()
+        var workflowConfiguration = new WorkflowConfiguration(new WorkerConfig()
         {
             StopWhenNoWork = workerCount == 1,
         }, NumberOfWorkers: workerCount);
@@ -127,7 +123,7 @@ public class TestHelper
 
         Engine.Data.AddSteps(steps);
 
-        var workflowConfiguration = new WfRuntimeConfiguration(new WorkerConfig()
+        var workflowConfiguration = new WorkflowConfiguration(new WorkerConfig()
         { StopWhenNoWork = workerCount == 1 },
         NumberOfWorkers: workerCount);
 

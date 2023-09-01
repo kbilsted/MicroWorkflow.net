@@ -6,16 +6,15 @@ namespace GreenFeetWorkflow;
 
 public abstract class GenericStepLogger : IWorkflowLogger
 {
-    bool IWorkflowLogger.TraceLoggingEnabled { get; set; } = false;
-    bool IWorkflowLogger.DebugLoggingEnabled { get; set; } = true;
-    bool IWorkflowLogger.InfoLoggingEnabled { get; set; } = true;
-    bool IWorkflowLogger.ErrorLoggingEnabled { get; set; } = true;
+    public LoggerConfiguration Configuration { get; init; }
 
     protected Action<string, Exception?, string?, Dictionary<string, object?>?>? Code;
+
     private IWorkflowLogger? nestedLogger;
 
-    protected GenericStepLogger(Action<string, Exception?, string?, Dictionary<string, object?>?>? code)
+    protected GenericStepLogger(LoggerConfiguration configuration, Action<string, Exception?, string?, Dictionary<string, object?>?>? code)
     {
+        Configuration = configuration;
         Code = code;
     }
 
@@ -79,7 +78,7 @@ public class ConsoleStepLogger : GenericStepLogger
 {
     private static readonly object Lock = new object();
 
-    public ConsoleStepLogger() : base(Print)
+    public ConsoleStepLogger() : base(new LoggerConfiguration(), Print)
     {
     }
 
@@ -107,7 +106,7 @@ public class ConsoleStepLogger : GenericStepLogger
 /// </summary>
 public class DiagnosticsStepLogger : GenericStepLogger
 {
-    public DiagnosticsStepLogger() : base(Print)
+    public DiagnosticsStepLogger() : base(new LoggerConfiguration(), Print)
     {
     }
 
@@ -126,7 +125,7 @@ public class CollectingLoggerForUnittest : GenericStepLogger
     protected readonly object Lock = new();
     public List<LogLine> Logs = new();
 
-    public CollectingLoggerForUnittest() : base(null)
+    public CollectingLoggerForUnittest(LoggerConfiguration configuration) : base(configuration, null)
     {
         Code = Store;
     }

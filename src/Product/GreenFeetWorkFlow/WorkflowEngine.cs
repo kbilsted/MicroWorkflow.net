@@ -7,7 +7,7 @@ public class WorkflowEngine
     public string? EngineName { get; set; }
     public CancellationToken StoppingToken { get; private set; }
 
-    public IReadOnlyList<Worker>? WorkerList { get; private set; }
+    public IReadOnlyList<Worker>? Workers { get; private set; }
     public Thread[] Threads { get; private set; } = new Thread[0];
 
 
@@ -19,8 +19,8 @@ public class WorkflowEngine
         this.logger = logger;
         this.iocContainer = iocContainer;
 
-        data = new WfRuntimeData(iocContainer, formatter, logger);
-        Runtime = new WfRuntime(data, new WfRuntimeMetrics(iocContainer), new WfRuntimeConfiguration(new WorkerConfig(), 0));
+        Data = new WfRuntimeData(iocContainer, formatter, logger);
+        Metrics = new WfRuntimeMetrics(iocContainer);
     }
 
     /// <summary> Access the steps </summary>
@@ -31,42 +31,43 @@ public class WorkflowEngine
 
     /// <summary> Engine configuration </summary>
     public WorkflowConfiguration Configuration { get; set; }
+
     static string MakeWorkerName(int i)
         => $"worker/{Environment.MachineName}/process/{Environment.ProcessId}/{i}";
 
     static string MakeEngineName()
         => $"engine/{Environment.MachineName}/process/{Environment.ProcessId}/{Random.Shared.Next(99999)}";
 
-    void Init(WfRuntimeConfiguration configuration, string? engineName = null)
+    void Init(WorkflowConfiguration configuration, string? engineName = null)
     {
         if (logger.InfoLoggingEnabled)
             logger.LogInfo($"{nameof(WorkflowEngine)}: starting engine" + engineName, null, null);
 
         Configuration = configuration;
+        configuration.LoggerConfiguration = logger.Configuration;
 
         EngineName = engineName ?? MakeEngineName();
 
         var workers = new Worker[configuration.NumberOfWorkers];
         for (int i = 0; i < configuration.NumberOfWorkers; i++)
         {
-            workers[i] = new Worker(logger, iocContainer, data, configuration.WorkerConfig)
+            workers[i] = new Worker(logger, iocContainer, Data, configuration.WorkerConfig)
             {
                 WorkerName = MakeWorkerName(i),
             };
         }
-        WorkerList = workers;
+        Workers = workers;
     }
-
 
     /// <summary> Starts the engine using 1 or more background threads </summary>
     public void Start(
-        WfRuntimeConfiguration configuration,
+        WorkflowConfiguration configuration,
         string? engineName = null,
         CancellationToken? stoppingToken = null)
     {
         Init(configuration, engineName);
 
-        Threads = WorkerList!
+        Threads = Workers!
            .Select((x, i) =>
            {
                var t = new Thread(async () => await x.StartAsync(stoppingToken ?? CancellationToken.None))
@@ -87,7 +88,7 @@ public class WorkflowEngine
     }
 
     public async Task StartAsync(
-        WfRuntimeConfiguration configuration,
+        WorkflowConfiguration configuration,
         string? engineName = null,
         CancellationToken? stoppingToken = null)
     {
@@ -97,13 +98,16 @@ public class WorkflowEngine
 
     /// <summary> Start the engine with the current thread as the worker. Also use this if you have trouble debugging weird scenarios </summary>
     public async Task StartAsSingleWorker(
-        WfRuntimeConfiguration configuration,
+        WorkflowConfiguration configuration,
         string? engineName = null,
         CancellationToken? stoppingToken = null)
     {
         Init(configuration, engineName);
 
-        await WorkerList!.Single().StartAsync(stoppingToken ?? CancellationToken.None);
+        if (configuration.NumberOfWorkers != 1)
+            throw new ArgumentException($"{nameof(configuration.NumberOfWorkers)} must have the value '1' since we are running in the current thread.");
+
+        await Workers!.Single().StartAsync(stoppingToken ?? CancellationToken.None);
     }
 }
 

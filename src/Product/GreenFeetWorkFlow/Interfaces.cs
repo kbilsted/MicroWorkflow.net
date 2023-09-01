@@ -7,10 +7,11 @@ public interface IStepImplementation
 
 public interface IWorkflowLogger
 {
-    public bool TraceLoggingEnabled { get; set; }
-    public bool DebugLoggingEnabled { get; set; }
-    public bool InfoLoggingEnabled { get; set; }
-    public bool ErrorLoggingEnabled { get; set; }
+    LoggerConfiguration Configuration { get; init; }
+    public bool TraceLoggingEnabled => Configuration.TraceLoggingEnabled;
+    public bool DebugLoggingEnabled => Configuration.DebugLoggingEnabled;
+    public bool InfoLoggingEnabled => Configuration.InfoLoggingEnabled;
+    public bool ErrorLoggingEnabled => Configuration.ErrorLoggingEnabled;
 
     void LogTrace(string? msg, Exception? exception, Dictionary<string, object?>? arguments);
     void LogDebug(string? msg, Exception? exception, Dictionary<string, object?>? arguments);

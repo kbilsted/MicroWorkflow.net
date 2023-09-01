@@ -27,7 +27,7 @@ public class AdoHelper
             .Where(model.FlowId, "[FlowId] = @FlowId")
             .Where(model.Description, "[Description] LIKE @Description");
 
-        if (logger.InfoLoggingEnabled)
+        if (logger.TraceLoggingEnabled)
             logger.LogTrace($"{nameof(SearchSteps)}: Sql: {(string)sql}", null, null);
 
         using var cmd = new SqlCommand(sql, tx.Connection, tx);
@@ -65,7 +65,7 @@ public class AdoHelper
         FROM {tableName} WITH(ROWLOCK, UPDLOCK) 
         WHERE [Id] = @id";
 
-        if (logger.InfoLoggingEnabled)
+        if (logger.TraceLoggingEnabled)
             logger.LogTrace($"{nameof(GetStep)}: Sql: {(string)sql}", null, null);
 
         var cmd = new SqlCommand(sql, tx.Connection, tx);
@@ -80,7 +80,7 @@ public class AdoHelper
          FROM {tableName} WITH(ROWLOCK, UPDLOCK, READPAST) 
          WHERE [ScheduleTime] <= @earliest";
 
-        if (logger.InfoLoggingEnabled)
+        if (logger.TraceLoggingEnabled)
             logger.LogTrace($"{nameof(GetAndLockReadyStep)}: Sql: {(string)sql}", null, null);
 
         using var cmd = new SqlCommand(sql, tx.Connection, tx);
@@ -180,7 +180,7 @@ SET
 ,[CorrelationId] = @CorrelationId
  WHERE Id = @Id";
 
-        if (logger.InfoLoggingEnabled)
+        if (logger.TraceLoggingEnabled)
             logger.LogTrace($"{nameof(Update)}: Sql: {(string)sql}", null, null);
 
         var cmd = new SqlCommand(sql, tx.Connection, tx);
@@ -269,7 +269,7 @@ SET
            ,@CreatedByStepId) 
  select cast(scope_identity() as int)";
 
-            if (logger.InfoLoggingEnabled)
+            if (logger.TraceLoggingEnabled)
                 logger.LogTrace($"{nameof(InsertReady)}: Sql: {(string)sql}", null, null);
 
             using SqlCommand cmd = new(sql, tx.Connection, tx);
@@ -319,7 +319,7 @@ SET
            ,@CreatedTime
            ,@CreatedByStepId) ";
 
-            if (logger.InfoLoggingEnabled)
+            if (logger.TraceLoggingEnabled)
                 logger.LogTrace($"{nameof(InsertDoneFail)}: Sql: {(string)sql}", null, null);
 
 
@@ -340,7 +340,7 @@ SET
                 FROM {name} WITH (NOLOCK)")
                 .Where(flowId, "[FlowId] = @FlowId");
 
-            if (logger.InfoLoggingEnabled)
+            if (logger.TraceLoggingEnabled)
                 logger.LogTrace($"{nameof(CountTables)}: Sql: {(string)sql}", null, null);
 
             var cmd = new SqlCommand(sql, tx.Connection, tx);

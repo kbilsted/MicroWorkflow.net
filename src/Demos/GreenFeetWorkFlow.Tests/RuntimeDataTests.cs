@@ -9,7 +9,7 @@ public class RuntimeDataTests
 {
     TestHelper helper = new TestHelper();
 
-    private readonly WfRuntimeConfiguration cfg = new WfRuntimeConfiguration(
+    private readonly WorkflowConfiguration cfg = new WorkflowConfiguration(
         new WorkerConfig() { StopWhenNoWork = true },
         NumberOfWorkers: 1);
 
