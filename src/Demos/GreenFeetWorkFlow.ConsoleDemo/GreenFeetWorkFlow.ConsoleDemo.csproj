@@ -10,7 +10,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="GreenFeetWorkFlow" Version="0.0.0.8" />
+		<PackageReference Include="GreenFeetWorkFlow" Version="0.8.0.4" />
 
 <!--
 		<ProjectReference Include="..\..\Product\GreenFeetWorkFlow\GreenFeetWorkFlow.csproj" />
