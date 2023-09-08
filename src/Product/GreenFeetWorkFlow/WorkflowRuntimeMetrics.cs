@@ -1,10 +1,10 @@
 ﻿namespace GreenFeetWorkflow;
 
-public class WfRuntimeMetrics
+public class WorkflowRuntimeMetrics
 {
     private readonly IWorkflowIocContainer container;
 
-    public WfRuntimeMetrics(IWorkflowIocContainer container)
+    public WorkflowRuntimeMetrics(IWorkflowIocContainer container)
     {
         this.container = container;
     }

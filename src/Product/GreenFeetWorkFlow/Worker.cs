@@ -16,12 +16,12 @@ public class Worker
 
     readonly IWorkflowLogger logger;
     readonly IWorkflowIocContainer iocContainer;
-    private readonly WfRuntimeData engineRuntimeData;
+    private readonly WorkflowRuntimeData engineRuntimeData;
     private readonly WorkerConfig workerConfig;
 
     readonly Stopwatch stopwatch = new();
 
-    public Worker(IWorkflowLogger logger, IWorkflowIocContainer iocContainer, WfRuntimeData runtime, WorkerConfig config)
+    public Worker(IWorkflowLogger logger, IWorkflowIocContainer iocContainer, WorkflowRuntimeData runtime, WorkerConfig config)
     {
         this.logger = logger;
         this.iocContainer = iocContainer;
@@ -297,7 +297,7 @@ public class Worker
         var future = now + Min(
             TimeSpan.FromHours(2),
             TimeSpan.FromSeconds(step.ExecutionCount * step.ExecutionCount * step.ExecutionCount));
-        return WfRuntimeData.TrimToSeconds(future);
+        return WorkflowRuntimeData.TrimToSeconds(future);
     }
 
     static TimeSpan Min(TimeSpan t1, TimeSpan t2) => t1 > t2 ? t2 : t1;
@@ -308,7 +308,7 @@ public class Worker
 
         if (result.Status == StepStatus.Ready)
         {
-            step.ScheduleTime = WfRuntimeData.TrimToSeconds(result.ScheduleTime)
+            step.ScheduleTime = WorkflowRuntimeData.TrimToSeconds(result.ScheduleTime)
                 ?? CalculateScheduleTime(step);
 
             if (result.NewState != null)

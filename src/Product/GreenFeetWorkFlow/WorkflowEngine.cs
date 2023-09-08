@@ -19,15 +19,15 @@ public class WorkflowEngine
         this.logger = logger;
         this.iocContainer = iocContainer;
 
-        Data = new WfRuntimeData(iocContainer, formatter, logger);
-        Metrics = new WfRuntimeMetrics(iocContainer);
+        Data = new WorkflowRuntimeData(iocContainer, formatter, logger);
+        Metrics = new WorkflowRuntimeMetrics(iocContainer);
     }
 
     /// <summary> Access the steps </summary>
-    public WfRuntimeData Data { get; }
+    public WorkflowRuntimeData Data { get; }
 
     /// <summary> Performance metrics </summary>
-    public WfRuntimeMetrics Metrics { get; set; }
+    public WorkflowRuntimeMetrics Metrics { get; set; }
 
     /// <summary> Engine configuration </summary>
     public WorkflowConfiguration Configuration { get; set; }

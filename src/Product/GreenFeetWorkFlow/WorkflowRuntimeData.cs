@@ -1,12 +1,12 @@
 ﻿namespace GreenFeetWorkflow;
 
-public class WfRuntimeData
+public class WorkflowRuntimeData
 {
     private readonly IWorkflowIocContainer iocContainer;
     private readonly IWorkflowStepStateFormatter formatter;
     private readonly IWorkflowLogger logger;
 
-    public WfRuntimeData(IWorkflowIocContainer iocContainer, IWorkflowStepStateFormatter formatter, IWorkflowLogger logger)
+    public WorkflowRuntimeData(IWorkflowIocContainer iocContainer, IWorkflowStepStateFormatter formatter, IWorkflowLogger logger)
     {
         this.iocContainer = iocContainer;
         this.formatter = formatter;
