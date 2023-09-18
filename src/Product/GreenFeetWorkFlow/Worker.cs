@@ -294,9 +294,10 @@ public class Worker
     static DateTime CalculateScheduleTime(Step step)
     {
         var now = DateTime.Now;
+        var count = step.ExecutionCount;
         var future = now + Min(
             TimeSpan.FromHours(2),
-            TimeSpan.FromSeconds(step.ExecutionCount * step.ExecutionCount * step.ExecutionCount));
+            TimeSpan.FromSeconds(count * count * count));
         return WorkflowRuntimeData.TrimToSeconds(future);
     }
 

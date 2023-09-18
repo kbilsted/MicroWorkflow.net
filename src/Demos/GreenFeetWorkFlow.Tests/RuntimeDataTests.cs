@@ -23,9 +23,7 @@ public class RuntimeDataTests
     public void When_searching_with_no_parameters_Then_success()
     {
         var engine = helper.CreateEngine();
-        var steps = engine.Data.SearchSteps(new SearchModel(FetchLevel: new(true, true, true))
-        {
-        });
+        var steps = engine.Data.SearchSteps(new SearchModel(), FetchLevels.ALL);
 
         steps.Keys.Count.Should().Be(3);
     }
@@ -44,52 +42,51 @@ public class RuntimeDataTests
         var id = engine.Data.AddStep(step, null);
 
         FetchLevels fetchLevels = FetchLevels.ALL;
-        var steps = engine.Data.SearchSteps(new SearchModel(fetchLevels)
+        var steps = engine.Data.SearchSteps(new SearchModel()
         {
             Id = id,
-        });
+        }, fetchLevels);
         steps[StepStatus.Ready].Single().Id.Should().Be(id);
 
-        steps = engine.Data.SearchSteps(new SearchModel(fetchLevels)
+        steps = engine.Data.SearchSteps(new SearchModel()
         {
             CorrelationId = step.CorrelationId,
-        });
+        }, fetchLevels);
         steps[StepStatus.Ready].Single().Id.Should().Be(id);
 
-        steps = engine.Data.SearchSteps(new SearchModel(fetchLevels)
+        steps = engine.Data.SearchSteps(new SearchModel()
         {
             Name = step.Name,
-        });
+        }, fetchLevels);
         steps[StepStatus.Ready].Single().Id.Should().Be(id);
 
-        steps = engine.Data.SearchSteps(new SearchModel(fetchLevels)
+        steps = engine.Data.SearchSteps(new SearchModel()
         {
             FlowId = step.FlowId,
-        });
+        }, fetchLevels);
         steps[StepStatus.Ready].Single().Id.Should().Be(id);
 
-        steps = engine.Data.SearchSteps(new SearchModel(fetchLevels)
+        steps = engine.Data.SearchSteps(new SearchModel()
         {
             SearchKey = step.SearchKey,
-        });
+        }, fetchLevels);
         steps[StepStatus.Ready].Single().Id.Should().Be(id);
 
-        steps = engine.Data.SearchSteps(new SearchModel(fetchLevels)
+        steps = engine.Data.SearchSteps(new SearchModel()
         {
             Description = step.Description,
-        });
+        }, fetchLevels);
         steps[StepStatus.Ready].Single().Id.Should().Be(id);
 
-
         // combined search
-        steps = engine.Data.SearchSteps(new SearchModel(fetchLevels)
+        steps = engine.Data.SearchSteps(new SearchModel()
         {
             Id = id,
             CorrelationId = step.CorrelationId,
             Name = step.Name,
             FlowId = step.FlowId,
             SearchKey = step.SearchKey,
-        });
+        }, fetchLevels);
         steps[StepStatus.Ready].Single().Id.Should().Be(id);
     }
 
@@ -106,15 +103,12 @@ public class RuntimeDataTests
         await engine.StartAsSingleWorker(cfg);
 
         var newId = engine.Data
-            .ReExecuteSteps(new SearchModel(Id: id, FetchLevel: new(Fail: true)))
+            .ReExecuteSteps(new SearchModel(Id: id))
             .Single();
 
         var persister = helper.Persister;
 
-        var newStep = persister.InTransaction(() =>
-persister.SearchSteps(new SearchModel(FetchLevel: FetchLevels.READY, Id: newId))
-[StepStatus.Ready]
-.Single());
+        var newStep = persister.InTransaction(() => persister.SearchSteps(new SearchModel(Id: newId), StepStatus.Ready).Single());
         newStep.Id.Should().BeGreaterThan(id);
         newStep.State.Should().Be(stepState.ToString());
         newStep.CorrelationId.Should().Be(step.CorrelationId);

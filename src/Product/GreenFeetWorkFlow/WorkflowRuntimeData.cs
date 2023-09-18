@@ -1,4 +1,6 @@
-﻿namespace GreenFeetWorkflow;
+﻿using System.Transactions;
+
+namespace GreenFeetWorkflow;
 
 public class WorkflowRuntimeData
 {
@@ -16,14 +18,11 @@ public class WorkflowRuntimeData
     /// <summary> Reschedule a ready step to 'now' and send it activation data </summary>
     public int ActivateStep(int id, object? activationArguments, object? transaction = null)
     {
-        string? serializedArguments = formatter.Serialize(activationArguments);
         var persister = iocContainer.GetInstance<IStepPersister>();
 
         int rows = persister.InTransaction(() =>
             {
-                var step = persister
-                            .SearchSteps(new SearchModel(Id: id, FetchLevel: FetchLevels.READY))[StepStatus.Ready]
-                            .FirstOrDefault();
+                var step = persister.SearchSteps(new SearchModel(Id: id), StepStatus.Ready).FirstOrDefault();
                 if (step == null)
                     return 0;
 
@@ -72,32 +71,32 @@ public class WorkflowRuntimeData
         FormatStateForSerialization(step);
     }
 
-    public Dictionary<StepStatus, IEnumerable<Step>> SearchSteps(SearchModel model, object? transaction = null)
+    public List<Step> SearchSteps(SearchModel criteria, StepStatus target, object? transaction = null)
     {
         IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
+        var result = persister.InTransaction(() => persister.SearchSteps(criteria, target), transaction);
+        return result;
+    }
 
-        var result = persister.InTransaction(() => persister.SearchSteps(model), transaction);
+    public Dictionary<StepStatus, List<Step>> SearchSteps(SearchModel criteria, FetchLevels fetchLevels, object? transaction = null)
+    {
+        IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
+        var result = persister.InTransaction(() => persister.SearchSteps(criteria, fetchLevels), transaction);
         return result;
     }
 
     /// <summary> Re-execute steps that are 'done' or 'failed' by inserting a clone into the 'ready' queue </summary>
     /// <returns>Ids of inserted steps</returns>
-    public int[] ReExecuteSteps(SearchModel criterias, object? transaction = null)
+    public int[] ReExecuteSteps(SearchModel criteria, object? transaction = null)
     {
-        if (criterias.FetchLevel.Ready)
-            throw new ArgumentOutOfRangeException("Cannot search the ready queue for steps to re-execute");
-
         IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
 
         int[] ids = persister.InTransaction(() =>
             {
                 var now = DateTime.Now;
 
-                var entities = persister.SearchSteps(criterias);
-
-                if (entities.ContainsKey(StepStatus.Ready) && entities[StepStatus.Ready].Any())
-                    throw new ArgumentOutOfRangeException("Cannot re-execute ready steps.");
-
+                var entities = persister.SearchSteps(criteria, FetchLevels.NONREADY);
+                
                 var steps = entities
                 .SelectMany(x => x.Value)
                 .Select(step => new Step()
@@ -127,6 +126,21 @@ public class WorkflowRuntimeData
         return ids;
     }
 
+    public bool FailStep(int id)
+    {
+        IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
+        return persister.InTransaction(() =>
+        {
+            var step = persister.SearchSteps(new(Id: id), StepStatus.Ready).SingleOrDefault();
+            if (step == null)
+                return false;
+            
+            persister.Delete(StepStatus.Ready, id);
+            persister.Insert(StepStatus.Failed, step);
+            return true;
+        });
+    }
+        
 
     /// <summary> we round down to ensure a worker can pick up the step/rerun-step. if in unittest mode it may exit if not rounded. </summary>
     internal static DateTime? TrimToSeconds(DateTime? now) => now == null ? null : TrimToSeconds(now.Value);

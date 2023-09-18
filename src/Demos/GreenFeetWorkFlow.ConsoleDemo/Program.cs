@@ -1,6 +1,14 @@
 ﻿using GreenFeetWorkflow;
 using System.Text.Json;
 
+
+// An example of a 3-step workflow
+//
+// +----------+      +------------+      +------------+
+// |fetch data|  ->  |Process data|  ->  |Email result
+// +----------+      +------------+      +------------+
+//
+//
 // step 1. register the steps to be used by the engine.
 // For the demo we don't use a real IOC container
 var iocContainer = new DemoIocContainer().RegisterNamedSteps(typeof(FetchData).Assembly);
@@ -71,13 +79,11 @@ class SendEmail : IStepImplementation
 {
     public const string Name = "v1/demos/fetch-wordanalyzeemail/ship-results";
 
-    private readonly EmailSender sender = new();
-
     public async Task<ExecutionResult> ExecuteAsync(Step step)
     {
         var topWords = JsonSerializer.Deserialize<string[]>(step.State!);
         var words = string.Join(", ", topWords!);
-        await sender.SendEmail(to: "demos@demoland.com", from: "some@one.cool", $"Top 3 words: {words}");
+        await new EmailSender().SendEmail(to: "demos@demoland.com", from: "some@one.cool", $"Top 3 words: {words}");
 
         return ExecutionResult.Done();
     }

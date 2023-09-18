@@ -154,7 +154,7 @@ public class TestHelper
         IStepPersister persister = iocContainer!.GetInstance<IStepPersister>();
         return persister
         .InTransaction(() =>
-            persister.SearchSteps(new SearchModel(FlowId: flowId, FetchLevel: FetchLevels.ALL)))
+            persister.SearchSteps(new SearchModel(FlowId: flowId), FetchLevels.ALL))
         .SelectMany(x => x.Value)
         .First();
     }

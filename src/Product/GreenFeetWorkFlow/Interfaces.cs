@@ -42,7 +42,9 @@ public interface IStepPersister : IDisposable
     /// <summary> Return a row and lock the row so other workers cannot pick it. </summary>
     Step? GetAndLockReadyStep();
 
-    Dictionary<StepStatus, IEnumerable<Step>> SearchSteps(SearchModel criteria);
+    public List<Step> SearchSteps(SearchModel criteria, StepStatus target);
+    Dictionary<StepStatus, List<Step>> SearchSteps(SearchModel criteria, FetchLevels fetchLevels);
+    
     Dictionary<StepStatus, int> CountTables(string? flowId = null);
     int Delete(StepStatus target, int id);
     int Insert(StepStatus target, Step step);

@@ -42,6 +42,8 @@ public class DemoInMemoryPersister : IStepPersister
         }
     }
 
+    
+
     void FreeLocks()
     {
         lock (GlobalLock)
@@ -56,8 +58,6 @@ public class DemoInMemoryPersister : IStepPersister
 
     public void RollBack() => FreeLocks();
 
-
-
     public void Dispose()
     {
     }
@@ -68,22 +68,28 @@ public class DemoInMemoryPersister : IStepPersister
         return new object();
     }
 
-    public Dictionary<StepStatus, IEnumerable<Step>> SearchSteps(SearchModel model)
+    public List<Step> SearchSteps(SearchModel criteria, StepStatus target)
     {
-        IEnumerable<Step> ready = new List<Step>();
-        if (model.FetchLevel.Ready)
+        return SearchSteps(criteria, new FetchLevels() {Ready = target == StepStatus.Ready})[StepStatus.Ready];
+    }
+
+    public Dictionary<StepStatus, List<Step>> SearchSteps(SearchModel criteria, FetchLevels fetchLevels)
+    {
+        List<Step> ready = new List<Step>();
+        if (fetchLevels.Ready)
         {
             ready = ReadySteps.Where(x =>
-                (model.CorrelationId != null && x.Value.CorrelationId == model.CorrelationId)
-                && (model.SearchKey != null && x.Value.SearchKey == model.SearchKey)
-                && (model.FlowId != null && x.Value.FlowId == model.FlowId)
-                && (model.Id != null && x.Value.Id == model.Id)
-                && (model.Name != null && x.Value.Name == model.Name)
+                (criteria.CorrelationId != null && x.Value.CorrelationId == criteria.CorrelationId)
+                && (criteria.SearchKey != null && x.Value.SearchKey == criteria.SearchKey)
+                && (criteria.FlowId != null && x.Value.FlowId == criteria.FlowId)
+                && (criteria.Id != null && x.Value.Id == criteria.Id)
+                && (criteria.Name != null && x.Value.Name == criteria.Name)
                 )
-                .Select(x => x.Value);
+                .Select(x => x.Value)
+                .ToList();
         }
 
-        return new Dictionary<StepStatus, IEnumerable<Step>>()
+        return new Dictionary<StepStatus, List<Step>>()
         {
             { StepStatus.Ready, ready }
         };

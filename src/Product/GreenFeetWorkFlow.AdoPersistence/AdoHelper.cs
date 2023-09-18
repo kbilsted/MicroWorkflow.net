@@ -15,10 +15,10 @@ public class AdoHelper
         this.logger = logger;
     }
 
-    public List<Step> SearchSteps(string table, SearchModel model, SqlTransaction tx)
+    public List<Step> SearchSteps(string table, SearchModel model, FetchLevels fetchLevels, SqlTransaction tx)
     {
         var sql = new Sql(
-            $@"SELECT TOP {model.FetchLevel.MaxRows} * 
+            $@"SELECT TOP {fetchLevels.MaxRows} * 
                 FROM {table} WITH (NOLOCK)")
             .Where(model.Id, "[Id] = @Id")
             .Where(model.CorrelationId, "[CorrelationId] = @CorrelationId")
@@ -61,7 +61,7 @@ public class AdoHelper
     public Step? GetStep(string tableName, int id, SqlTransaction tx)
     {
         var sql =
-        @$"SELECT TOP 1 * 
+        @$"SELECT * 
         FROM {tableName} WITH(ROWLOCK, UPDLOCK) 
         WHERE [Id] = @id";
 

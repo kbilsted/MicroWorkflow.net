@@ -69,22 +69,31 @@ public class SqlServerPersister : IStepPersister
         }
     }
 
-    public Dictionary<StepStatus, IEnumerable<Step>> SearchSteps(SearchModel criteria)
+    public List<Step> SearchSteps(SearchModel criteria, StepStatus target)
     {
         if (transaction == null)
             throw new ArgumentException("Missing transaction. Remember to create a transaction before calling");
 
-        List<Step> ready = criteria.FetchLevel.Ready
-            ? helper.SearchSteps(TableNameReady, criteria, transaction!)
+        var steps = helper.SearchSteps(GetTableName(target), criteria, new FetchLevels(), transaction!);
+        return steps;
+    }
+
+    public Dictionary<StepStatus, List<Step>> SearchSteps(SearchModel criteria, FetchLevels fetchLevel)
+    {
+        if (transaction == null)
+            throw new ArgumentException("Missing transaction. Remember to create a transaction before calling");
+
+        List<Step> ready = fetchLevel.Ready
+            ? helper.SearchSteps(TableNameReady, criteria, fetchLevel, transaction!)
             : new List<Step>();
-        List<Step> done = criteria.FetchLevel.Done
-            ? helper.SearchSteps(TableNameDone, criteria, transaction!)
+        List<Step> done = fetchLevel.Done
+            ? helper.SearchSteps(TableNameDone, criteria, fetchLevel, transaction!)
             : new List<Step>();
-        List<Step> fail = criteria.FetchLevel.Fail
-            ? helper.SearchSteps(TableNameFail, criteria, transaction!)
+        List<Step> fail = fetchLevel.Fail
+            ? helper.SearchSteps(TableNameFail, criteria, fetchLevel, transaction!)
             : new List<Step>();
 
-        return new Dictionary<StepStatus, IEnumerable<Step>>()
+        return new Dictionary<StepStatus, List<Step>>()
         {
             { StepStatus.Ready, ready },
             { StepStatus.Done, done },
