@@ -5,7 +5,7 @@ using System.Text.Json;
 // An example of a 3-step workflow
 //
 // +----------+      +------------+      +------------+
-// |fetch data|  ->  |Process data|  ->  |Email result
+// |fetch data|  ->  |Process data|  ->  |Email result|
 // +----------+      +------------+      +------------+
 //
 //
@@ -21,10 +21,10 @@ var formatter = new DotNetStepStateFormatterJson(logger);
 var engine = new WorkflowEngine(logger, iocContainer, formatter);
 
 // step 3. add a step to be executed - this step will spawn new steps during processing
-engine.Runtime.Data.AddStep(new Step(FetchData.Name, 0));
+engine.Data.AddStep(new Step(FetchData.Name, 0));
 
 // step 4. GO!
-engine.Start(new WfRuntimeConfiguration(new WorkerConfig() { StopWhenNoWork = true }, NumberOfWorkers: 1));
+engine.Start(new WorkflowConfiguration(new WorkerConfig { StopWhenNoWork = true }, NumberOfWorkers: 1));
 
 // don't close the window yet
 Console.ReadLine();
@@ -74,7 +74,7 @@ class AnalyzeWords : IStepImplementation
 }
 
 [StepName(Name)]
-[StepName("v2/alternative-name")]
+[StepName("v2/alternative-name")] // step implementation may have multiple names
 class SendEmail : IStepImplementation
 {
     public const string Name = "v1/demos/fetch-wordanalyzeemail/ship-results";
@@ -83,7 +83,9 @@ class SendEmail : IStepImplementation
     {
         var topWords = JsonSerializer.Deserialize<string[]>(step.State!);
         var words = string.Join(", ", topWords!);
-        await new EmailSender().SendEmail(to: "demos@demoland.com", from: "some@one.cool", $"Top 3 words: {words}");
+        
+        await new EmailSender()
+            .SendEmail(to: "demos@demoland.com", from: "some@one.cool", $"Top 3 words: {words}");
 
         return ExecutionResult.Done();
     }
