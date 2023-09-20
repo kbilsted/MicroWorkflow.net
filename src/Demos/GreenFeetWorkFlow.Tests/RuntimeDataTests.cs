@@ -14,22 +14,22 @@ public class RuntimeDataTests
         NumberOfWorkers: 1);
 
     [SetUp]
-    public void Setup()
+    public async Task Setup()
     {
         helper = new TestHelper();
     }
 
     [Test]
-    public void When_searching_with_no_parameters_Then_success()
+    public async Task When_searching_with_no_parameters_Then_success()
     {
         var engine = helper.CreateEngine();
-        var steps = engine.Data.SearchSteps(new SearchModel(), FetchLevels.ALL);
+        var steps = await engine.Data.SearchStepsAsync(new SearchModel(), FetchLevels.ALL);
 
         steps.Keys.Count.Should().Be(3);
     }
 
     [Test]
-    public void When_SearchSteps_Then_success()
+    public async Task When_SearchSteps_Then_success()
     {
         var engine = helper.CreateEngine();
         var step = new Step(helper.RndName)
@@ -39,47 +39,47 @@ public class RuntimeDataTests
             SearchKey = Guid.NewGuid().ToString(),
             Description = Guid.NewGuid().ToString(),
         };
-        var id = engine.Data.AddStep(step, null);
+        var id = await engine.Data.AddStepAsync(step, null);
 
         FetchLevels fetchLevels = FetchLevels.ALL;
-        var steps = engine.Data.SearchSteps(new SearchModel()
+        var steps = await engine.Data.SearchStepsAsync(new SearchModel()
         {
             Id = id,
         }, fetchLevels);
         steps[StepStatus.Ready].Single().Id.Should().Be(id);
 
-        steps = engine.Data.SearchSteps(new SearchModel()
+        steps = await engine.Data.SearchStepsAsync(new SearchModel()
         {
             CorrelationId = step.CorrelationId,
         }, fetchLevels);
         steps[StepStatus.Ready].Single().Id.Should().Be(id);
 
-        steps = engine.Data.SearchSteps(new SearchModel()
+        steps = await engine.Data.SearchStepsAsync(new SearchModel()
         {
             Name = step.Name,
         }, fetchLevels);
         steps[StepStatus.Ready].Single().Id.Should().Be(id);
 
-        steps = engine.Data.SearchSteps(new SearchModel()
+        steps = await engine.Data.SearchStepsAsync(new SearchModel()
         {
             FlowId = step.FlowId,
         }, fetchLevels);
         steps[StepStatus.Ready].Single().Id.Should().Be(id);
 
-        steps = engine.Data.SearchSteps(new SearchModel()
+        steps = await engine.Data.SearchStepsAsync(new SearchModel()
         {
             SearchKey = step.SearchKey,
         }, fetchLevels);
         steps[StepStatus.Ready].Single().Id.Should().Be(id);
 
-        steps = engine.Data.SearchSteps(new SearchModel()
+        steps = await engine.Data.SearchStepsAsync(new SearchModel()
         {
             Description = step.Description,
         }, fetchLevels);
         steps[StepStatus.Ready].Single().Id.Should().Be(id);
 
         // combined search
-        steps = engine.Data.SearchSteps(new SearchModel()
+        steps = await engine.Data.SearchStepsAsync(new SearchModel()
         {
             Id = id,
             CorrelationId = step.CorrelationId,
@@ -99,11 +99,11 @@ public class RuntimeDataTests
 
         var stepState = 12345;
         var step = new Step("v1/fail-and-reactivate", stepState) { FlowId = helper.FlowId, CorrelationId = helper.CorrelationId };
-        var id = engine.Data.AddStep(step);
+        var id = await engine.Data.AddStepAsync(step);
         await engine.StartAsSingleWorker(cfg);
 
-        var newId = engine.Data
-            .ReExecuteSteps(new SearchModel(Id: id))
+        var newId = (await engine.Data
+            .ReExecuteStepsAsync(new SearchModel(Id: id)))
             .Single();
 
         var persister = helper.Persister;

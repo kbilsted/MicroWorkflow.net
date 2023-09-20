@@ -7,7 +7,7 @@ namespace GreenFeetWorkflow.Tests;
 public class PerformanceTests
 {
     [Test]
-    public void Inserting_10000_steps_timing()
+    public async Task Inserting_10000_steps_timing()
     {
         var helper = new TestHelper();
 
@@ -16,7 +16,7 @@ public class PerformanceTests
         var name = "inserttest";
 
         var steps = Enumerable.Range(0, 10000).Select(x => new Step(name)).ToArray();
-        engine.Data.AddSteps(steps);
+        await engine.Data.AddStepsAsync(steps);
 
         watch.Stop();
         watch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(3));

@@ -42,10 +42,10 @@ public class AdoSingletonStepTests
         var step = new Step(helper.RndName) { Singleton = true, };
         var step2 = new Step(helper.RndName) { Singleton = true, };
 
-        Action act = () => engine.Data.AddSteps(new[] { step, step2 });
+        Func<Task> act = () => engine.Data.AddStepsAsync(new[] { step, step2 });
 
         act.Should()
-            .Throw<SqlException>()
+            .ThrowAsync<SqlException>()
             .WithMessage("Cannot insert duplicate key row*");
     }
 }

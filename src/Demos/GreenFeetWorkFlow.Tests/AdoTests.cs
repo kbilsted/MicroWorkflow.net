@@ -40,7 +40,7 @@ public class WorkerTests
     }
 
     [Test]
-    public void When_adding_two_steps_in_the_same_transaction_Then_succeed()
+    public async Task When_adding_two_steps_in_the_same_transaction_Then_succeed()
     {
         string[] stepResults = new string[2];
         const string name = "v1/When_adding_two_steps_in_the_same_transaction_Then_succeed";
@@ -53,11 +53,11 @@ public class WorkerTests
                 return ExecutionResult.Done();
             })));
 
-        using var connection = new SqlConnection(helper.ConnectionString);
+        await using var connection = new SqlConnection(helper.ConnectionString);
         connection.Open();
-        using var tx = connection.BeginTransaction(System.Data.IsolationLevel.ReadCommitted);
-        engine.Data.AddStep(new Step(name, 0), tx);
-        engine.Data.AddStep(new Step(name, 1), tx);
+        await using var tx = connection.BeginTransaction(System.Data.IsolationLevel.ReadCommitted);
+        await engine.Data.AddStepAsync(new Step(name, 0), tx);
+        await engine.Data.AddStepAsync(new Step(name, 1), tx);
         tx.Commit();
         engine.Start(cfg);
 
@@ -102,10 +102,10 @@ public class WorkerTests
                 name,
                 GenericImplementation.Create(step => throw step.FailAsException(newSteps: new Step(nameNewStep))))
             );
-        engine.Data.AddStep(new Step(name) { FlowId = helper.FlowId });
+        await engine.Data.AddStepAsync(new Step(name) { FlowId = helper.FlowId });
         await engine.StartAsSingleWorker(cfg);
 
-        var steps = engine.Data.SearchSteps(new SearchModel(FlowId: helper.FlowId), FetchLevels.ALL);
+        var steps = await engine.Data.SearchStepsAsync(new SearchModel(FlowId: helper.FlowId), FetchLevels.ALL);
 
         steps.Is(@" [
     {
@@ -360,7 +360,7 @@ public class WorkerTests
             FlowId = helper.FlowId,
             ScheduleTime = DateTime.Now.AddYears(35)
         };
-        var id = engine.Data.AddStep(futureStep, null);
+        var id = engine.Data.AddStepAsync(futureStep, null);
         engine.Start(cfg);
         helper.AssertTableCounts(helper.FlowId, ready: 1, done: 0, failed: 0);
 
@@ -368,7 +368,7 @@ public class WorkerTests
     }
 
     [Test]
-    public void When_step_is_in_the_future_Then_it_can_be_activated_to_execute_now()
+    public async Task When_step_is_in_the_future_Then_it_can_be_activated_to_execute_now()
     {
         string? stepResult = null;
 
@@ -381,8 +381,8 @@ public class WorkerTests
             FlowId = helper.FlowId,
             ScheduleTime = DateTime.Now.AddYears(35)
         };
-        var id = engine.Data.AddStep(futureStep, null);
-        var count = engine.Data.ActivateStep(id, null);
+        var id = await engine.Data.AddStepAsync(futureStep, null);
+        var count = await engine.Data.ActivateStepAsync(id, null);
         count.Should().Be(1);
 
         engine.Start(cfg);
@@ -393,7 +393,7 @@ public class WorkerTests
     }
 
     [Test]
-    public void When_step_is_in_the_future_Then_it_can_be_activated_to_execute_now_with_args()
+    public async Task When_step_is_in_the_future_Then_it_can_be_activated_to_execute_now_with_args()
     {
         string? stepResult = null;
         string args = "1234";
@@ -406,8 +406,8 @@ public class WorkerTests
             FlowId = helper.FlowId,
             ScheduleTime = DateTime.Now.AddYears(35)
         };
-        var id = engine.Data.AddStep(futureStep, null);
-        var count = engine.Data.ActivateStep(id, args);
+        var id = await engine.Data.AddStepAsync(futureStep, null);
+        var count = await engine.Data.ActivateStepAsync(id, args);
         count.Should().Be(1);
         engine.Start(cfg);
 
@@ -460,7 +460,7 @@ public class WorkerTests
             (int count, Guid id, DateTime maxWait) = helper.Formatter!.Deserialize<(int, Guid, DateTime)>(step.State);
             var sales = GroceryBuyer.SalesDb.Where(x => x.id == id).ToArray();
             if (sales.Length != 2 && DateTime.Now <= maxWait)
-                return ExecutionResult.Rerun(scheduleTime: DateTime.Now.AddSeconds(0.1));
+                return ExecutionResult.Rerun(scheduleTime: DateTime.Now.AddSeconds(0.2));
 
             stepResult = $"total: {sales.Sum(x => x.total)}";
             helper.cts.Cancel();

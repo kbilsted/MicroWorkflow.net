@@ -58,7 +58,7 @@ public class TestHelper
         return Engine;
     }
 
-    public void CreateAndRunEngineForPerformance(Step[] steps, int workerCount, params (string, IStepImplementation)[] stepHandlers)
+    public async Task CreateAndRunEngineForPerformance(Step[] steps, int workerCount, params (string, IStepImplementation)[] stepHandlers)
     {
         logger = new DiagnosticsStepLogger();
         logger.Configuration.TraceLoggingEnabledUntil = DateTime.MinValue;
@@ -74,7 +74,7 @@ public class TestHelper
         iocContainer = new AutofacAdaptor(builder.Build());
         Engine = new WorkflowEngine(logger, iocContainer, Formatter);
 
-        Engine.Data.AddSteps(steps);
+        await Engine.Data.AddStepsAsync(steps);
 
         var workflowConfiguration = new WorkflowConfiguration(new WorkerConfig()
         {
@@ -84,7 +84,7 @@ public class TestHelper
         Engine.Start(workflowConfiguration, stoppingToken: cts.Token);
     }
 
-    public void CreateAndRunEngine(Step[] steps, int workerCount, params (string, IStepImplementation)[] stepHandlers)
+    public async Task CreateAndRunEngine(Step[] steps, int workerCount, params (string, IStepImplementation)[] stepHandlers)
     {
         logger = new DiagnosticsStepLogger();
 
@@ -96,7 +96,7 @@ public class TestHelper
         iocContainer = new AutofacAdaptor(builder.Build());
         Engine = new WorkflowEngine(logger, iocContainer, Formatter);
 
-        Engine.Data.AddSteps(steps);
+        await Engine.Data.AddStepsAsync(steps);
 
         var workflowConfiguration = new WorkflowConfiguration(new WorkerConfig()
         {
@@ -109,7 +109,7 @@ public class TestHelper
             Engine.Start(workflowConfiguration, stoppingToken: cts.Token);
     }
 
-    public void CreateAndRunEngineWithAttributes(Step[] steps, int workerCount)
+    public async Task CreateAndRunEngineWithAttributes(Step[] steps, int workerCount)
     {
         logger = new DiagnosticsStepLogger();
 
@@ -121,7 +121,7 @@ public class TestHelper
         iocContainer = new AutofacAdaptor(builder.Build());
         Engine = new WorkflowEngine(logger, iocContainer, Formatter);
 
-        Engine.Data.AddSteps(steps);
+        await Engine.Data.AddStepsAsync(steps);
 
         var workflowConfiguration = new WorkflowConfiguration(new WorkerConfig()
         { StopWhenNoWork = workerCount == 1 },

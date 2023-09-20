@@ -11,13 +11,13 @@ public class EngineTests
     }
 
     [Test]
-    public void When_adding_an_event_Then_an_id_PK_is_returned()
+    public async Task When_adding_an_event_Then_an_id_PK_is_returned()
     {
         helper.CreateEngine();
         Step step = new Step(helper.RndName) { ScheduleTime = DateTime.Now.AddMonths(1) };
-        var id = helper.Engine!.Data.AddStep(step);
+        var id = await helper.Engine!.Data.AddStepAsync(step);
 
-        var result = helper.Engine.Data.SearchSteps(new(Id: id), StepStatus.Ready);
+        var result = await helper.Engine.Data.SearchStepsAsync(new(Id: id), StepStatus.Ready);
 
         result.Single().Name.Should().Be(helper.RndName);
     }
