@@ -23,7 +23,7 @@ public class AttributeRegistrationTests
 
         public async Task<ExecutionResult> ExecuteAsync(Step step)
         {
-            return await step.DoneAsync(new Step(StepB.Name));
+            return await Task.FromResult(step.Done(new Step(StepB.Name)));
         }
     }
 
@@ -35,7 +35,7 @@ public class AttributeRegistrationTests
         public async Task<ExecutionResult> ExecuteAsync(Step step)
         {
             StepResult.Add(step.FlowId!, step.FlowId);
-            return await step.DoneAsync();
+            return await Task.FromResult(step.Done());
         }
     }
 }

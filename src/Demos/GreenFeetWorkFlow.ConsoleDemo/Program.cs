@@ -68,7 +68,7 @@ class AnalyzeWords : IStepImplementation
             .Take(3)
             .Select(x => x.Key);
 
-        return await Task.FromResult(ExecutionResult.Done().
+        return await Task.FromResult(step.Done().
                 With(new Step(SendEmail.Name, topWords)));
     }
 }
@@ -87,7 +87,7 @@ class SendEmail : IStepImplementation
         await new EmailSender()
             .SendEmail(to: "demos@demoland.com", from: "some@one.cool", $"Top 3 words: {words}");
 
-        return ExecutionResult.Done();
+        return step.Done();
     }
 }
 

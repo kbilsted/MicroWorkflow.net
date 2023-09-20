@@ -2,18 +2,6 @@
 
 public class Step
 {
-    public Step()
-    { }
-
-    public Step(string name) : this(name, null)
-    { }
-
-    public Step(string name, object? state)
-    {
-        Name = name;
-        InitialState = state;
-    }
-
     public int Id { get; set; }
 
     public string Name { get; set; }
@@ -47,14 +35,19 @@ public class Step
 
     /// <summary> The number of times a step has been executed. On the first execution this has value 1.</summary>
     public int ExecutionCount { get; set; }
+    
     /// <summary> The elapsed time of the latest execution </summary>
     public long? ExecutionDurationMillis { get; set; }
+    
     /// <summary> The time when the latest execution took place </summary>
     public DateTime? ExecutionStartTime { get; set; }
+    
     /// <summary> The worker name executing the step </summary>
     public string? ExecutedBy { get; set; }
+    
     /// <summary> The time the step was created </summary>
     public DateTime CreatedTime { get; set; }
+    
     /// <summary> The 'parent', i.e. the step which created this step. If there is no parent, 0 is used.
     /// Steps created from a step will have its parent set (unless you overwrite it). 
     /// </summary>
@@ -73,6 +66,20 @@ public class Step
     /// <summary> typically set in various error situations by the framework, unless you overwrite it </summary>
     public string? Description { get; set; }
 
+
+    public Step()
+    { }
+
+    public Step(string name) : this(name, null)
+    { }
+
+    public Step(string name, object? state)
+    {
+        Name = name;
+        InitialState = state;
+    }
+    
+
     /// <summary> Mark the step as finished successfully. </summary>
     public ExecutionResult Done() => ExecutionResult.Done();
 
@@ -82,15 +89,6 @@ public class Step
     /// <summary> Mark the step as finished successfully. </summary>
     public ExecutionResult Done(string description, params Step[]? newSteps) => ExecutionResult.Done(description, newSteps);
 
-    /// <summary> Mark the step as finished successfully. </summary>
-    public async Task<ExecutionResult> DoneAsync() => await Task.FromResult(ExecutionResult.Done());
-
-    /// <summary> Mark the step as finished successfully. </summary>
-    public async Task<ExecutionResult> DoneAsync(params Step[]? newSteps) => await Task.FromResult(ExecutionResult.Done(newSteps));
-
-    /// <summary> Mark the step as finished successfully. </summary>
-    public async Task<ExecutionResult> DoneAsync(string description, params Step[]? newSteps) => await Task.FromResult(ExecutionResult.Done(description, newSteps));
-
     /// <summary> Mark the step as finished with failure. </summary>
     public ExecutionResult Fail() => ExecutionResult.Fail();
 
@@ -99,15 +97,6 @@ public class Step
 
     /// <summary> Mark the step as finished with failure. </summary>
     public ExecutionResult Fail(string description, params Step[]? newSteps) => ExecutionResult.Fail(description, newSteps);
-
-    /// <summary> Mark the step as finished with failure. </summary>
-    public async Task<ExecutionResult> FailAsync() => await Task.FromResult(ExecutionResult.Fail());
-
-    /// <summary> Mark the step as finished with failure. </summary>
-    public async Task<ExecutionResult> FailAsync(string description) => await Task.FromResult(ExecutionResult.Fail(description));
-
-    /// <summary> Mark the step as finished with failure. </summary>
-    public async Task<ExecutionResult> FailAsync(string description, params Step[]? newSteps) => await Task.FromResult(ExecutionResult.Fail(description, newSteps));
 
     /// <summary> Throw this exception to tell the step engine that the job has finished with failure </summary>
     /// <returns>an exception to throw</returns>
@@ -125,12 +114,4 @@ public class Step
        DateTime? scheduleTime = null,
        string? persistedStateFormat = null,
        string? description = null) => ExecutionResult.Rerun(newStateForRerun, newSteps, scheduleTime, persistedStateFormat, description);
-
-    /// <summary> Mark the step for a re-execution </summary>
-    public async Task<ExecutionResult> RerunAsync(
-       object? newStateForRerun = null,
-       List<Step>? newSteps = null,
-       DateTime? scheduleTime = null,
-       string? persistedStateFormat = null,
-       string? description = null) => await Task.FromResult(ExecutionResult.Rerun(newStateForRerun, newSteps, scheduleTime, persistedStateFormat, description));
 }

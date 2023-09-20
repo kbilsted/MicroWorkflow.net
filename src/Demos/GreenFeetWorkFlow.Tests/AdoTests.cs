@@ -505,7 +505,7 @@ public class WorkerTests
                 SalesDb.Add((instruction!.PurchaseId, instruction.Item!, prices[instruction.Item!] * instruction.Count));
             }
 
-            return await step.DoneAsync();
+            return await Task.FromResult(step.Done());
         }
     }
 }

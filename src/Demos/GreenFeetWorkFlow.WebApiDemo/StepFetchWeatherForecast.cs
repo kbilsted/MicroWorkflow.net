@@ -16,6 +16,6 @@ class StepFetchWeatherForecast : IStepImplementation
 
         WeaterForecastDB.LazyFetchedWeatherForecasts = weather;
 
-        return await step.RerunAsync(scheduleTime: DateTime.Now.AddSeconds(3));
+        return await Task.FromResult(step.Rerun(scheduleTime: DateTime.Now.AddSeconds(3)));
     }
 }

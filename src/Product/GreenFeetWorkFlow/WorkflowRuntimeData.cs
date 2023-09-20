@@ -125,22 +125,33 @@ public class WorkflowRuntimeData
 
         return ids;
     }
-
-    public bool FailStep(int id)
+    
+    /// <summary>
+    /// Fail one or more 'ready' steps. If a step is executing while being failed a db deadlock may occur and instead the failing must be issued from a step with retries instead.
+    /// </summary>
+    /// <param name="criteria"></param>
+    /// <param name="transaction"></param>
+    /// <returns>The ids of the failed steps</returns>
+    public int[] FailSteps(SearchModel criteria, object? transaction = null)
     {
         IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
-        return persister.InTransaction(() =>
+
+        int[] ids = persister.InTransaction(() =>
         {
-            var step = persister.SearchSteps(new(Id: id), StepStatus.Ready).SingleOrDefault();
-            if (step == null)
-                return false;
-            
-            persister.Delete(StepStatus.Ready, id);
-            persister.Insert(StepStatus.Failed, step);
-            return true;
-        });
+            var steps = persister.SearchSteps(criteria, StepStatus.Ready);
+
+            foreach (var step in steps)
+            {
+                persister.Delete(StepStatus.Ready, step.Id);
+                persister.Insert(StepStatus.Failed, step);
+
+            }
+
+            return steps.Select(x=>x.Id).ToArray();
+        }, transaction);
+
+        return ids;
     }
-        
 
     /// <summary> we round down to ensure a worker can pick up the step/rerun-step. if in unittest mode it may exit if not rounded. </summary>
     internal static DateTime? TrimToSeconds(DateTime? now) => now == null ? null : TrimToSeconds(now.Value);
