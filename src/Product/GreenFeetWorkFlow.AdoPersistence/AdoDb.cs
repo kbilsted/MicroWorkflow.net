@@ -29,6 +29,7 @@ public class SqlServerPersister : IStepPersister
     public void SetTransaction(object transaction)
     {
         this.transaction = (SqlTransaction?)transaction;
+        this.connection = this.transaction.Connection;
     }
 
     public object CreateTransaction()
@@ -41,30 +42,52 @@ public class SqlServerPersister : IStepPersister
         connection.Open();
 
         transaction = connection.BeginTransaction(System.Data.IsolationLevel.ReadCommitted);
+
         return transaction;
     }
 
-    public T InTransaction<T>(Func<T> code, object? transaction = null)
+    public T InTransaction<T>(Func<T> code, object? outsideTransaction = null)
     {
         try
         {
-            if (transaction == null)
+            if (outsideTransaction == null)
                 CreateTransaction();
             else
-                SetTransaction(transaction);
+                SetTransaction(outsideTransaction);
+        }
+        catch (Exception ex)
+        {
+            if (logger.TraceLoggingEnabled)
+                logger.LogTrace($"{nameof(SqlServerPersister)}: Error in 'InTransaction()' while creating/setting transaction", ex, new Dictionary<string, object?>() {
+                { "PersisterId", persisterId } ,
+                        //{ "Stack", new StackTrace().ToString()} ,
+                });
 
+            throw;
+        }
+
+        try
+        {
             T result = code();
 
-            if (transaction == null)
-            {
+            // only commit if we created the tx
+            if (outsideTransaction == null)
                 Commit();
-            }
+            
             return result;
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            if (transaction == null)
+            if (logger.TraceLoggingEnabled)
+                logger.LogTrace($"{nameof(SqlServerPersister)}: Error executing code in 'InTransaction()'", e, new Dictionary<string, object?>() {
+                { "PersisterId", persisterId } ,
+                        //{ "Stack", new StackTrace().ToString()} ,
+                });
+
+            // only rollback if we created the tx
+            if (outsideTransaction == null)
                 RollBack();
+
             throw;
         }
     }
@@ -145,17 +168,21 @@ public class SqlServerPersister : IStepPersister
             logger.LogTrace($"{nameof(SqlServerPersister)}: Rollback Transaction",
                 null,
                 new Dictionary<string, object?>() { { "PersisterId", persisterId } });
-
-        if (transaction == null)
-            throw new InvalidOperationException("There is no transaction to rollback");
-        transaction.Rollback();
-        transaction.Dispose();
-        transaction = null;
-
-        if (connection == null)
-            throw new InvalidOperationException("There is no open connection");
-        connection.Dispose();
-        connection = null;
+        try
+        {
+            if (transaction == null)
+                throw new InvalidOperationException("There is no transaction to rollback");
+            transaction.Rollback();
+            transaction.Dispose();
+            transaction = null;
+        }
+        finally
+        {
+            if (connection == null)
+                throw new InvalidOperationException("There is no open connection");
+            connection.Dispose();
+            connection = null;
+        }
     }
 
     public Dictionary<StepStatus, int> CountTables(string? flowId = null)

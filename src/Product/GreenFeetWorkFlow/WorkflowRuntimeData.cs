@@ -1,6 +1,4 @@
-﻿using System.Transactions;
-
-namespace GreenFeetWorkflow;
+﻿namespace GreenFeetWorkflow;
 
 public class WorkflowRuntimeData
 {

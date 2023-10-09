@@ -14,7 +14,7 @@ public class RuntimeDataTests
         NumberOfWorkers: 1);
 
     [SetUp]
-    public async Task Setup()
+    public void Setup()
     {
         helper = new TestHelper();
     }

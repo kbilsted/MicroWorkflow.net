@@ -190,6 +190,20 @@ public class WorkerTests
         row.Name.Should().Be("test-throw-exception");
     }
 
+
+    [Test]
+    public void When_connecting_unsecurely_to_DB_Then_see_the_exception()
+    {
+        var impl = ("onestep_fails", new GenericImplementation(step => step.Fail()));
+        helper.ConnectionString = helper.IllegalConnectionString;
+        
+        Action act = () => helper.CreateAndRunEngine(new Step("onestep_fails") { FlowId = helper.FlowId }, impl);
+
+        act.Should()
+            .Throw<SqlException>()
+            .WithMessage("A connection was successfully established with the server, but then an error occurred during the login process.*");
+    }
+
     [Test]
     public void OneStep_fail()
     {

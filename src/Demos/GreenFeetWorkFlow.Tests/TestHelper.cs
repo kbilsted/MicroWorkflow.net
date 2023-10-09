@@ -39,7 +39,8 @@ public class TestHelper
     public void CreateAndRunEngine(Step[] steps, params (string, IStepImplementation)[] stepHandlers)
         => CreateAndRunEngine(steps, 1, stepHandlers);
 
-    public readonly string ConnectionString = "Server=localhost;Database=adotest;Integrated Security=True;TrustServerCertificate=True";
+    public string ConnectionString = "Server=localhost;Database=adotest;Integrated Security=True;TrustServerCertificate=True";
+    public readonly string IllegalConnectionString = "Server=localhost;Database=adotest;Integrated Security=False;TrustServerCertificate=False";
 
 
     public WorkflowEngine CreateEngine(params (string, IStepImplementation)[] stepHandlers)
@@ -58,7 +59,7 @@ public class TestHelper
         return Engine;
     }
 
-    public async Task CreateAndRunEngineForPerformance(Step[] steps, int workerCount, params (string, IStepImplementation)[] stepHandlers)
+    public void CreateAndRunEngineForPerformance(Step[] steps, int workerCount, params (string, IStepImplementation)[] stepHandlers)
     {
         logger = new DiagnosticsStepLogger();
         logger.Configuration.TraceLoggingEnabledUntil = DateTime.MinValue;
@@ -74,7 +75,7 @@ public class TestHelper
         iocContainer = new AutofacAdaptor(builder.Build());
         Engine = new WorkflowEngine(logger, iocContainer, Formatter);
 
-        await Engine.Data.AddStepsAsync(steps);
+        Engine.Data.AddStepsAsync(steps).GetAwaiter().GetResult();
 
         var workflowConfiguration = new WorkflowConfiguration(new WorkerConfig()
         {
@@ -84,7 +85,7 @@ public class TestHelper
         Engine.Start(workflowConfiguration, stoppingToken: cts.Token);
     }
 
-    public async Task CreateAndRunEngine(Step[] steps, int workerCount, params (string, IStepImplementation)[] stepHandlers)
+    public void CreateAndRunEngine(Step[] steps, int workerCount, params (string, IStepImplementation)[] stepHandlers)
     {
         logger = new DiagnosticsStepLogger();
 
@@ -96,7 +97,7 @@ public class TestHelper
         iocContainer = new AutofacAdaptor(builder.Build());
         Engine = new WorkflowEngine(logger, iocContainer, Formatter);
 
-        await Engine.Data.AddStepsAsync(steps);
+        Engine.Data.AddStepsAsync(steps).GetAwaiter().GetResult();
 
         var workflowConfiguration = new WorkflowConfiguration(new WorkerConfig()
         {
@@ -109,7 +110,7 @@ public class TestHelper
             Engine.Start(workflowConfiguration, stoppingToken: cts.Token);
     }
 
-    public async Task CreateAndRunEngineWithAttributes(Step[] steps, int workerCount)
+    public void CreateAndRunEngineWithAttributes(Step[] steps, int workerCount)
     {
         logger = new DiagnosticsStepLogger();
 
@@ -121,7 +122,7 @@ public class TestHelper
         iocContainer = new AutofacAdaptor(builder.Build());
         Engine = new WorkflowEngine(logger, iocContainer, Formatter);
 
-        await Engine.Data.AddStepsAsync(steps);
+        Engine.Data.AddStepsAsync(steps).GetAwaiter().GetResult();
 
         var workflowConfiguration = new WorkflowConfiguration(new WorkerConfig()
         { StopWhenNoWork = workerCount == 1 },
