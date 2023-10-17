@@ -70,7 +70,7 @@ public class DemoInMemoryPersister : IStepPersister
 
     public List<Step> SearchSteps(SearchModel criteria, StepStatus target)
     {
-        return SearchSteps(criteria, new FetchLevels() {Ready = target == StepStatus.Ready})[StepStatus.Ready];
+        return SearchSteps(criteria, new FetchLevels() { Ready = target == StepStatus.Ready })[StepStatus.Ready];
     }
 
     public Dictionary<StepStatus, List<Step>> SearchSteps(SearchModel criteria, FetchLevels fetchLevels)
@@ -148,6 +148,8 @@ public class DemoInMemoryPersister : IStepPersister
             }
         }
     }
+
+    public Task InsertBulkAsync(StepStatus target, IEnumerable<Step> steps) => Task.FromResult(Insert(target, steps.ToArray()));
 
     public int Insert(StepStatus target, Step step)
     {

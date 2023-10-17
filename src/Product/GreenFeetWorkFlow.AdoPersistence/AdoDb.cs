@@ -1,5 +1,6 @@
 ﻿using GreenFeetWorkflow;
 using Microsoft.Data.SqlClient;
+using System.Data;
 
 namespace GreenFeetWorkFlow.AdoMsSql;
 
@@ -225,6 +226,25 @@ public class SqlServerPersister : IStepPersister
         }
 
         return result.ToArray();
+    }
+
+    public async Task InsertBulkAsync(StepStatus target, IEnumerable<Step> steps)
+    {
+        if (transaction != null)
+            throw new ArgumentException("Inside transaction, does not work in bulk");
+
+        await using SqlConnection conn = new SqlConnection(connectionString);
+        await conn.OpenAsync();
+        var table = new DataTable();
+
+        using SqlDataAdapter adapter = new SqlDataAdapter($"select top 0 * from {TableNameReady}", conn);
+        adapter.FillSchema(table, SchemaType.Source);
+
+        using SqlBulkCopy bulk = new SqlBulkCopy(conn);
+        bulk.DestinationTableName = table.TableName;
+
+        using ObjectDataReader<Step> objectDataReader = new ObjectDataReader<Step>(steps);
+        await bulk.WriteToServerAsync(objectDataReader);
     }
 
     public int Delete(StepStatus target, int id)

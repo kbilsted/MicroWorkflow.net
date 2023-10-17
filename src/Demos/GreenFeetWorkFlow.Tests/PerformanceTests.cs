@@ -7,7 +7,10 @@ namespace GreenFeetWorkflow.Tests;
 public class PerformanceTests
 {
     [Test]
-    public async Task Inserting_10000_steps_timing()
+    [TestCase(50)] // 3
+    [TestCase(100)] // 5
+    [TestCase(200)] // 10
+    public async Task Inserting_10000_steps_timing(int max)
     {
         var helper = new TestHelper();
 
@@ -15,11 +18,31 @@ public class PerformanceTests
         var watch = Stopwatch.StartNew();
         var name = "inserttest";
 
-        var steps = Enumerable.Range(0, 10000).Select(x => new Step(name)).ToArray();
+        var steps = Enumerable.Range(0, max).Select(x => new Step(name)).ToArray();
         await engine.Data.AddStepsAsync(steps);
 
         watch.Stop();
-        watch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(3));
+        watch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds((max/50.0)*3.01));
+        Console.WriteLine(watch);
+    }
+
+    [Test]
+    [TestCase(50)] // 3
+    [TestCase(100)] // 5
+    [TestCase(200)] // 10
+    public async Task Inserting_10000_steps_timing_bulk(int max)
+    {
+        var helper = new TestHelper();
+
+        var engine = helper.CreateEngine();
+        var watch = Stopwatch.StartNew();
+        var name = "inserttest3";
+
+        var steps = Enumerable.Range(0, max).Select(x => new Step(name)).ToArray();
+        await engine.Data.AddStepsBulkAsync(steps);
+
+        watch.Stop();
+        watch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(0.9));
         Console.WriteLine(watch);
     }
 

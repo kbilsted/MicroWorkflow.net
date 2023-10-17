@@ -49,6 +49,8 @@ public interface IStepPersister : IDisposable
     int Delete(StepStatus target, int id);
     int Insert(StepStatus target, Step step);
     int[] Insert(StepStatus target, Step[] steps);
+    Task InsertBulkAsync(StepStatus target, IEnumerable<Step> steps);
+
     int Update(StepStatus target, Step step);
 }
 

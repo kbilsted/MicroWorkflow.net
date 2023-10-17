@@ -14,7 +14,7 @@ public class WorkflowRuntimeData
     }
 
     /// <summary> Reschedule a ready step to 'now' and send it activation data </summary>
-    public async Task <int> ActivateStepAsync(int id, object? activationArguments, object? transaction = null)
+    public async Task<int> ActivateStepAsync(int id, object? activationArguments, object? transaction = null)
     {
         var persister = iocContainer.GetInstance<IStepPersister>();
 
@@ -52,6 +52,24 @@ public class WorkflowRuntimeData
         return await Task.FromResult(result);
     }
 
+    /// <summary> Add steps to be executed. May throw exception if persistence layer fails. For example when inserting multiple singleton elements.
+    /// Bulk operation. Very fast, but cannot be used with other transactions and does not return identities inserted
+    /// </summary>
+    public async Task AddStepsBulkAsync(IEnumerable<Step> steps)
+    {
+        var now = DateTime.Now;
+
+        var persister = iocContainer.GetInstance<IStepPersister>();
+
+        var fix = steps.Select(x =>
+        {
+            FixupNewStep(null, x, now);
+            return x;
+        });
+
+        await persister.InsertBulkAsync(StepStatus.Ready, fix);
+    }
+
     internal void FixupNewStep(Step? originStep, Step step, DateTime now)
     {
         if (string.IsNullOrEmpty(step.Name))
@@ -77,7 +95,7 @@ public class WorkflowRuntimeData
         return await Task.FromResult(result);
     }
 
-    public async Task< Dictionary<StepStatus, List<Step>>> SearchStepsAsync(SearchModel criteria, FetchLevels fetchLevels, object? transaction = null)
+    public async Task<Dictionary<StepStatus, List<Step>>> SearchStepsAsync(SearchModel criteria, FetchLevels fetchLevels, object? transaction = null)
     {
         IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
         var result = persister.InTransaction(() => persister.SearchSteps(criteria, fetchLevels), transaction);
@@ -95,7 +113,7 @@ public class WorkflowRuntimeData
                 var now = DateTime.Now;
 
                 var entities = persister.SearchSteps(criteria, FetchLevels.NONREADY);
-                
+
                 var steps = entities
                 .SelectMany(x => x.Value)
                 .Select(step => new Step()
@@ -124,7 +142,7 @@ public class WorkflowRuntimeData
 
         return await Task.FromResult(ids);
     }
-    
+
     /// <summary>
     /// Fail one or more 'ready' steps. If a step is executing while being failed a db deadlock may occur and instead the failing must be issued from a step with retries instead.
     /// </summary>
@@ -145,7 +163,7 @@ public class WorkflowRuntimeData
                 persister.Insert(StepStatus.Failed, step);
             }
 
-            return steps.Select(x=>x.Id).ToArray();
+            return steps.Select(x => x.Id).ToArray();
         }, transaction);
 
         return await Task.FromResult(ids);

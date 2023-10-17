@@ -21,6 +21,12 @@ public class Step
     /// <summary> A key that can be set to later retrieve the step and invoke it using a 'Command' </summary>
     public string? SearchKey { get; set; }
 
+    /// <summary> The number of times a step has been executed. On the first execution this has value 1.</summary>
+    public int ExecutionCount { get; set; }
+
+    /// <summary> The earliest point in time the step will be executed </summary>
+    public DateTime ScheduleTime { get; set; }
+
     /// <summary> Field is only used for when new steps needs be persisted for the first time. </summary>
     public object? InitialState { get; set; }
 
@@ -33,28 +39,14 @@ public class Step
     /// <summary> the arguments for an activation as it is formatted and persisted in the persistencelayer </summary>
     public string? ActivationArgs { get; set; }
 
-    /// <summary> The number of times a step has been executed. On the first execution this has value 1.</summary>
-    public int ExecutionCount { get; set; }
-    
-    /// <summary> The elapsed time of the latest execution </summary>
-    public long? ExecutionDurationMillis { get; set; }
-    
     /// <summary> The time when the latest execution took place </summary>
     public DateTime? ExecutionStartTime { get; set; }
-    
+
+    /// <summary> The elapsed time of the latest execution </summary>
+    public long? ExecutionDurationMillis { get; set; }
+
     /// <summary> The worker name executing the step </summary>
     public string? ExecutedBy { get; set; }
-    
-    /// <summary> The time the step was created </summary>
-    public DateTime CreatedTime { get; set; }
-    
-    /// <summary> The 'parent', i.e. the step which created this step. If there is no parent, 0 is used.
-    /// Steps created from a step will have its parent set (unless you overwrite it). 
-    /// </summary>
-    public int CreatedByStepId { get; set; }
-
-    /// <summary> The earliest point in time the step will be executed </summary>
-    public DateTime ScheduleTime { get; set; }
 
     /// <summary>
     /// An id of the context in which the step was created. Usually this is used to connect log entries across system boundaries.
@@ -62,6 +54,14 @@ public class Step
     /// Steps created from a step will inherit the correlationId (unless you overwrite it). 
     /// </summary>
     public string? CorrelationId { get; set; }
+
+    /// <summary> The time the step was created </summary>
+    public DateTime CreatedTime { get; set; }
+    
+    /// <summary> The 'parent', i.e. the step which created this step. If there is no parent, 0 is used.
+    /// Steps created from a step will have its parent set (unless you overwrite it). 
+    /// </summary>
+    public int CreatedByStepId { get; set; }
 
     /// <summary> typically set in various error situations by the framework, unless you overwrite it </summary>
     public string? Description { get; set; }
