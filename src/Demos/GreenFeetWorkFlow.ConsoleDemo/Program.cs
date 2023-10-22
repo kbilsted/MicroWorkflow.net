@@ -21,7 +21,7 @@ var formatter = new DotNetStepStateFormatterJson(logger);
 var engine = new WorkflowEngine(logger, iocContainer, formatter);
 
 // step 3. add a step to be executed - this step will spawn new steps during processing
-engine.Data.AddStep(new Step(FetchData.Name, 0));
+await engine.Data.AddStepAsync(new Step(FetchData.Name, 0));
 
 // step 4. GO!
 engine.Start(new WorkflowConfiguration(new WorkerConfig { StopWhenNoWork = true }, NumberOfWorkers: 1));
