@@ -17,6 +17,9 @@ iocContainer.Entries.Add(typeof(IStepPersister).FullName!, new DemoInMemoryPersi
 // step 2. build the engine and specify as many workers as you want in parallelism
 // The engine even supports being started on multiple machines 
 IWorkflowLogger logger = new ConsoleStepLogger();
+logger.Configuration.TraceLoggingEnabledUntil = DateTime.Now.AddYears(2);
+logger.Configuration.DebugLoggingEnabledUntil = DateTime.Now.AddYears(2);
+
 var formatter = new DotNetStepStateFormatterJson(logger);
 var engine = new WorkflowEngine(logger, iocContainer, formatter);
 

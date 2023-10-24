@@ -38,7 +38,7 @@ public class WorkflowEngine
     static string MakeEngineName()
         => $"engine/{Environment.MachineName}/process/{Environment.ProcessId}/{Random.Shared.Next(99999)}";
 
-    void Init(WorkflowConfiguration configuration, string? engineName = null)
+    void Init(WorkflowConfiguration configuration, string? engineName)
     {
         if (logger.InfoLoggingEnabled)
             logger.LogInfo($"{nameof(WorkflowEngine)}: starting engine" + engineName, null, null);
@@ -59,7 +59,7 @@ public class WorkflowEngine
         Workers = workers;
     }
 
-    /// <summary> Starts the engine using 1 or more background threads </summary>
+    /// <summary> Starts the engine using 1 or more background threads in a non-async context </summary>
     public void Start(
         WorkflowConfiguration configuration,
         string? engineName = null,
@@ -87,6 +87,7 @@ public class WorkflowEngine
             thread.Join();
     }
 
+    /// <summary> Starts the engine using 1 or more background threads in an async context</summary>
     public async Task StartAsync(
         WorkflowConfiguration configuration,
         string? engineName = null,
