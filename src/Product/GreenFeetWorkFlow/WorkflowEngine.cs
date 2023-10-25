@@ -93,9 +93,13 @@ public class WorkflowEngine
         string? engineName = null,
         CancellationToken? stoppingToken = null)
     {
-        await Task.Run(() => Start(configuration, engineName, stoppingToken));
+        Init(configuration, engineName);
+        
+        var token = stoppingToken ?? CancellationToken.None;
+        
+        var tasks = Workers!.Select(w => w.StartAsync(token));
+        await Task.WhenAll(tasks.ToArray());
     }
-
 
     /// <summary> Start the engine with the current thread as the worker. Also use this if you have trouble debugging weird scenarios </summary>
     public async Task StartAsSingleWorker(
