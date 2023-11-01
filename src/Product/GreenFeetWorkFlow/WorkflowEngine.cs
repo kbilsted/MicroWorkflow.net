@@ -65,17 +65,24 @@ public class WorkflowEngine
         string? engineName = null,
         CancellationToken? stoppingToken = null)
     {
+        static bool RunIt(Worker x, CancellationToken? stoppingToken)
+        {
+            x.StartAsync(stoppingToken ?? CancellationToken.None)
+                .GetAwaiter()
+                .GetResult();
+            return true;
+        }
+
         Init(configuration, engineName);
 
         Threads = Workers!
            .Select((x, i) =>
            {
-               var t = new Thread(async () => await x.StartAsync(stoppingToken ?? CancellationToken.None))
+               var t = new Thread(() => RunIt(x, stoppingToken))
                {
                    Name = x.WorkerName,
                    IsBackground = true // c# automatically shuts down background threads when all foreground threads are terminated
                };
-
                return t;
            })
            .ToArray();
@@ -84,7 +91,20 @@ public class WorkflowEngine
             thread.Start();
 
         foreach (var thread in Threads)
-            thread.Join();
+        {
+            try
+            {
+                var threadDied = thread.Join(-1);
+
+                if (threadDied)
+                    logger.LogError($"Thread '{thread.Name}' has died! An exception was thrown and either exception not caught or async call not awaited", null, null);
+            }
+            catch (Exception e)
+            {
+                logger.LogError($"Exception during thread execution on thread '{thread.Name}'", e, null);
+                throw;
+            }
+        }
     }
 
     /// <summary> Starts the engine using 1 or more background threads in an async context</summary>
@@ -94,9 +114,9 @@ public class WorkflowEngine
         CancellationToken? stoppingToken = null)
     {
         Init(configuration, engineName);
-        
+
         var token = stoppingToken ?? CancellationToken.None;
-        
+
         var tasks = Workers!.Select(w => w.StartAsync(token));
         await Task.WhenAll(tasks.ToArray());
     }
