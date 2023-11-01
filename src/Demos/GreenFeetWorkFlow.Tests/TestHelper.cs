@@ -79,7 +79,7 @@ public class TestHelper
 
         var workflowConfiguration = new WorkflowConfiguration(new WorkerConfig()
         {
-            StopWhenNoWork = false
+            StopWhenNoImmediateWork = false
         }, NumberOfWorkers: workerCount);
 
         Engine.Start(workflowConfiguration, stoppingToken: cts.Token);
@@ -101,7 +101,7 @@ public class TestHelper
 
         var workflowConfiguration = new WorkflowConfiguration(new WorkerConfig()
         {
-            StopWhenNoWork = workerCount == 1,
+            StopWhenNoImmediateWork = workerCount == 1,
         }, NumberOfWorkers: workerCount);
 
         if (workerCount == 1)
@@ -125,7 +125,7 @@ public class TestHelper
         Engine.Data.AddStepsAsync(steps).GetAwaiter().GetResult();
 
         var workflowConfiguration = new WorkflowConfiguration(new WorkerConfig()
-        { StopWhenNoWork = workerCount == 1 },
+        { StopWhenNoImmediateWork = workerCount == 1 },
         NumberOfWorkers: workerCount);
 
         Engine.Start(workflowConfiguration, stoppingToken: cts.Token);

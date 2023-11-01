@@ -69,7 +69,7 @@ public class Worker
                         StoppingToken.WaitHandle.WaitOne(workerConfig.DelayTechnicalTransientError);
                         continue;
                     case WorkerRunStatus.NoWorkDone:
-                        if (workerConfig.StopWhenNoWork)
+                        if (workerConfig.StopWhenNoImmediateWork)
                         {
                             if (logger.DebugLoggingEnabled)
                                 logger.LogDebug($"{nameof(Worker)}: Stopping worker thread due to no work",

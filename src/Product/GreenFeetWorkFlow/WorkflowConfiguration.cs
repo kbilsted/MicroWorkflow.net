@@ -32,9 +32,10 @@ public class LoggerConfiguration
 public record WorkerConfig()
 {
     /// <summary>
-    /// stop the engine when there is no work to carry out now (only none or future step exists)
+    /// stop the engine when there is no immediate work to carry out now (it will stop if eg. future step exists).
+    /// Useful for testing
     /// </summary>
-    public bool StopWhenNoWork { get; set; } = false;
+    public bool StopWhenNoImmediateWork { get; set; } = false;
 
     public TimeSpan DelayNoReadyWork { get; set; } = TimeSpan.FromSeconds(3);
     public TimeSpan DelayTechnicalTransientError { get; set; } = TimeSpan.FromMinutes(2);

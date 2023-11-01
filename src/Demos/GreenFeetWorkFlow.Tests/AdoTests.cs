@@ -11,7 +11,7 @@ public class WorkerTests
     private readonly WorkflowConfiguration cfg = new WorkflowConfiguration(
         new WorkerConfig()
         {
-            StopWhenNoWork = true
+            StopWhenNoImmediateWork = true
         },
         NumberOfWorkers: 1);
 
