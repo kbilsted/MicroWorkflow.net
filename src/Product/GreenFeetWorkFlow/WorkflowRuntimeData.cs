@@ -184,7 +184,12 @@ public class WorkflowRuntimeData
     internal static DateTime? TrimToSeconds(DateTime? now) => now == null ? null : TrimToSeconds(now.Value);
 
     /// <summary> we round down to ensure a worker can pick up the step/rerun-step. if in unittest mode it may exit if not rounded. </summary>
-    internal static DateTime TrimToSeconds(DateTime now) => new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second);
+    internal static DateTime TrimToSeconds(DateTime now)
+    {
+        if (now == DateTime.MaxValue || now == DateTime.MinValue)
+            return now;
+        return new DateTime(now.Ticks - (now.Ticks % TimeSpan.TicksPerSecond), now.Kind);
+    }
 
     internal void FormatStateForSerialization(Step step)
     {
