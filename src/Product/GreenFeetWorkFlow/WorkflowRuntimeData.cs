@@ -34,6 +34,24 @@ public class WorkflowRuntimeData
         return await Task.FromResult(rows);
     }
 
+    /// <summary>
+    /// Try adding a step if it is not found in the ready queue
+    /// </summary>
+    /// <returns>the identity of the step or null if a search found one or more ready steps</returns>
+    public int? AddStepIfNotExists(Step step, SearchModel searchModel, object? transaction = null)
+    {
+        IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
+        int? result = persister.InTransaction(() =>
+        {
+            if (persister.SearchSteps(searchModel, StepStatus.Ready).Any())
+                return (int?)null;
+
+            return persister.Insert(StepStatus.Ready, step);
+        }, transaction);
+
+        return result;
+    }
+
     /// <summary> Add step to be executed. May throw exception if persistence layer fails. For example when inserting multiple singleton elements </summary>
     /// <returns>the identity of the step</returns>
     public async Task<int> AddStepAsync(Step step, object? transaction = null) => (await AddStepsAsync(new[] { step }, transaction)).Single();
