@@ -45,7 +45,7 @@ public class WorkerTests
     }
 
     [Test]
-    public async Task When_adding_two_steps_in_the_same_transaction_Then_both_execute()
+    public void When_adding_two_steps_in_the_same_transaction_Then_both_execute()
     {
         string[] stepResults = new string[2];
         const string name = "v1/When_adding_two_steps_in_the_same_transaction_Then_succeed";
@@ -71,7 +71,7 @@ public class WorkerTests
     Dictionary<StepStatus, List<Step>> GetAllByFlowId() => helper.Engine!.Data.SearchSteps(new SearchModel(FlowId: helper.FlowId), FetchLevels.ALL);
 
     [Test]
-    public async Task When_executing_step_throwing_special_FailCurrentStepException_Then_fail_current_step()
+    public void When_executing_step_throwing_special_FailCurrentStepException_Then_fail_current_step()
     {
         const string name = "test-throw-failstepexception";
         helper.StepHandlers = [(
@@ -86,7 +86,7 @@ public class WorkerTests
     }
 
     [Test]
-    public async Task When_executing_step_throwing_special_FailCurrentStepException_using_step_Then_fail_current_step()
+    public void When_executing_step_throwing_special_FailCurrentStepException_using_step_Then_fail_current_step()
     {
         const string name = "test-throw-failstepexception_from_step_variable";
         helper.Steps = [new Step(name) { FlowId = helper.FlowId }];
@@ -98,7 +98,7 @@ public class WorkerTests
     }
 
     [Test]
-    public async Task When_executing_step_throwing_special_FailCurrentStepException_and_add_step_Then_fail_current_step_and_add_ready_step()
+    public void When_executing_step_throwing_special_FailCurrentStepException_and_add_step_Then_fail_current_step_and_add_ready_step()
     {
         var name = "test-throw-failstepexception-with-newStep";
         var nameNewStep = "test-throw-failstepexception-with-newStep-newstepname";
@@ -168,7 +168,7 @@ public class WorkerTests
     }
 
     [Test]
-    public async Task When_executing_step_throwing_exception_Then_rerun_current_step_and_ensure_state_is_unchanged()
+    public void When_executing_step_throwing_exception_Then_rerun_current_step_and_ensure_state_is_unchanged()
     {
         int? dbid = null;
         const string name = "test-throw-exception";
@@ -392,7 +392,7 @@ public class WorkerTests
     }
 
     [Test]
-    public async Task When_step_is_in_the_future_Then_it_can_be_activated_to_execute_now()
+    public void When_step_is_in_the_future_Then_it_can_be_activated_to_execute_now()
     {
         string? stepResult = null;
         const string name = "When_step_is_in_the_future_Then_it_can_be_activated_to_execute_now";
@@ -408,7 +408,7 @@ public class WorkerTests
 
         // activate
         var id = GetByFlowId().Single().Id;
-        var count = await helper.Engine!.Data.ActivateStepAsync(id, null);
+        var count = helper.Engine!.Data.ActivateStep(id, null);
         count.Should().Be(1);
 
         helper.Start();
@@ -418,7 +418,7 @@ public class WorkerTests
     }
 
     [Test]
-    public async Task When_step_is_in_the_future_Then_it_can_be_activated_to_execute_now_with_args()
+    public void When_step_is_in_the_future_Then_it_can_be_activated_to_execute_now_with_args()
     {
         string? stepResult = null;
         string args = "1234";
@@ -434,7 +434,7 @@ public class WorkerTests
 
         // activate
         var id = GetByFlowId().Single().Id;
-        var count = await helper.Engine!.Data.ActivateStepAsync(id, args);
+        var count = helper.Engine!.Data.ActivateStep(id, args);
         count.Should().Be(1);
         helper.Start();
 
@@ -443,7 +443,7 @@ public class WorkerTests
     }
 
     [Test]
-    public async Task TwoSteps_flow_with_last_step_undefined_stephandler__so_test_terminate()
+    public void TwoSteps_flow_with_last_step_undefined_stephandler__so_test_terminate()
     {
         string? stepResult = null;
         const string name = "undefined-next-step/cookFood";
