@@ -129,16 +129,19 @@ public class WorkflowRuntimeData
     }
 
     /// <summary> Re-execute steps that are 'done' or 'failed' by inserting a clone into the 'ready' queue </summary>
-    /// <returns>Ids of inserted steps</returns>
-    public async Task<int[]> ReExecuteStepsAsync(SearchModel criteria, object? transaction = null)
+    /// <returns>Ids of inserted steps into the ready queue</returns>
+    public int[] ReExecuteSteps(SearchModel criteria, FetchLevels stepKinds, object? transaction = null)
     {
         IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
+
+        if (stepKinds.Ready)
+            throw new ArgumentException("Cannot re-execute 'ready' steps");
 
         int[] ids = persister.InTransaction(() =>
             {
                 var now = DateTime.Now;
-
-                var entities = persister.SearchSteps(criteria, FetchLevels.NONREADY);
+                var trimmedNow = TrimToSeconds(now);
+                var entities = persister.SearchSteps(criteria, stepKinds);
 
                 var steps = entities
                 .SelectMany(x => x.Value)
@@ -148,11 +151,11 @@ public class WorkflowRuntimeData
                     CorrelationId = step.CorrelationId,
                     CreatedByStepId = step.CreatedByStepId,
                     CreatedTime = now,
-                    Description = $"Re-execution of step id: " + step.Id,
+                    Description = $"Re-execution of step id: {step.Id}",
                     State = step.State,
                     StateFormat = step.StateFormat,
                     ActivationArgs = step.ActivationArgs,
-                    ScheduleTime = now,
+                    ScheduleTime = trimmedNow,
                     Singleton = step.Singleton,
                     SearchKey = step.SearchKey,
                     Name = step.Name,
@@ -160,16 +163,16 @@ public class WorkflowRuntimeData
                 .ToArray();
 
                 if (logger.InfoLoggingEnabled)
-                    logger.LogInfo("Reexecuting ids", null, new Dictionary<string, object?>() { { "ids", steps.Select(x => x.Id).ToArray() } });
+                    logger.LogInfo($"{nameof(WorkflowRuntimeData)}: Reexecuting ids", null, new Dictionary<string, object?>() { { "ids", steps.Select(x => x.Id).ToArray() } });
 
                 return persister.Insert(StepStatus.Ready, steps);
             },
             transaction);
 
-        return await Task.FromResult(ids);
         Worker.ResetWaitForWorkers();
         WorkerCoordinator?.TryAddWorker();
 
+        return ids;
     }
 
     /// <summary>

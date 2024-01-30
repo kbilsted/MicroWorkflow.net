@@ -122,13 +122,24 @@ public class RuntimeDataTests
         newStep.FlowId.Should().Be(step.FlowId);
         newStep.CreatedByStepId.Should().Be(step.Id);
         newStep.ScheduleTime.Should().BeCloseTo(DateTime.Now, TimeSpan.FromSeconds(2));
+        newStep.ScheduleTime.Millisecond.Should().Be(0);
         newStep.ExecutionCount.Should().Be(0);
     }
 
+    [Test]
+    public void When_adding_a_step_Then_place_it_in_the_ready_queue()
+    {
+        var engine = helper.Build();
+        var step = new Step(helper.RndName) { FlowId = helper.FlowId, CorrelationId = helper.CorrelationId };
+        var id = engine.Data.AddStep(step);
+        tearDownStep = id;
 
+        var newStep = engine.Data.SearchSteps(new SearchModel(Id: id), StepStatus.Ready).Single();
         newStep.CorrelationId.Should().Be(step.CorrelationId);
         newStep.FlowId.Should().Be(step.FlowId);
         newStep.CreatedByStepId.Should().Be(step.Id);
         newStep.ScheduleTime.Should().BeCloseTo(DateTime.Now, TimeSpan.FromSeconds(5));
+        newStep.ScheduleTime.Millisecond.Should().Be(0);
+        newStep.ExecutionCount.Should().Be(0);
     }
 }
