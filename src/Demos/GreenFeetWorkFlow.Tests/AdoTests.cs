@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using ReassureTest;
 using System.Diagnostics;
+using static GreenFeetWorkflow.Tests.TestHelper;
 
 namespace GreenFeetWorkflow.Tests;
 
@@ -12,8 +13,7 @@ public class WorkerTests
         new WorkerConfig()
         {
             StopWhenNoImmediateWork = true
-        },
-        NumberOfWorkers: 1);
+        });
 
     [SetUp]
     public void Setup()
@@ -22,74 +22,79 @@ public class WorkerTests
     }
 
     [Test]
-    public void When_executing_OneStep_with_state_Then_succeed()
+    public void When_executing_OneStep_with_initialstate_Then_that_state_is_accessible_and_step_is_executed()
     {
         string? stepResult = null;
+        const string StepName = "OneStep";
+        helper.Steps = [new Step(StepName)
+        {
+            InitialState = 1234,
+            FlowId = helper.FlowId
+        }];
+        helper.StepHandlers = [(StepName, new GenericImplementation(step =>
+        {
+            int counter = helper.Formatter!.Deserialize<int>(step.State);
+            stepResult = $"hello {counter}";
+            return ExecutionResult.Done();
+        }))];
 
-        helper.CreateAndRunEngine(
-            new[] { new Step("OneStep") { InitialState = 1234, FlowId = helper.FlowId } },
-            ("OneStep", new GenericImplementation(step =>
-            {
-                int counter = helper.Formatter!.Deserialize<int>(step.State);
-                stepResult = $"hello {counter}";
-                return ExecutionResult.Done();
-            })));
+        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
 
         stepResult.Should().Be("hello 1234");
         helper.AssertTableCounts(helper.FlowId, ready: 0, done: 1, failed: 0);
     }
 
     [Test]
-    public async Task When_adding_two_steps_in_the_same_transaction_Then_succeed()
+    public async Task When_adding_two_steps_in_the_same_transaction_Then_both_execute()
     {
         string[] stepResults = new string[2];
         const string name = "v1/When_adding_two_steps_in_the_same_transaction_Then_succeed";
 
-        var engine = helper.CreateEngine(
-            (name, new GenericImplementation(step =>
-            {
-                int counter = helper.Formatter!.Deserialize<int>(step.State);
-                stepResults[counter] = $"hello {counter}";
-                return ExecutionResult.Done();
-            })));
+        helper.StepHandlers = [Handle(name, step =>
+        {
+            int counter = helper.Formatter!.Deserialize<int>(step.State);
+            stepResults[counter] = $"hello {counter}";
+            return ExecutionResult.Done();
+        })];
 
-        await using var connection = new SqlConnection(helper.ConnectionString);
-        connection.Open();
-        await using var tx = connection.BeginTransaction(System.Data.IsolationLevel.ReadCommitted);
-        await engine.Data.AddStepAsync(new Step(name, 0), tx);
-        await engine.Data.AddStepAsync(new Step(name, 1), tx);
-        tx.Commit();
-        engine.Start(cfg);
+        var engine = helper.StopWhenNoWork().Build();
+
+        engine.Data.AddSteps([new Step(name, 0), new Step(name, 1)]);
+
+        helper.Start();
 
         stepResults.Should().BeEquivalentTo(new[] { "hello 0", "hello 1" });
     }
 
+    IEnumerable<Step> GetByFlowId() => GetAllByFlowId().SelectMany(x => x.Value);
+
+    Dictionary<StepStatus, List<Step>> GetAllByFlowId() => helper.Engine!.Data.SearchSteps(new SearchModel(FlowId: helper.FlowId), FetchLevels.ALL);
+
     [Test]
-    public void When_executing_step_throwing_special_FailCurrentStepException_Then_fail_current_step()
+    public async Task When_executing_step_throwing_special_FailCurrentStepException_Then_fail_current_step()
     {
-        helper.CreateAndRunEngine(
-             new Step() { Name = "test-throw-failstepexception", FlowId = helper.FlowId },
-            (
+        const string name = "test-throw-failstepexception";
+        helper.StepHandlers = [(
                 "test-throw-failstepexception",
                 GenericImplementation.Create(step => throw new FailCurrentStepException("some description"))
-            ));
+            )];
+        helper.Steps = [new Step() { Name = name, FlowId = helper.FlowId }];
+        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
 
         helper.AssertTableCounts(helper.FlowId, ready: 0, done: 0, failed: 1);
-        helper.GetByFlowId(helper.FlowId).Description.Should().Be("some description");
+        GetByFlowId().Should().Satisfy(x => x.Description == "some description");
     }
 
     [Test]
-    public void When_executing_step_throwing_special_FailCurrentStepException_using_step_Then_fail_current_step()
+    public async Task When_executing_step_throwing_special_FailCurrentStepException_using_step_Then_fail_current_step()
     {
-        helper.CreateAndRunEngine(
-            new Step("test-throw-failstepexception_from_step_variable") { FlowId = helper.FlowId },
-            (
-                "test-throw-failstepexception_from_step_variable",
-                GenericImplementation.Create(step => throw step.FailAsException("some description"))
-            ));
+        const string name = "test-throw-failstepexception_from_step_variable";
+        helper.Steps = [new Step(name) { FlowId = helper.FlowId }];
+        helper.StepHandlers = [Handle(name, step => throw step.FailAsException("some description"))];
+        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
 
         helper.AssertTableCounts(helper.FlowId, ready: 0, done: 0, failed: 1);
-        helper.GetByFlowId(helper.FlowId).Description.Should().Be("some description");
+        GetByFlowId().Single().Description.Should().Be("some description");
     }
 
     [Test]
@@ -97,15 +102,12 @@ public class WorkerTests
     {
         var name = "test-throw-failstepexception-with-newStep";
         var nameNewStep = "test-throw-failstepexception-with-newStep-newstepname";
-        var engine = helper.CreateEngine(
-            (
-                name,
-                GenericImplementation.Create(step => throw step.FailAsException(newSteps: new Step(nameNewStep))))
-            );
-        await engine.Data.AddStepAsync(new Step(name) { FlowId = helper.FlowId });
-        await engine.StartAsSingleWorker(cfg);
 
-        var steps = await engine.Data.SearchStepsAsync(new SearchModel(FlowId: helper.FlowId), FetchLevels.ALL);
+        helper.StepHandlers = [Handle(name, step => throw step.FailAsException(newSteps: new Step(nameNewStep)))];
+        helper.Steps = [new Step(name) { FlowId = helper.FlowId }];
+        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
+
+        var steps = GetAllByFlowId();
 
         steps.Is(@" [
     {
@@ -166,38 +168,40 @@ public class WorkerTests
     }
 
     [Test]
-    public void When_executing_step_throwing_exception_Then_rerun_current_step_and_ensure_state_is_unchanged()
+    public async Task When_executing_step_throwing_exception_Then_rerun_current_step_and_ensure_state_is_unchanged()
     {
         int? dbid = null;
-
-        helper.CreateAndRunEngine(
-            new Step("test-throw-exception", "hej") { FlowId = helper.FlowId },
+        const string name = "test-throw-exception";
+        helper.StepHandlers = [
             (
-                "test-throw-exception",
+                name,
                 GenericImplementation.Create(step =>
                 {
                     dbid = step.Id;
                     throw new Exception("exception message");
-                })));
+                }))];
+        helper.Steps = [new Step(name, "hej") { FlowId = helper.FlowId }];
+        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
 
         helper.AssertTableCounts(helper.FlowId, ready: 1, done: 0, failed: 0);
 
         var persister = helper.Persister;
-        var row = persister.InTransaction(() =>
-        persister.SearchSteps(new SearchModel(Id: dbid!.Value), StepStatus.Ready)).Single();
+        var row = helper.Engine.Data.SearchSteps(new SearchModel(Id: dbid!.Value), StepStatus.Ready).Single();
         row!.State.Should().Be("\"hej\"");
         row.FlowId.Should().Be(helper.FlowId);
-        row.Name.Should().Be("test-throw-exception");
+        row.Name.Should().Be(name);
     }
 
 
     [Test]
     public void When_connecting_unsecurely_to_DB_Then_see_the_exception()
     {
-        var impl = ("onestep_fails", new GenericImplementation(step => step.Fail()));
-        helper.ConnectionString = helper.IllegalConnectionString;
-        
-        Action act = () => helper.CreateAndRunEngine(new Step("onestep_fails") { FlowId = helper.FlowId }, impl);
+        const string IllegalConnectionString = "Server=localhost;Database=adotest;Integrated Security=False;TrustServerCertificate=False";
+
+        helper.StepHandlers = [Handle("onestep_fails", step => step.Fail())];
+        helper.ConnectionString = IllegalConnectionString;
+
+        Action act = () => helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
 
         act.Should()
             .Throw<SqlException>()
@@ -205,11 +209,12 @@ public class WorkerTests
     }
 
     [Test]
-    public void OneStep_fail()
+    public void When_step_is_failing_Then_it_is_marked_as_failed()
     {
-        var impl = ("onestep_fails", new GenericImplementation(step => step.Fail()));
-
-        helper.CreateAndRunEngine(new Step("onestep_fails") { FlowId = helper.FlowId }, impl);
+        const string name = "onestep_fails";
+        helper.StepHandlers = [(name, new GenericImplementation(step => step.Fail()))];
+        helper.Steps = [new Step(name) { FlowId = helper.FlowId }];
+        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
 
         helper.AssertTableCounts(helper.FlowId, ready: 0, done: 0, failed: 1);
     }
@@ -218,36 +223,33 @@ public class WorkerTests
     public void When_executing_step_for_the_first_time_Then_execution_count_is_1()
     {
         int? stepResult = null;
-
-        var impl = (helper.RndName, new GenericImplementation(step =>
+        helper.StepHandlers = [(helper.RndName, new GenericImplementation(step =>
         {
             stepResult = step.ExecutionCount;
             return ExecutionResult.Done();
-        }));
-
-        helper.CreateAndRunEngine(new[] { new Step(helper.RndName) }, impl);
+        }))];
+        helper.Steps = [new Step(helper.RndName)];
+        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
 
         stepResult.Should().Be(1);
     }
 
-
     [Test]
-    public void OneStep_Repeating_Thrice()
+    public void When_step_returns_rerun_Then_it_is_rerun()
     {
+        const string name = "OneStep_Repeating_Thrice";
         string? stepResult = null;
-
-        var impl = ("OneStep_Repeating_Thrice", new GenericImplementation(step =>
+        helper.StepHandlers = [Handle(name, step =>
         {
             int counter = helper.Formatter!.Deserialize<int>(step.State);
-
             stepResult = $"counter {counter} executionCount {step.ExecutionCount}";
 
             if (counter < 3)
                 return ExecutionResult.Rerun(stateForRerun: counter + 1, scheduleTime: step.ScheduleTime);
             return ExecutionResult.Done();
-        }));
-
-        helper.CreateAndRunEngine(new Step("OneStep_Repeating_Thrice") { InitialState = 1, FlowId = helper.FlowId }, impl);
+        })];
+        helper.Steps = [new Step(name) { InitialState = 1, FlowId = helper.FlowId }];
+        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
 
         stepResult.Should().Be("counter 3 executionCount 3");
 
@@ -255,45 +257,27 @@ public class WorkerTests
     }
 
     [Test]
-    public void TwoSteps_flow_same_flowid()
+    public void When_one_step_executes_as_done_with_a_new_step_Then_new_step_has_the_same_flowid_and_correlationId()
     {
-        string? stepResult = null;
+        Step? executingStep = null;
 
-        var implA = ("check-flowid/a", new GenericImplementation(step => step.Done(new Step("check-flowid/b"))));
-        var implB = ("check-flowid/b", new GenericImplementation(step =>
+        helper.StepHandlers = [
+         ("check-flowid/a", new GenericImplementation(step => step.Done(new Step("check-flowid/b")))),
+            ("check-flowid/b", new GenericImplementation(step =>
+           {
+               executingStep = step;
+               return ExecutionResult.Done();
+           }))];
+        helper.Steps = [new Step
         {
-            stepResult = step.FlowId;
-            return ExecutionResult.Done();
-        }));
-
-        helper.CreateAndRunEngine(new Step { Name = "check-flowid/a", FlowId = helper.FlowId }, implA, implB);
-
-        stepResult.Should().Be($"{helper.FlowId}");
-
-        helper.AssertTableCounts(helper.FlowId, ready: 0, done: 2, failed: 0);
-    }
-
-    [Test]
-    public void TwoSteps_flow_same_correlationid()
-    {
-        string? stepResult = null;
-
-        var implA = ("check-correlationid/a", new GenericImplementation(step => step.Done(new Step("check-correlationid/b"))));
-        var implB = ("check-correlationid/b", new GenericImplementation(step =>
-        {
-            stepResult = step.CorrelationId;
-            return ExecutionResult.Done();
-        }));
-
-        helper.CreateAndRunEngine(new Step
-        {
-            Name = "check-correlationid/a",
-            CorrelationId = helper.CorrelationId,
+            Name = "check-flowid/a",
             FlowId = helper.FlowId,
-        }, implA, implB);
+            CorrelationId = helper.CorrelationId,
+        }];
+        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
 
-        stepResult.Should().Be(helper.CorrelationId);
-
+        executingStep.FlowId.Should().Be(helper.FlowId);
+        executingStep.CorrelationId.Should().Be(helper.CorrelationId);
         helper.AssertTableCounts(helper.FlowId, ready: 0, done: 2, failed: 0);
     }
 
@@ -304,26 +288,59 @@ public class WorkerTests
         string oldId = Guid.NewGuid().ToString();
         string newId = Guid.NewGuid().ToString();
 
-        var cookHandler = ("check-correlationidchange/cookFood", new GenericImplementation(step =>
+        helper.StepHandlers = [("check-correlationidchange/cookFood", new GenericImplementation(step =>
         {
             return step.Done()
                 .With(new Step("check-correlationidchange/eat")
                 {
                     CorrelationId = newId,
                 });
-        }));
-        var eatHandler = ("check-correlationidchange/eat", new GenericImplementation(step =>
+        })),
+            ("check-correlationidchange/eat", new GenericImplementation(step =>
         {
             stepResult = step.CorrelationId;
             return step.Done();
-        }));
+        }))];
+        helper.Steps = [new Step()
+        {
+            Name = "check-correlationidchange/cookFood",
+            CorrelationId = oldId
+        }];
 
-        helper.CreateAndRunEngine(new[] { new Step()
+        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
+
+        stepResult.Should().Be(newId);
+    }
+
+
+    [Test]
+    public void When_a_step_creates_a_new_step_Then_new_step_may_change_correlationid2()
+    {
+        string? stepResult = null;
+        string oldId = Guid.NewGuid().ToString();
+        string newId = Guid.NewGuid().ToString();
+
+        helper.StepHandlers = [
+            Handle("check-correlationidchange/cookFood", step =>
+        {
+            return step.Done()
+                .With(new Step("check-correlationidchange/eat")
+                {
+                    CorrelationId = newId,
+                });
+        }),
+            Handle("check-correlationidchange/eat", step =>
             {
-                Name = "check-correlationidchange/cookFood",
-                CorrelationId = oldId
-            } },
-            cookHandler, eatHandler);
+                stepResult = step.CorrelationId;
+                return step.Done();
+            })];
+        helper.Steps = [new Step()
+        {
+            Name = "check-correlationidchange/cookFood",
+            CorrelationId = oldId
+        }];
+
+        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
 
         stepResult.Should().Be(newId);
     }
@@ -333,26 +350,22 @@ public class WorkerTests
     {
         string? stepResult = null;
 
-
-        helper.CreateAndRunEngine(
-            new[] { new Step() { Name = "check-future-step/cookFood", FlowId = helper.FlowId } },
-            ("check-future-step/cookFood",
-            step =>
+        helper.StepHandlers = [
+            Handle("check-future-step/cookFood", step =>
             {
                 string food = "potatoes";
                 stepResult = $"cooking {food}";
                 return ExecutionResult.Done(
                     new Step("check-future-step/eat", food) { ScheduleTime = DateTime.Now.AddYears(30) });
-            }
-        ),
-            ("check-future-step/eat",
-            step =>
+            }),
+            Handle("check-future-step/eat", step =>
             {
                 var food = helper.Formatter!.Deserialize<string>(step.State);
                 stepResult = $"eating {food}";
                 return ExecutionResult.Done();
-            }
-        ));
+            })];
+        helper.Steps = [new Step() { Name = "check-future-step/cookFood", FlowId = helper.FlowId }];
+        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
 
         stepResult.Should().Be($"cooking potatoes");
 
@@ -364,18 +377,15 @@ public class WorkerTests
     public void When_step_is_in_the_future_Then_it_wont_execute()
     {
         string? stepResult = null;
-
-        var name = "When_step_is_in_the_future_Then_it_wont_execute";
-
-        var engine = helper.CreateEngine((name, GenericImplementation.Create(step => { stepResult = step.FlowId; return step.Done(); })));
-        Step futureStep = new()
+        const string name = "When_step_is_in_the_future_Then_it_wont_execute";
+        helper.StepHandlers = [Handle(name, step => { stepResult = step.FlowId; return step.Done(); })];
+        helper.Steps = [new Step(name)
         {
-            Name = name,
             FlowId = helper.FlowId,
             ScheduleTime = DateTime.Now.AddYears(35)
-        };
-        var id = engine.Data.AddStepAsync(futureStep, null);
-        engine.Start(cfg);
+        }];
+        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
+
         helper.AssertTableCounts(helper.FlowId, ready: 1, done: 0, failed: 0);
 
         stepResult.Should().BeNull();
@@ -385,24 +395,25 @@ public class WorkerTests
     public async Task When_step_is_in_the_future_Then_it_can_be_activated_to_execute_now()
     {
         string? stepResult = null;
-
-        var name = "When_step_is_in_the_future_Then_it_can_be_activated_to_execute_now";
-
-        var engine = helper.CreateEngine((name, GenericImplementation.Create(step => { stepResult = step.FlowId; return step.Done(); })));
-        Step futureStep = new()
+        const string name = "When_step_is_in_the_future_Then_it_can_be_activated_to_execute_now";
+        helper.StepHandlers = [Handle(name, step => { stepResult = step.FlowId; return step.Done(); })];
+        helper.Steps = [new Step(name)
         {
-            Name = name,
             FlowId = helper.FlowId,
             ScheduleTime = DateTime.Now.AddYears(35)
-        };
-        var id = await engine.Data.AddStepAsync(futureStep, null);
-        var count = await engine.Data.ActivateStepAsync(id, null);
+        }];
+        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
+        helper.AssertTableCounts(helper.FlowId, ready: 1, done: 0, failed: 0);
+        stepResult.Should().BeNull();
+
+        // activate
+        var id = GetByFlowId().Single().Id;
+        var count = await helper.Engine!.Data.ActivateStepAsync(id, null);
         count.Should().Be(1);
 
-        engine.Start(cfg);
+        helper.Start();
 
         stepResult.Should().Be(helper.FlowId.ToString());
-
         helper.AssertTableCounts(helper.FlowId, ready: 0, done: 1, failed: 0);
     }
 
@@ -411,83 +422,76 @@ public class WorkerTests
     {
         string? stepResult = null;
         string args = "1234";
-        var name = "When_step_is_in_the_future_Then_it_can_be_activated_to_execute_now_with_args";
+        const string name = "When_step_is_in_the_future_Then_it_can_be_activated_to_execute_now_with_args";
 
-        var engine = helper.CreateEngine((name, GenericImplementation.Create(step => { stepResult = step.ActivationArgs; return step.Done(); })));
-        Step futureStep = new()
+        helper.StepHandlers = [Handle(name, step => { stepResult = step.ActivationArgs; return step.Done(); })];
+        helper.Steps = [new Step(name)
         {
-            Name = name,
             FlowId = helper.FlowId,
             ScheduleTime = DateTime.Now.AddYears(35)
-        };
-        var id = await engine.Data.AddStepAsync(futureStep, null);
-        var count = await engine.Data.ActivateStepAsync(id, args);
+        }];
+        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
+
+        // activate
+        var id = GetByFlowId().Single().Id;
+        var count = await helper.Engine!.Data.ActivateStepAsync(id, args);
         count.Should().Be(1);
-        engine.Start(cfg);
+        helper.Start();
 
         stepResult.Should().Be(JsonConvert.SerializeObject(args));
         helper.AssertTableCounts(helper.FlowId, ready: 0, done: 1, failed: 0);
     }
 
-
     [Test]
-    public void TwoSteps_flow_with_last_step_undefined_stephandler__so_test_terminate()
+    public async Task TwoSteps_flow_with_last_step_undefined_stephandler__so_test_terminate()
     {
         string? stepResult = null;
-
-        var cookHandler = ("undefined-next-step/cookFood", new GenericImplementation((step) =>
+        const string name = "undefined-next-step/cookFood";
+        helper.StepHandlers = [Handle(name, step =>
         {
-            stepResult = $"cooking {"potatoes"}";
+            stepResult = $"cooking potatoes";
             return step.Done(new Step("undefined-next-step/eat", "potatoes"));
-        }));
-
-        helper.CreateAndRunEngine(
-            new[] { new Step() { Name = "undefined-next-step/cookFood", FlowId = helper.FlowId } },
-            cookHandler);
+        })];
+        helper.Steps = [new Step(name) { FlowId = helper.FlowId }];
+        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
 
         stepResult.Should().Be($"cooking potatoes");
 
         helper.AssertTableCounts(helper.FlowId, ready: 1, done: 1, failed: 0);
+        GetAllByFlowId()[StepStatus.Ready].Single().State.Should().Be("\"potatoes\"");
     }
-
 
     [Test]
     public void When_a_step_creates_two_steps_Then_those_steps_can_be_synchronized_and_join_into_a_forth_merge_step()
     {
         string? stepResult = null;
 
-        var stepDriveToShop = new Step("v1/forkjoin/drive-to-shop", new[] { "milk", "cookies" });
-        var payForStuff = new Step("v1/forkjoin/pay");
+        helper.StepHandlers = [Handle("v1/forkjoin/pay-for-all",
+            step =>
+            {
+                (int count, Guid id, DateTime maxWait) = helper.Formatter!.Deserialize<(int, Guid, DateTime)>(step.State);
+                var sales = GroceryBuyer.SalesDb.Where(x => x.id == id).ToArray();
+                if (sales.Length != 2 && DateTime.Now <= maxWait)
+                    return ExecutionResult.Rerun(scheduleTime: DateTime.Now.AddSeconds(0.2));
 
-        var drive = ("v1/forkjoin/drive-to-shop", GenericImplementation.Create(step =>
-        {
-            stepResult = $"driving";
-            var id = Guid.NewGuid();
-            Step milk = new("v1/forkjoin/pick-milk", new BuyInstructions() { Item = "milk", Count = 1, PurchaseId = id });
-            Step cookies = new("v1/forkjoin/pick-cookies", new BuyInstructions() { Item = "cookies", Count = 30, PurchaseId = id });
-            Step pay = new("v1/forkjoin/pay-for-all", (count: 2, id, maxWait: DateTime.Now.AddSeconds(8)));
-            return step.Done(milk, cookies, pay);
-        }));
-
-        var checkout = ("v1/forkjoin/pay-for-all", GenericImplementation.Create(step =>
-        {
-            (int count, Guid id, DateTime maxWait) = helper.Formatter!.Deserialize<(int, Guid, DateTime)>(step.State);
-            var sales = GroceryBuyer.SalesDb.Where(x => x.id == id).ToArray();
-            if (sales.Length != 2 && DateTime.Now <= maxWait)
-                return ExecutionResult.Rerun(scheduleTime: DateTime.Now.AddSeconds(0.2));
-
-            stepResult = $"total: {sales.Sum(x => x.total)}";
-            helper.cts.Cancel();
-            return ExecutionResult.Done();
-        }));
-
-        helper.CreateAndRunEngine(
-            new[] { new Step() { Name = "v1/forkjoin/drive-to-shop", FlowId = helper.FlowId } },
-            4,
-            drive,
-            checkout,
+                stepResult = $"total: {sales.Sum(x => x.total)}";
+                return ExecutionResult.Done();
+            }),
+            Handle("v1/forkjoin/drive-to-shop", step =>
+            {
+                stepResult = $"driving";
+                var id = Guid.NewGuid();
+                Step milk = new("v1/forkjoin/pick-milk", new BuyInstructions() { Item = "milk", Count = 1, PurchaseId = id });
+                Step cookies = new("v1/forkjoin/pick-cookies", new BuyInstructions() { Item = "cookies", Count = 30, PurchaseId = id });
+                Step pay = new("v1/forkjoin/pay-for-all", (count: 2, id, maxWait: DateTime.Now.AddSeconds(8)));
+                return step.Done(milk, cookies, pay);
+            }),
             ("v1/forkjoin/pick-milk", new GroceryBuyer()),
-            ("v1/forkjoin/pick-cookies", new GroceryBuyer()));
+            ("v1/forkjoin/pick-cookies", new GroceryBuyer())];
+
+        helper.Steps = [new Step("v1/forkjoin/drive-to-shop") { FlowId = helper.FlowId }];
+
+        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
 
         stepResult.Should().Be($"total: 61");
 
