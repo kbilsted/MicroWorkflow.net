@@ -1,19 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
+		<TargetFrameworks>net6.0;net8.0</TargetFrameworks>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 
 		<IsPackable>true</IsPackable>
 
-		<Title>A very fast workflow engine with zero dependencies</Title>
+		<Title>A very fast distributed and embedable workflow engine with zero dependencies</Title>
 
 		<Authors>Kasper B. Graversen</Authors>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<RepositoryUrl>https://github.com/kbilsted/GreenFeetWorkflow</RepositoryUrl>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
-		<AnalysisLevel>6.0</AnalysisLevel>
+		<AnalysisLevel>latest</AnalysisLevel>
 		<Description>
 			A very simple workflow engine that can run in any DB, or memory, adapts to any logging framework and any IOC container.
 			Is so simple to use that you can understand the situation even when production fails and you need to look in the Database for state.
@@ -25,7 +25,7 @@
 		<IncludeContentInPack>true</IncludeContentInPack>
 		<PackageProjectUrl>https://github.com/kbilsted/GreenFeetWorkFlow</PackageProjectUrl>
 
-		<PackageTags>workflow; work flow; workflows; GreenFeetWorkFlow; GreenFeetWorkFlow; free</PackageTags>
+		<PackageTags>workflow; work flow; workflows; Embedable; GreenFeetWorkFlow; free; Open source</PackageTags>
 
 		<IncludeSymbols>True</IncludeSymbols>
 
@@ -48,7 +48,7 @@
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
 		</None>
-		<None Update="README.md">
+		<None Update="../../../README.md">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
 		</None>

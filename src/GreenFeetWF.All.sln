@@ -22,6 +22,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GreenFeetWorkFlow.Formatter.NewtonsoftJson", "Product\GreenFeetWorkFlow.Formatter.NewtonsoftJson\GreenFeetWorkFlow.Formatter.NewtonsoftJson.csproj", "{01DB9CED-771C-46C3-A6F8-528DAB818FBF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GreenFeetWorkFlow.WebApiDemo", "Demos\GreenFeetWorkFlow.WebApiDemo\GreenFeetWorkFlow.WebApiDemo.csproj", "{8F8576D7-E79E-4E7D-8FBF-0694D87D3759}"
+	ProjectSection(ProjectDependencies) = postProject
+		{BD6831E2-BC24-4F79-B1DF-BE4917511BE7} = {BD6831E2-BC24-4F79-B1DF-BE4917511BE7}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,13 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
+		<TargetFrameworks>net6.0;net8.0</TargetFrameworks>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 
 		<IsPackable>true</IsPackable>
 		<Authors>Kasper B. Graversen</Authors>
-		<RepositoryUrl>https://github.com/kbilsted/GreenFeetWorkFlowWorkflow</RepositoryUrl>
+		<RepositoryUrl>https://github.com/kbilsted/GreenFeetWorkFlow/tree/master/src/Product/GreenFeetWorkFlow.Ioc.Autofac</RepositoryUrl>
 		<IncludeSymbols>True</IncludeSymbols>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<Title>Autofac íntegration</Title>
