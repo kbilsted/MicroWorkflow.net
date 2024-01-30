@@ -9,9 +9,6 @@ public class RuntimeDataTests
 {
     TestHelper helper = new TestHelper();
 
-    private readonly WorkflowConfiguration cfg = new WorkflowConfiguration(
-        new WorkerConfig() { StopWhenNoImmediateWork = true },
-        NumberOfWorkers: 1);
 
     [SetUp]
     public void Setup()

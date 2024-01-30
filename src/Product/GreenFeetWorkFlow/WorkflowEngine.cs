@@ -2,14 +2,12 @@
 
 public class WorkflowEngine
 {
-    private readonly IWorkflowLogger logger;
-    private readonly IWorkflowIocContainer iocContainer;
+    public readonly IWorkflowLogger logger;
+    public readonly IWorkflowIocContainer iocContainer;
     public string? EngineName { get; set; }
     public CancellationToken StoppingToken { get; private set; }
 
-    public IReadOnlyList<Worker>? Workers { get; private set; }
-    public Thread[] Threads { get; private set; } = new Thread[0];
-
+    public WorkerCoordinator WorkerCoordinator;
 
     public WorkflowEngine(
         IWorkflowLogger logger,
@@ -19,9 +17,14 @@ public class WorkflowEngine
         this.logger = logger;
         this.iocContainer = iocContainer;
 
-        Data = new WorkflowRuntimeData(iocContainer, formatter, logger);
+        Data = new WorkflowRuntimeData(iocContainer, formatter, logger, null);
         Metrics = new WorkflowRuntimeMetrics(iocContainer);
     }
+
+    /// <summary>
+    /// used for force stopping an engine in unittest
+    /// </summary>
+    private CancellationTokenSource? cts;
 
     /// <summary> Access the steps </summary>
     public WorkflowRuntimeData Data { get; }
@@ -32,13 +35,10 @@ public class WorkflowEngine
     /// <summary> Engine configuration </summary>
     public WorkflowConfiguration Configuration { get; set; }
 
-    static string MakeWorkerName(int i)
-        => $"worker/{Environment.MachineName}/process/{Environment.ProcessId}/{i}";
-
     static string MakeEngineName()
-        => $"engine/{Environment.MachineName}/process/{Environment.ProcessId}/{Random.Shared.Next(99999)}";
+        => $"{Environment.MachineName}/pid/{Environment.ProcessId}/{Random.Shared.Next(99999)}";
 
-    void Init(WorkflowConfiguration configuration, string? engineName)
+    void Init(WorkflowConfiguration configuration, string? engineName, CancellationToken? token)
     {
         if (logger.InfoLoggingEnabled)
             logger.LogInfo($"{nameof(WorkflowEngine)}: starting engine" + engineName, null, null);
@@ -48,92 +48,58 @@ public class WorkflowEngine
 
         EngineName = engineName ?? MakeEngineName();
 
-        var workers = new Worker[configuration.NumberOfWorkers];
-        for (int i = 0; i < configuration.NumberOfWorkers; i++)
+        if (token == null)
         {
-            workers[i] = new Worker(logger, iocContainer, Data, configuration.WorkerConfig)
-            {
-                WorkerName = MakeWorkerName(i),
-            };
+            cts = configuration.WorkerConfig.StopWhenNoImmediateWork ? new CancellationTokenSource() : null;
+            if (cts == null)
+                throw new Exception("Either use a CancellationToken as a parameter, or use 'WorkerConfig.StopWhenNoImmediateWork=true'");
+            StoppingToken= cts.Token;
         }
-        Workers = workers;
+        else
+        {
+            cts = CancellationTokenSource.CreateLinkedTokenSource(token.Value);
+            StoppingToken = cts.Token;
+        }
+
+        WorkerCoordinator = new WorkerCoordinator(
+            configuration.WorkerConfig, 
+            cts, 
+            logger, 
+            async () => await new Worker(logger, iocContainer, Data, configuration.WorkerConfig, WorkerCoordinator).StartAsync(StoppingToken));
+
+        if (configuration.WorkerConfig.MinWorkerCount < 1)
+            throw new Exception("'MinWorkerCount' cannot be less than 1");
+        if(configuration.WorkerConfig.MaxWorkerCount< configuration.WorkerConfig.MinWorkerCount)
+            throw new Exception("'MaxWorkerCount' cannot be less than 'MinWorkerCount'");
+        for (int i = 0; i < configuration.WorkerConfig.MinWorkerCount; i++)
+        {
+            WorkerCoordinator.TryAddWorker();
+        }
+
+        Data.WorkerCoordinator = WorkerCoordinator;
     }
 
-    /// <summary> Starts the engine using 1 or more background threads in a non-async context </summary>
+    /// <summary>
+    /// start the engine, which starts workers in the back ground
+    /// </summary>
+    public void StartAsync(
+        WorkflowConfiguration configuration,
+        string? engineName = null,
+        CancellationToken? stoppingToken = null)
+    {
+        Init(configuration, engineName, stoppingToken);
+    }
+
+    /// <summary>
+    /// Start the engine and await the stopping token gets cancelled
+    /// </summary>
     public void Start(
-        WorkflowConfiguration configuration,
-        string? engineName = null,
-        CancellationToken? stoppingToken = null)
+    WorkflowConfiguration configuration,
+    string? engineName = null,
+    CancellationToken? stoppingToken = null)
     {
-        static bool RunIt(Worker x, CancellationToken? stoppingToken)
-        {
-            x.StartAsync(stoppingToken ?? CancellationToken.None)
-                .GetAwaiter()
-                .GetResult();
-            return true;
-        }
+        StartAsync(configuration, engineName, stoppingToken);    
 
-        Init(configuration, engineName);
-
-        Threads = Workers!
-           .Select((x, i) =>
-           {
-               var t = new Thread(() => RunIt(x, stoppingToken))
-               {
-                   Name = x.WorkerName,
-                   IsBackground = true // c# automatically shuts down background threads when all foreground threads are terminated
-               };
-               return t;
-           })
-           .ToArray();
-
-        foreach (var thread in Threads)
-            thread.Start();
-
-        foreach (var thread in Threads)
-        {
-            try
-            {
-                var threadDied = thread.Join(-1);
-
-                if (threadDied)
-                    logger.LogError($"Thread '{thread.Name}' has died! An exception was thrown and either exception not caught or async call not awaited", null, null);
-            }
-            catch (Exception e)
-            {
-                logger.LogError($"Exception during thread execution on thread '{thread.Name}'", e, null);
-                throw;
-            }
-        }
-    }
-
-    /// <summary> Starts the engine using 1 or more background threads in an async context</summary>
-    public async Task StartAsync(
-        WorkflowConfiguration configuration,
-        string? engineName = null,
-        CancellationToken? stoppingToken = null)
-    {
-        Init(configuration, engineName);
-
-        var token = stoppingToken ?? CancellationToken.None;
-
-        var tasks = Workers!.Select(w => w.StartAsync(token));
-        await Task.WhenAll(tasks.ToArray());
-    }
-
-    /// <summary> Start the engine with the current thread as the worker. Also use this if you have trouble debugging weird scenarios </summary>
-    public async Task StartAsSingleWorker(
-        WorkflowConfiguration configuration,
-        string? engineName = null,
-        CancellationToken? stoppingToken = null)
-    {
-        Init(configuration, engineName);
-
-        if (configuration.NumberOfWorkers != 1)
-            throw new ArgumentException($"{nameof(configuration.NumberOfWorkers)} must have the value '1' since we are running in the current thread.");
-
-        await Workers!.Single().StartAsync(stoppingToken ?? CancellationToken.None);
+        StoppingToken.WaitHandle.WaitOne();
     }
 }
-
-

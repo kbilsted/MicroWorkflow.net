@@ -5,12 +5,14 @@ public class WorkflowRuntimeData
     private readonly IWorkflowIocContainer iocContainer;
     private readonly IWorkflowStepStateFormatter formatter;
     private readonly IWorkflowLogger logger;
+    public WorkerCoordinator? WorkerCoordinator;
 
-    public WorkflowRuntimeData(IWorkflowIocContainer iocContainer, IWorkflowStepStateFormatter formatter, IWorkflowLogger logger)
+    public WorkflowRuntimeData(IWorkflowIocContainer iocContainer, IWorkflowStepStateFormatter formatter, IWorkflowLogger logger, WorkerCoordinator? workerCoordinator)
     {
         this.iocContainer = iocContainer;
         this.formatter = formatter;
         this.logger = logger;
+        this.WorkerCoordinator = workerCoordinator;
     }
 
     /// <summary> Reschedule a ready step to 'now' and send it activation data </summary>
@@ -50,6 +52,10 @@ public class WorkflowRuntimeData
         IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
         var result = persister.InTransaction(() => persister.Insert(StepStatus.Ready, steps), transaction);
         return await Task.FromResult(result);
+
+        Worker.ResetWaitForWorkers();
+        WorkerCoordinator?.TryAddWorker();
+
     }
 
     /// <summary> Add steps to be executed. May throw exception if persistence layer fails. For example when inserting multiple singleton elements.
@@ -68,6 +74,8 @@ public class WorkflowRuntimeData
         });
 
         await persister.InsertBulkAsync(StepStatus.Ready, fix);
+        Worker.ResetWaitForWorkers();
+        WorkerCoordinator?.TryAddWorker();
     }
 
     internal void FixupNewStep(Step? originStep, Step step, DateTime now)
@@ -141,6 +149,9 @@ public class WorkflowRuntimeData
             transaction);
 
         return await Task.FromResult(ids);
+        Worker.ResetWaitForWorkers();
+        WorkerCoordinator?.TryAddWorker();
+
     }
 
     /// <summary>
