@@ -47,18 +47,19 @@ public class Worker
 totalwaits: {TotalperformanceWaitCounter} totalfutile-fetches:{TotalperformanceFutileFetchCounter} total work done:{TotalperformanceWorkDoneCounter}");
 
     /// <summary> The good name for a worker is nice for debugging when multiple workers are executing on the same engine. </summary>
-    public string? WorkerName { get; set; }
+    public string WorkerName { get; set; }
 
-    readonly IWorkflowLogger logger;
-    readonly IWorkflowIocContainer iocContainer;
+    private readonly IWorkflowLogger logger;
+    private readonly IWorkflowIocContainer iocContainer;
     private readonly WorkflowRuntimeData engineRuntimeData;
     private readonly WorkerConfig workerConfig;
     private readonly WorkerCoordinator coordinator;
 
-    readonly Stopwatch stopwatch = new();
+    private readonly Stopwatch stopwatch = new();
 
-    public Worker(IWorkflowLogger logger, IWorkflowIocContainer iocContainer, WorkflowRuntimeData runtime, WorkerConfig config, WorkerCoordinator coordinator)
+    public Worker(string workerName, IWorkflowLogger logger, IWorkflowIocContainer iocContainer, WorkflowRuntimeData runtime, WorkerConfig config, WorkerCoordinator coordinator)
     {
+        WorkerName = workerName;
         this.logger = logger;
         this.iocContainer = iocContainer;
         this.engineRuntimeData = runtime;

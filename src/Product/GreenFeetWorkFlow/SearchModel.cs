@@ -15,4 +15,5 @@ public record FetchLevels(bool Ready = false, bool Done = false, bool Fail = fal
     public static FetchLevels ALL = new FetchLevels(true, true, true);
     public static FetchLevels READY = new FetchLevels(true, false, false);
     public static FetchLevels NONREADY = new FetchLevels(false, true, true);
+    public static FetchLevels FAILED = new FetchLevels(false, false, true);
 };

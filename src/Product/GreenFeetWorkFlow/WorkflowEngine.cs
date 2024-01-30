@@ -35,13 +35,15 @@ public class WorkflowEngine
     /// <summary> Engine configuration </summary>
     public WorkflowConfiguration Configuration { get; set; }
 
-    static string MakeEngineName()
+    static string MakeWorkerName()
         => $"{Environment.MachineName}/pid/{Environment.ProcessId}/{Random.Shared.Next(99999)}";
+    static string MakeEngineName()
+         => $"{Environment.MachineName}/pid/{Environment.ProcessId}";
 
     void Init(WorkflowConfiguration configuration, string? engineName, CancellationToken? token)
     {
         if (logger.InfoLoggingEnabled)
-            logger.LogInfo($"{nameof(WorkflowEngine)}: starting engine" + engineName, null, null);
+            logger.LogInfo($"{nameof(WorkflowEngine)}: starting engine {engineName}", null, null);
 
         Configuration = configuration;
         configuration.LoggerConfiguration = logger.Configuration;
@@ -65,7 +67,7 @@ public class WorkflowEngine
             configuration.WorkerConfig, 
             cts, 
             logger, 
-            async () => await new Worker(logger, iocContainer, Data, configuration.WorkerConfig, WorkerCoordinator).StartAsync(StoppingToken));
+            async () => new Worker(MakeWorkerName(), logger, iocContainer, Data, configuration.WorkerConfig, WorkerCoordinator).StartAsync(StoppingToken));
 
         if (configuration.WorkerConfig.MinWorkerCount < 1)
             throw new Exception("'MinWorkerCount' cannot be less than 1");
