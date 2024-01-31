@@ -71,9 +71,9 @@ totalwaits: {TotalperformanceWaitCounter} totalfutile-fetches:{TotalperformanceF
 
     public async Task StartAsync(CancellationToken stoppingToken)
     {
-        if (logger.InfoLoggingEnabled)
-            logger.LogInfo($"{nameof(Worker)}: starting worker", null, new Dictionary<string, object?>() {
-                { "workerId", Thread.CurrentThread.Name! } });
+        if (logger.TraceLoggingEnabled)
+            logger.LogTrace($"{nameof(Worker)}: starting worker", null, new Dictionary<string, object?>() {
+                { "workerId", WorkerName } });
 
         StoppingToken = stoppingToken;
 
@@ -81,10 +81,10 @@ totalwaits: {TotalperformanceWaitCounter} totalfutile-fetches:{TotalperformanceF
 
         PrintPerformanceCounters();
 
-        if (logger.InfoLoggingEnabled)
-            logger.LogInfo($"{nameof(Worker)}: stopping worker", null, new Dictionary<string, object?>()
+        if (logger.TraceLoggingEnabled)
+            logger.LogTrace($"{nameof(Worker)}: stopping worker", null, new Dictionary<string, object?>()
             {
-                { "workerId", Thread.CurrentThread.Name! },
+                { "workerId", WorkerName },
                 { "IsCancellationRequested", StoppingToken.IsCancellationRequested }
             });
     }
@@ -118,10 +118,10 @@ totalwaits: {TotalperformanceWaitCounter} totalfutile-fetches:{TotalperformanceF
 
                         if (workerConfig.StopWhenNoImmediateWork)
                         {
-                            if (logger.DebugLoggingEnabled)
-                                logger.LogDebug($"{nameof(Worker)}: Stopping worker thread due to no work",
+                            if (logger.TraceLoggingEnabled)
+                                logger.LogTrace($"{nameof(Worker)}: Stopping worker thread due to no work",
                                     null,
-                                    new Dictionary<string, object?>() { { "workerId", Thread.CurrentThread.Name! } });
+                                    new Dictionary<string, object?>() { { "workerId", WorkerName } });
                             coordinator.ForceStopEngine();
                             return;
                         }
