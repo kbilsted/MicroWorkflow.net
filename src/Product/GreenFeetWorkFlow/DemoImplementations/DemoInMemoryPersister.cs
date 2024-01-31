@@ -9,9 +9,9 @@ public class DemoInMemoryPersister : IStepPersister
     readonly object GlobalLock = new();
     int GlobalId = 1;
 
-    static readonly Dictionary<int, Step> ReadySteps = new();
-    static readonly Dictionary<int, Step> DoneSteps = new();
-    static readonly Dictionary<int, Step> FailedSteps = new();
+    public static readonly Dictionary<int, Step> ReadySteps = new();
+    public static readonly Dictionary<int, Step> DoneSteps = new();
+    public static readonly Dictionary<int, Step> FailedSteps = new();
 
     static readonly HashSet<int> Locked = new();
 
