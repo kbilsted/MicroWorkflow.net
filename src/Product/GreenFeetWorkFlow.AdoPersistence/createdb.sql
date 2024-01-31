@@ -179,7 +179,7 @@ drop table [Steps_Fail]
 delete from [Steps_Ready]
 delete from [Steps_Done]
 
-select * from [Steps_Ready]
+SELECT TOP (100) *  FROM [adotest].[dbo].[Steps_Ready] (nolock)
 select * from [Steps_Done]
 select * from [Steps_Fail]
 

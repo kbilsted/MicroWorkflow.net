@@ -14,7 +14,7 @@ public class AutofacAdaptor : IWorkflowIocContainer
     public T GetInstance<T>() where T : notnull
     {
         var v = container.Resolve<T>()
-            ?? throw new Exception($"Cannot find steppersister registered as {typeof(IStepPersister)}");
+            ?? throw new Exception($"Type {typeof(T)} is not registered");
         return v;
     }
 

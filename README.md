@@ -1,11 +1,14 @@
 # GreenFeetWorkFlow .Net
 <!--start-->
-[![Stats](https://img.shields.io/badge/Code_lines-1,8_K-ff69b4.svg)]()
+[![Stats](https://img.shields.io/badge/Code_lines-2,5_K-ff69b4.svg)]()
 [![Stats](https://img.shields.io/badge/Test_lines-0-69ffb4.svg)]()
-[![Stats](https://img.shields.io/badge/Doc_lines-133-ffb469.svg)]()
+[![Stats](https://img.shields.io/badge/Doc_lines-453-ffb469.svg)]()
 <!--end-->
 
-An very fast, highly scalable and simple system for workflows, queues, outbox-pattern and job scheduling.
+An very fast, highly scalable (both horizontally and vertically), and simple system for workflows, queues, outbox-pattern and job scheduling.
+
+You can easily embed it directly in your solutions or use it as a stand-alone workflow. 
+
 
 
 
@@ -16,6 +19,7 @@ Reasons to try out GreenFeet Workflow
 **Simplicity** 
 * We model only the steps in a workflow, not the transitions between them. 
 * This greatly simplify the datamodel, the versioning of a flow or a step, and enable you to use reusable code blocks for determining a transition.
+* It is easy to embed it directly into your solutions to improve resiliance
 
 **Steps are implemented in C# *not* in some obscure language** 
 * hence the code is readable, deubable, testable - like the rest of your code base

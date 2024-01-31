@@ -9,9 +9,10 @@ public class LineCounterUpdateReadme
     [Explicit]
     public void UpdateReadme()
     {
-        var basePath = Path.Combine(Assembly.GetExecutingAssembly().Location, "..", "..", "..", "..", "..", "..");
+        var basePath = Path.Combine(Assembly.GetExecutingAssembly().Location, "..", "..", "..", "..", "..", "..","..");
         Console.WriteLine(basePath);
         var linecounter = new LineCounting();
-        linecounter.ReplaceWebshieldsInFile(basePath, Path.Combine(basePath, "README.md"));
+        string destinationFile = Path.Combine(basePath, "README.md");
+        linecounter.ReplaceWebshieldsInFile(basePath, destinationFile);
     }
 }

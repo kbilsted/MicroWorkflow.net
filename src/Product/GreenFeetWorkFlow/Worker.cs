@@ -4,29 +4,67 @@ namespace GreenFeetWorkflow;
 
 public class Worker
 {
-    private static readonly object Lock = new(); // TODO dont use static when more machines running in the same environment
+    private static readonly object Lock = new();
 
     /// <summary> static field so it is shared among all workers. It ensures if no work and many workers, we don't bombard the persistent storage with request for ready items </summary>
     static DateTime SharedThresholdToReducePollingReadyItems = DateTime.MinValue;
 
     public CancellationToken StoppingToken { get; private set; }
 
-    /// <summary> The good name for a worker is nice for debugging when multiple workers are executing on the same engine. </summary>
-    public string? WorkerName { get; set; }
+    public static void ResetWaitForWorkers()
+    {
+        lock (Lock)
+        {
+            SharedThresholdToReducePollingReadyItems = DateTime.MinValue;
+        }
+    }
 
-    readonly IWorkflowLogger logger;
-    readonly IWorkflowIocContainer iocContainer;
+    // TODO: flyt til metrics
+    private int performanceWaitCounter = 0;
+    private int performanceFutileFetchCounter = 0;
+    private int performanceWorkDoneCounter = 0;
+    private static int TotalperformanceWaitCounter = 0;
+    private static int TotalperformanceFutileFetchCounter = 0;
+    private static int TotalperformanceWorkDoneCounter = 0;
+
+    int noWorkStreak = 0;
+
+    [Conditional("MOREOUTPUT")]
+    void AddToWaitCounter()
+    {
+        performanceWaitCounter++;
+        TotalperformanceWaitCounter++;
+    }
+
+    [Conditional("MOREOUTPUT")]
+    void AddToFutileFetchCounter() { performanceFutileFetchCounter++; TotalperformanceFutileFetchCounter++; }
+
+    [Conditional("MOREOUTPUT")]
+    void AddToWorkDoneCounter() { performanceWorkDoneCounter++; TotalperformanceWorkDoneCounter++; }
+
+    [Conditional("MOREOUTPUT")]
+    void PrintPerformanceCounters() => Console.WriteLine(@$"{WorkerName} waits: {performanceWaitCounter} futile-fetches:{performanceFutileFetchCounter} work done:{performanceWorkDoneCounter}
+totalwaits: {TotalperformanceWaitCounter} totalfutile-fetches:{TotalperformanceFutileFetchCounter} total work done:{TotalperformanceWorkDoneCounter}");
+
+    /// <summary> The good name for a worker is nice for debugging when multiple workers are executing on the same engine. </summary>
+    public string WorkerName { get; set; }
+
+    private readonly IWorkflowLogger logger;
+    private readonly IWorkflowIocContainer iocContainer;
     private readonly WorkflowRuntimeData engineRuntimeData;
     private readonly WorkerConfig workerConfig;
+    private readonly WorkerCoordinator coordinator;
 
-    readonly Stopwatch stopwatch = new();
+    private readonly Stopwatch stopwatch = new();
 
-    public Worker(IWorkflowLogger logger, IWorkflowIocContainer iocContainer, WorkflowRuntimeData runtime, WorkerConfig config)
+    public Worker(string workerName, IWorkflowLogger logger, IWorkflowIocContainer iocContainer, WorkflowRuntimeData runtime, WorkerConfig config, WorkerCoordinator coordinator)
     {
+        WorkerName = workerName;
         this.logger = logger;
         this.iocContainer = iocContainer;
         this.engineRuntimeData = runtime;
         this.workerConfig = config;
+        this.coordinator = coordinator;
     }
 
     enum WorkerRunStatus { Stop, Continue, NoWorkDone, Error }
@@ -40,6 +78,8 @@ public class Worker
         StoppingToken = stoppingToken;
 
         await ExecuteLoop();
+
+        PrintPerformanceCounters();
 
         if (logger.InfoLoggingEnabled)
             logger.LogInfo($"{nameof(Worker)}: stopping worker", null, new Dictionary<string, object?>()
@@ -55,34 +95,56 @@ public class Worker
         {
             try
             {
-                Delay();
-
                 var result = await FetchExecuteStoreStep();
 
                 switch (result)
                 {
                     case WorkerRunStatus.Stop:
                         return;
+
                     case WorkerRunStatus.Continue:
+                        AddToWorkDoneCounter();
+                        ResetWaitForWorkers();
+                        noWorkStreak = 0;
+                        coordinator.TryAddWorker();
                         continue;
+
                     case WorkerRunStatus.Error:
                         StoppingToken.WaitHandle.WaitOne(workerConfig.DelayTechnicalTransientError);
                         continue;
+
                     case WorkerRunStatus.NoWorkDone:
+                        AddToFutileFetchCounter();
+
                         if (workerConfig.StopWhenNoImmediateWork)
                         {
                             if (logger.DebugLoggingEnabled)
                                 logger.LogDebug($"{nameof(Worker)}: Stopping worker thread due to no work",
                                     null,
                                     new Dictionary<string, object?>() { { "workerId", Thread.CurrentThread.Name! } });
+                            coordinator.ForceStopEngine();
                             return;
                         }
 
                         lock (Lock)
                         {
-                            if (SharedThresholdToReducePollingReadyItems < DateTime.Now)
+                            // we don't want to always extend the deadline for when to look for work again
+                            // as this can become a very long wait when there are many threads
+                            var firstWorkerToHaveNoWork = SharedThresholdToReducePollingReadyItems < DateTime.Now;
+                            if (firstWorkerToHaveNoWork)
                                 SharedThresholdToReducePollingReadyItems = DateTime.Now + workerConfig.DelayNoReadyWork;
                         }
+
+                        if (noWorkStreak++ >= workerConfig.MaxNoWorkStreakCount)
+                        {
+                            if (coordinator.MayWorkerDie())
+                                return;
+                            else
+                                noWorkStreak = 0;
+                        }
+
+                        Delay();
+
                         break;
                 }
             }
@@ -102,17 +164,16 @@ public class Worker
 
     void Delay()
     {
-        bool mustWaitMore;
-        do
+        bool mustWaitMore = true;
+        while (mustWaitMore && !StoppingToken.IsCancellationRequested)
         {
-            lock (Lock)
-            {
-                mustWaitMore = DateTime.Now < SharedThresholdToReducePollingReadyItems;
-            }
-
+            mustWaitMore = DateTime.Now < SharedThresholdToReducePollingReadyItems;
             if (mustWaitMore)
+            {
                 StoppingToken.WaitHandle.WaitOne(workerConfig.DelayNoReadyWork);
-        } while (mustWaitMore);
+                AddToWaitCounter();
+            }
+        }
     }
 
     (Step?, WorkerRunStatus?) GetNextStep(IStepPersister persister)

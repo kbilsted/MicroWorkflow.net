@@ -1,17 +1,13 @@
-﻿using NUnit.Framework.Internal;
+﻿using static GreenFeetWorkflow.Tests.TestHelper;
 
 namespace GreenFeetWorkflow.Tests;
 
 /// <summary>
-/// test the runtime api
+/// test the runtime data api
 /// </summary>
 public class RuntimeDataTests
 {
     TestHelper helper = new TestHelper();
-
-    private readonly WorkflowConfiguration cfg = new WorkflowConfiguration(
-        new WorkerConfig() { StopWhenNoImmediateWork = true },
-        NumberOfWorkers: 1);
 
     [SetUp]
     public void Setup()
@@ -19,19 +15,31 @@ public class RuntimeDataTests
         helper = new TestHelper();
     }
 
-    [Test]
-    public async Task When_searching_with_no_parameters_Then_success()
+    int? tearDownStep = null;
+    [TearDown]
+    public void Teardown()
     {
-        var engine = helper.CreateEngine();
-        var steps = await engine.Data.SearchStepsAsync(new SearchModel(), FetchLevels.ALL);
+        if (tearDownStep == null)
+            return;
+        if (helper.Engine == null)
+            helper.Build();
+        helper.Engine!.Data.FailSteps(new SearchModel(Id: tearDownStep), null);
+    }
+
+    [Test]
+    public void When_searching_with_no_parameters_Then_success()
+    {
+        var engine = helper.Build();
+        var steps = engine.Data.SearchSteps(new SearchModel(), FetchLevels.ALL);
 
         steps.Keys.Count.Should().Be(3);
     }
 
     [Test]
-    public async Task When_SearchSteps_Then_success()
+    public void When_SearchSteps_Then_success()
     {
-        var engine = helper.CreateEngine();
+        var engine = helper.Build();
+
         var step = new Step(helper.RndName)
         {
             FlowId = Guid.NewGuid().ToString(),
@@ -39,47 +47,47 @@ public class RuntimeDataTests
             SearchKey = Guid.NewGuid().ToString(),
             Description = Guid.NewGuid().ToString(),
         };
-        var id = await engine.Data.AddStepAsync(step, null);
+        var id = engine.Data.AddStep(step, null);
 
         FetchLevels fetchLevels = FetchLevels.ALL;
-        var steps = await engine.Data.SearchStepsAsync(new SearchModel()
+        var steps = engine.Data.SearchSteps(new SearchModel()
         {
             Id = id,
         }, fetchLevels);
         steps[StepStatus.Ready].Single().Id.Should().Be(id);
 
-        steps = await engine.Data.SearchStepsAsync(new SearchModel()
+        steps = engine.Data.SearchSteps(new SearchModel()
         {
             CorrelationId = step.CorrelationId,
         }, fetchLevels);
         steps[StepStatus.Ready].Single().Id.Should().Be(id);
 
-        steps = await engine.Data.SearchStepsAsync(new SearchModel()
+        steps = engine.Data.SearchSteps(new SearchModel()
         {
             Name = step.Name,
         }, fetchLevels);
         steps[StepStatus.Ready].Single().Id.Should().Be(id);
 
-        steps = await engine.Data.SearchStepsAsync(new SearchModel()
+        steps = engine.Data.SearchSteps(new SearchModel()
         {
             FlowId = step.FlowId,
         }, fetchLevels);
         steps[StepStatus.Ready].Single().Id.Should().Be(id);
 
-        steps = await engine.Data.SearchStepsAsync(new SearchModel()
+        steps = engine.Data.SearchSteps(new SearchModel()
         {
             SearchKey = step.SearchKey,
         }, fetchLevels);
         steps[StepStatus.Ready].Single().Id.Should().Be(id);
 
-        steps = await engine.Data.SearchStepsAsync(new SearchModel()
+        steps = engine.Data.SearchSteps(new SearchModel()
         {
             Description = step.Description,
         }, fetchLevels);
         steps[StepStatus.Ready].Single().Id.Should().Be(id);
 
         // combined search
-        steps = await engine.Data.SearchStepsAsync(new SearchModel()
+        steps = engine.Data.SearchSteps(new SearchModel()
         {
             Id = id,
             CorrelationId = step.CorrelationId,
@@ -91,29 +99,47 @@ public class RuntimeDataTests
     }
 
     [Test]
-    public async Task When_reexecuting_a_step_Then_execute_it()
+    public void When_reexecuting_a_step_Then_place_it_in_the_ready_queue()
     {
+        const string name = "v1/fail-and-reactivate";
         Dictionary<int, int> results = new();
+        var step = new Step(name) { FlowId = helper.FlowId, CorrelationId = helper.CorrelationId };
+        var engine = helper
+            .With(e =>
+            {
+                e.StepHandlers = [Handle(name, _ => throw new FailCurrentStepException("fail on purpose"))];
+                e.Steps = [step];
+            })
+            .UseMax1Worker().StopWhenNoWork().BuildAndStart();
 
-        var engine = helper.CreateEngine(("v1/fail-and-reactivate", GenericImplementation.Create(_ => throw new FailCurrentStepException("fail on purpose"))));
+        int reExecutingId = engine.Data
+           .ReExecuteSteps(new SearchModel(FlowId: helper.FlowId), FetchLevels.FAILED)
+           .Single();
+        tearDownStep = reExecutingId;
 
-        var stepState = 12345;
-        var step = new Step("v1/fail-and-reactivate", stepState) { FlowId = helper.FlowId, CorrelationId = helper.CorrelationId };
-        var id = await engine.Data.AddStepAsync(step);
-        await engine.StartAsSingleWorker(cfg);
+        var newStep = engine.Data.SearchSteps(new SearchModel(Id: reExecutingId), StepStatus.Ready).Single();
+        newStep.CorrelationId.Should().Be(step.CorrelationId);
+        newStep.FlowId.Should().Be(step.FlowId);
+        newStep.CreatedByStepId.Should().Be(step.Id);
+        newStep.ScheduleTime.Should().BeCloseTo(DateTime.Now, TimeSpan.FromSeconds(2));
+        newStep.ScheduleTime.Millisecond.Should().Be(0);
+        newStep.ExecutionCount.Should().Be(0);
+    }
 
-        var newId = (await engine.Data
-            .ReExecuteStepsAsync(new SearchModel(Id: id)))
-            .Single();
+    [Test]
+    public void When_adding_a_step_Then_place_it_in_the_ready_queue()
+    {
+        var engine = helper.Build();
+        var step = new Step(helper.RndName) { FlowId = helper.FlowId, CorrelationId = helper.CorrelationId };
+        var id = engine.Data.AddStep(step);
+        tearDownStep = id;
 
-        var persister = helper.Persister;
-
-        var newStep = persister.InTransaction(() => persister.SearchSteps(new SearchModel(Id: newId), StepStatus.Ready).Single());
-        newStep.Id.Should().BeGreaterThan(id);
-        newStep.State.Should().Be(stepState.ToString());
+        var newStep = engine.Data.SearchSteps(new SearchModel(Id: id), StepStatus.Ready).Single();
         newStep.CorrelationId.Should().Be(step.CorrelationId);
         newStep.FlowId.Should().Be(step.FlowId);
         newStep.CreatedByStepId.Should().Be(step.Id);
         newStep.ScheduleTime.Should().BeCloseTo(DateTime.Now, TimeSpan.FromSeconds(5));
+        newStep.ScheduleTime.Millisecond.Should().Be(0);
+        newStep.ExecutionCount.Should().Be(0);
     }
 }

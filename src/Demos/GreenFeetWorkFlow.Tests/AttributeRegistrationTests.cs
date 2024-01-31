@@ -8,11 +8,10 @@ public class AttributeRegistrationTests
     public void When_using_stepnameattribute_Then_stepimplementation_is_registered()
     {
         var testhelper = new TestHelper();
-
-        testhelper.CreateAndRunEngineWithAttributes(new Step(StepA.Name) { FlowId = testhelper.FlowId });
+        testhelper.Steps = [new Step(StepA.Name) { FlowId = testhelper.FlowId }];
+        testhelper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
 
         StepResult[testhelper.FlowId].Should().Be(testhelper.FlowId);
-
         testhelper.AssertTableCounts(testhelper.FlowId, ready: 0, done: 2, failed: 0);
     }
 

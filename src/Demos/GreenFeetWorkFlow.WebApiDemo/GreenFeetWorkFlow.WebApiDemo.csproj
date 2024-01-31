@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
 	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<IsPackable>false</IsPackable>
@@ -16,7 +16,6 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\Product\GreenFeetWorkFlow.AdoPersistence\GreenFeetWorkFlow.AdoMsSql.csproj" />
-		<ProjectReference Include="..\..\Product\GreenFeetWorkFlow.Ioc.Autofac\GreenFeetWorkFlow.Ioc.Autofac.csproj" />
 		<ProjectReference Include="..\..\Product\GreenFeetWorkFlow.Ioc.Autofac\GreenFeetWorkFlow.Ioc.Autofac.csproj" />
 	</ItemGroup>
 

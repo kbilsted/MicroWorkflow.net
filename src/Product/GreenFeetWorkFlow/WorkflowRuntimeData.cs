@@ -5,16 +5,19 @@ public class WorkflowRuntimeData
     private readonly IWorkflowIocContainer iocContainer;
     private readonly IWorkflowStepStateFormatter formatter;
     private readonly IWorkflowLogger logger;
+    public WorkerCoordinator? WorkerCoordinator;
 
-    public WorkflowRuntimeData(IWorkflowIocContainer iocContainer, IWorkflowStepStateFormatter formatter, IWorkflowLogger logger)
+    public WorkflowRuntimeData(IWorkflowIocContainer iocContainer, IWorkflowStepStateFormatter formatter, IWorkflowLogger logger, WorkerCoordinator? workerCoordinator)
     {
         this.iocContainer = iocContainer;
         this.formatter = formatter;
         this.logger = logger;
+        this.WorkerCoordinator = workerCoordinator;
     }
 
+    // TODO unittest
     /// <summary> Reschedule a ready step to 'now' and send it activation data </summary>
-    public async Task<int> ActivateStepAsync(int id, object? activationArguments, object? transaction = null)
+    public int ActivateStep(int id, object? activationArguments, object? transaction = null)
     {
         var persister = iocContainer.GetInstance<IStepPersister>();
 
@@ -29,27 +32,49 @@ public class WorkflowRuntimeData
                 return persister.Update(StepStatus.Ready, step);
             },
             transaction);
-        return await Task.FromResult(rows);
+        return rows;
+    }
+
+    /// <summary>
+    /// Try adding a step if it is not found in the ready queue
+    /// </summary>
+    /// <returns>the identity of the step or null if a search found one or more ready steps</returns>
+    public int? AddStepIfNotExists(Step step, SearchModel searchModel, object? transaction = null)
+    {
+        IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
+        int? result = persister.InTransaction(() =>
+        {
+            if (persister.SearchSteps(searchModel, StepStatus.Ready).Any())
+                return (int?)null;
+
+            return persister.Insert(StepStatus.Ready, step);
+        }, transaction);
+
+        return result;
     }
 
     /// <summary> Add step to be executed. May throw exception if persistence layer fails. For example when inserting multiple singleton elements </summary>
     /// <returns>the identity of the step</returns>
-    public async Task<int> AddStepAsync(Step step, object? transaction = null) => (await AddStepsAsync(new[] { step }, transaction)).Single();
+    public int AddStep(Step step, object? transaction = null) => AddSteps(new[] { step }, transaction).Single();
 
     /// <summary> Add steps to be executed. May throw exception if persistence layer fails. For example when inserting multiple singleton elements </summary>
     /// <returns>the identity of the steps</returns>
-    public async Task<int[]> AddStepsAsync(Step[] steps, object? transaction = null)
+    public int[] AddSteps(Step[] steps, object? transaction = null)
     {
         var now = DateTime.Now;
 
-        foreach (var x in steps)
+        foreach (var step in steps)
         {
-            FixupNewStep(null, x, now);
+            FixupNewStep(null, step, now);
         }
 
         IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
         var result = persister.InTransaction(() => persister.Insert(StepStatus.Ready, steps), transaction);
-        return await Task.FromResult(result);
+
+        Worker.ResetWaitForWorkers();
+        WorkerCoordinator?.TryAddWorker();
+
+        return result;
     }
 
     /// <summary> Add steps to be executed. May throw exception if persistence layer fails. For example when inserting multiple singleton elements.
@@ -68,6 +93,8 @@ public class WorkflowRuntimeData
         });
 
         await persister.InsertBulkAsync(StepStatus.Ready, fix);
+        Worker.ResetWaitForWorkers();
+        WorkerCoordinator?.TryAddWorker();
     }
 
     internal void FixupNewStep(Step? originStep, Step step, DateTime now)
@@ -88,31 +115,34 @@ public class WorkflowRuntimeData
         FormatStateForSerialization(step);
     }
 
-    public async Task<List<Step>> SearchStepsAsync(SearchModel criteria, StepStatus target, object? transaction = null)
+    public List<Step> SearchSteps(SearchModel criteria, StepStatus target, object? transaction = null)
     {
         IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
         var result = persister.InTransaction(() => persister.SearchSteps(criteria, target), transaction);
-        return await Task.FromResult(result);
+        return result;
     }
 
-    public async Task<Dictionary<StepStatus, List<Step>>> SearchStepsAsync(SearchModel criteria, FetchLevels fetchLevels, object? transaction = null)
+    public Dictionary<StepStatus, List<Step>> SearchSteps(SearchModel criteria, FetchLevels fetchLevels, object? transaction = null)
     {
         IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
         var result = persister.InTransaction(() => persister.SearchSteps(criteria, fetchLevels), transaction);
-        return await Task.FromResult(result);
+        return result;
     }
 
     /// <summary> Re-execute steps that are 'done' or 'failed' by inserting a clone into the 'ready' queue </summary>
-    /// <returns>Ids of inserted steps</returns>
-    public async Task<int[]> ReExecuteStepsAsync(SearchModel criteria, object? transaction = null)
+    /// <returns>Ids of inserted steps into the ready queue</returns>
+    public int[] ReExecuteSteps(SearchModel criteria, FetchLevels stepKinds, object? transaction = null)
     {
         IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
+
+        if (stepKinds.Ready)
+            throw new ArgumentException("Cannot re-execute 'ready' steps");
 
         int[] ids = persister.InTransaction(() =>
             {
                 var now = DateTime.Now;
-
-                var entities = persister.SearchSteps(criteria, FetchLevels.NONREADY);
+                var trimmedNow = TrimToSeconds(now);
+                var entities = persister.SearchSteps(criteria, stepKinds);
 
                 var steps = entities
                 .SelectMany(x => x.Value)
@@ -122,11 +152,11 @@ public class WorkflowRuntimeData
                     CorrelationId = step.CorrelationId,
                     CreatedByStepId = step.CreatedByStepId,
                     CreatedTime = now,
-                    Description = $"Re-execution of step id: " + step.Id,
+                    Description = $"Re-execution of step id: {step.Id}",
                     State = step.State,
                     StateFormat = step.StateFormat,
                     ActivationArgs = step.ActivationArgs,
-                    ScheduleTime = now,
+                    ScheduleTime = trimmedNow,
                     Singleton = step.Singleton,
                     SearchKey = step.SearchKey,
                     Name = step.Name,
@@ -134,13 +164,16 @@ public class WorkflowRuntimeData
                 .ToArray();
 
                 if (logger.InfoLoggingEnabled)
-                    logger.LogInfo("Reexecuting ids", null, new Dictionary<string, object?>() { { "ids", steps.Select(x => x.Id).ToArray() } });
+                    logger.LogInfo($"{nameof(WorkflowRuntimeData)}: Reexecuting ids", null, new Dictionary<string, object?>() { { "ids", steps.Select(x => x.Id).ToArray() } });
 
                 return persister.Insert(StepStatus.Ready, steps);
             },
             transaction);
 
-        return await Task.FromResult(ids);
+        Worker.ResetWaitForWorkers();
+        WorkerCoordinator?.TryAddWorker();
+
+        return ids;
     }
 
     /// <summary>
@@ -149,7 +182,7 @@ public class WorkflowRuntimeData
     /// <param name="criteria"></param>
     /// <param name="transaction"></param>
     /// <returns>The ids of the failed steps</returns>
-    public async Task<int[]> FailStepsAsync(SearchModel criteria, object? transaction = null)
+    public int[] FailSteps(SearchModel criteria, object? transaction = null)
     {
         IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
 
@@ -166,14 +199,19 @@ public class WorkflowRuntimeData
             return steps.Select(x => x.Id).ToArray();
         }, transaction);
 
-        return await Task.FromResult(ids);
+        return ids;
     }
 
     /// <summary> we round down to ensure a worker can pick up the step/rerun-step. if in unittest mode it may exit if not rounded. </summary>
     internal static DateTime? TrimToSeconds(DateTime? now) => now == null ? null : TrimToSeconds(now.Value);
 
     /// <summary> we round down to ensure a worker can pick up the step/rerun-step. if in unittest mode it may exit if not rounded. </summary>
-    internal static DateTime TrimToSeconds(DateTime now) => new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, now.Second);
+    internal static DateTime TrimToSeconds(DateTime now)
+    {
+        if (now == DateTime.MaxValue || now == DateTime.MinValue)
+            return now;
+        return new DateTime(now.Ticks - (now.Ticks % TimeSpan.TicksPerSecond), now.Kind);
+    }
 
     internal void FormatStateForSerialization(Step step)
     {

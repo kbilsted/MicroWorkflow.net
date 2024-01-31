@@ -1,8 +1,6 @@
 ﻿namespace GreenFeetWorkflow;
 
-public record WorkflowConfiguration(
-    WorkerConfig WorkerConfig,
-    int NumberOfWorkers)
+public record WorkflowConfiguration(WorkerConfig WorkerConfig)
 {
     public LoggerConfiguration LoggerConfiguration { get; set; }
 }
@@ -26,7 +24,6 @@ public class LoggerConfiguration
         DebugLoggingEnabledUntil = DateTime.MinValue,
         TraceLoggingEnabledUntil = DateTime.MinValue,
     };
-
 }
 
 public record WorkerConfig()
@@ -37,7 +34,22 @@ public record WorkerConfig()
     /// </summary>
     public bool StopWhenNoImmediateWork { get; set; } = false;
 
-    public TimeSpan DelayNoReadyWork { get; set; } = TimeSpan.FromSeconds(3);
+    public TimeSpan DelayNoReadyWork { get; set; } = TimeSpan.FromSeconds(1);
     public TimeSpan DelayTechnicalTransientError { get; set; } = TimeSpan.FromMinutes(2);
     public TimeSpan DelayMissingStepHandler { get; set; } = TimeSpan.FromHours(1);
+
+    /// <summary>
+    /// minimum number of workers
+    /// </summary>
+    public int MinWorkerCount = 1;
+
+    /// <summary>
+    /// Maximum number of workers
+    /// </summary>
+    public int MaxWorkerCount = 8;
+
+    /// <summary>
+    /// Kill dynamic workers that haven't found work x times in a streak. 
+    /// </summary>
+    public int MaxNoWorkStreakCount = 10;
 }

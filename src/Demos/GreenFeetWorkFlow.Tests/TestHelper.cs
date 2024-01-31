@@ -13,134 +13,100 @@ public class TestHelper
     public SqlServerPersister Persister => (SqlServerPersister)iocContainer!.GetInstance<IStepPersister>();
     public readonly string CorrelationId = Guid.NewGuid().ToString();
     public readonly string FlowId = Guid.NewGuid().ToString();
-    private IWorkflowLogger? logger;
+    public IWorkflowLogger? Logger;
     public WorkflowEngine? Engine;
+    public (string, IStepImplementation)[] StepHandlers { get; set; } = new (string, IStepImplementation)[0];
 
     readonly ContainerBuilder builder = new ContainerBuilder();
+    public string ConnectionString = "Server=localhost;Database=adotest;Integrated Security=True;TrustServerCertificate=True";
 
-    readonly LoggerConfiguration loggerConfiguration = new LoggerConfiguration()
+    public Step[] Steps = Array.Empty<Step>();
+
+    public LoggerConfiguration LoggerConfiguration = new LoggerConfiguration()
     {
         ErrorLoggingEnabledUntil = DateTime.MaxValue,
         InfoLoggingEnabledUntil = DateTime.MaxValue,
         DebugLoggingEnabledUntil = DateTime.MaxValue,
-        TraceLoggingEnabledUntil = DateTime.MaxValue,
+        TraceLoggingEnabledUntil = DateTime.MinValue,
     };
 
-    public void CreateAndRunEngine(Step[] steps, params (string name, Func<Step, ExecutionResult> code)[] stepHandlers)
-        => CreateAndRunEngine(
-            steps,
-            1,
-            stepHandlers.Select(x => (x.name, (IStepImplementation)new GenericImplementation(x.code))).ToArray());
+    public WorkflowConfiguration WorkflowConfiguration;
 
-    public void CreateAndRunEngine(Step step, params (string, IStepImplementation)[] stepHandlers)
-    => CreateAndRunEngine(new[] { step }, 1, stepHandlers);
-
-
-    public void CreateAndRunEngine(Step[] steps, params (string, IStepImplementation)[] stepHandlers)
-        => CreateAndRunEngine(steps, 1, stepHandlers);
-
-    public string ConnectionString = "Server=localhost;Database=adotest;Integrated Security=True;TrustServerCertificate=True";
-    public readonly string IllegalConnectionString = "Server=localhost;Database=adotest;Integrated Security=False;TrustServerCertificate=False";
-
-
-    public WorkflowEngine CreateEngine(params (string, IStepImplementation)[] stepHandlers)
+    public TestHelper()
     {
-        logger = new DiagnosticsStepLogger();
-        ((DiagnosticsStepLogger)logger).AddNestedLogger(new ConsoleStepLogger());
+        WorkflowConfiguration = new WorkflowConfiguration(
+            new WorkerConfig())
+        {
+            LoggerConfiguration = LoggerConfiguration
+        };
+    }
+    public static (string, IStepImplementation) Handle(string name, Func<Step, ExecutionResult> code) => (name, new GenericImplementation(code));
 
-        builder.RegisterInstances(logger, stepHandlers);
-        builder.Register<IStepPersister>(c => new SqlServerPersister(ConnectionString, logger)).InstancePerDependency();
+    public WorkflowEngine Build()
+    {
+        if (Logger == null)
+        {
+            Logger = new DiagnosticsStepLogger(WorkflowConfiguration.LoggerConfiguration);
+            ((DiagnosticsStepLogger)Logger).AddNestedLogger(new ConsoleStepLogger(WorkflowConfiguration.LoggerConfiguration));
+        }
 
-        Formatter = new NewtonsoftStateFormatterJson(logger);
+        builder.RegisterInstances(Logger, StepHandlers);
+        builder.Register<IStepPersister>(c => new SqlServerPersister(ConnectionString, Logger)).InstancePerDependency();
+
+        // register all classes having a [step] attribute
+        builder.RegisterStepImplementations(Logger, typeof(TestHelper).Assembly);
+
+        Formatter ??= new NewtonsoftStateFormatterJson(Logger);
 
         iocContainer = new AutofacAdaptor(builder.Build());
-        Engine = new WorkflowEngine(logger, iocContainer, Formatter);
+        Engine = new WorkflowEngine(Logger, iocContainer, Formatter);
+
+        Engine.Data.AddSteps(Steps);
 
         return Engine;
     }
 
-    public void CreateAndRunEngineForPerformance(Step[] steps, int workerCount, params (string, IStepImplementation)[] stepHandlers)
+    public TestHelper With(Action<TestHelper> action)
     {
-        logger = new DiagnosticsStepLogger();
-        logger.Configuration.TraceLoggingEnabledUntil = DateTime.MinValue;
-        logger.Configuration.DebugLoggingEnabledUntil = DateTime.MinValue;
-        logger.Configuration.InfoLoggingEnabledUntil = DateTime.MinValue;
-        logger.Configuration.ErrorLoggingEnabledUntil = DateTime.MinValue;
-
-        builder.RegisterInstances(logger, stepHandlers);
-        builder.Register<IStepPersister>(c => new SqlServerPersister(ConnectionString, logger));
-
-        Formatter = new NewtonsoftStateFormatterJson(logger);
-
-        iocContainer = new AutofacAdaptor(builder.Build());
-        Engine = new WorkflowEngine(logger, iocContainer, Formatter);
-
-        Engine.Data.AddStepsAsync(steps).GetAwaiter().GetResult();
-
-        var workflowConfiguration = new WorkflowConfiguration(new WorkerConfig()
-        {
-            StopWhenNoImmediateWork = false
-        }, NumberOfWorkers: workerCount);
-
-        Engine.Start(workflowConfiguration, stoppingToken: cts.Token);
+        action(this);
+        return this;
     }
 
-    public void CreateAndRunEngine(Step[] steps, int workerCount, params (string, IStepImplementation)[] stepHandlers)
+    public TestHelper UseMax1Worker()
     {
-        logger = new DiagnosticsStepLogger();
-
-        builder.RegisterInstances(logger, stepHandlers);
-        builder.Register<IStepPersister>(c => new SqlServerPersister(ConnectionString, logger));
-
-        Formatter = new NewtonsoftStateFormatterJson(logger);
-
-        iocContainer = new AutofacAdaptor(builder.Build());
-        Engine = new WorkflowEngine(logger, iocContainer, Formatter);
-
-        Engine.Data.AddStepsAsync(steps).GetAwaiter().GetResult();
-
-        var workflowConfiguration = new WorkflowConfiguration(new WorkerConfig()
-        {
-            StopWhenNoImmediateWork = workerCount == 1,
-        }, NumberOfWorkers: workerCount);
-
-        if (workerCount == 1)
-            Engine.StartAsSingleWorker(workflowConfiguration, stoppingToken: cts.Token).GetAwaiter().GetResult();
-        else
-            Engine.Start(workflowConfiguration, stoppingToken: cts.Token);
+        WorkflowConfiguration.WorkerConfig.MaxWorkerCount = 1;
+        return this;
     }
 
-    public void CreateAndRunEngineWithAttributes(Step[] steps, int workerCount)
+    public TestHelper StopWhenNoWork()
     {
-        logger = new DiagnosticsStepLogger();
-
-        builder.RegisterStepImplementations(logger, typeof(TestHelper).Assembly);
-        builder.Register<IStepPersister>(c => new SqlServerPersister(ConnectionString, logger));
-
-        Formatter = new NewtonsoftStateFormatterJson(logger);
-
-        iocContainer = new AutofacAdaptor(builder.Build());
-        Engine = new WorkflowEngine(logger, iocContainer, Formatter);
-
-        Engine.Data.AddStepsAsync(steps).GetAwaiter().GetResult();
-
-        var workflowConfiguration = new WorkflowConfiguration(new WorkerConfig()
-        { StopWhenNoImmediateWork = workerCount == 1 },
-        NumberOfWorkers: workerCount);
-
-        Engine.Start(workflowConfiguration, stoppingToken: cts.Token);
+        WorkflowConfiguration.WorkerConfig.StopWhenNoImmediateWork = true;
+        return this;
     }
 
-    public void CreateAndRunEngineWithAttributes(params Step[] steps)
+    public WorkflowEngine BuildAndStart()
     {
-        CreateAndRunEngineWithAttributes(steps, 1);
+        Build();
+        return Start();
+    }
+
+    public WorkflowEngine StartAsync()
+    {
+        Engine!.StartAsync(WorkflowConfiguration, stoppingToken: cts.Token);
+        return Engine;
+    }
+
+    public WorkflowEngine Start()
+    {
+        if (Engine == null) throw new Exception("Remember to 'build' before 'start'");
+        Engine!.Start(WorkflowConfiguration, stoppingToken: cts.Token);
+        return Engine;
     }
 
     public void AssertTableCounts(string flowId, int ready, int done, int failed)
     {
-        IStepPersister persister = iocContainer!.GetInstance<IStepPersister>();
-        persister
-            .InTransaction(() => ((SqlServerPersister)persister).CountTables(flowId))
+        var p = Persister;
+        p.InTransaction(() => p.CountTables(flowId))
             .Should().BeEquivalentTo(
             new Dictionary<StepStatus, int>
             {
@@ -148,15 +114,5 @@ public class TestHelper
                 { StepStatus.Done, done},
                 { StepStatus.Failed, failed},
             });
-    }
-
-    public Step GetByFlowId(string flowId)
-    {
-        IStepPersister persister = iocContainer!.GetInstance<IStepPersister>();
-        return persister
-        .InTransaction(() =>
-            persister.SearchSteps(new SearchModel(FlowId: flowId), FetchLevels.ALL))
-        .SelectMany(x => x.Value)
-        .First();
     }
 }

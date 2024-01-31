@@ -1,13 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
+		<TargetFrameworks>net6.0;net8.0</TargetFrameworks>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 
 		<IsPackable>true</IsPackable>
 		<Authors>Kasper B. Graversen</Authors>
-		<RepositoryUrl>https://github.com/kbilsted/GreenFeetWorkFlowWorkflow</RepositoryUrl>
+		<RepositoryUrl>https://github.com/kbilsted/GreenFeetWorkFlow/tree/master/src/Product/GreenFeetWorkFlow.Ioc.Autofac</RepositoryUrl>
 		<IncludeSymbols>True</IncludeSymbols>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<Title>Autofac íntegration</Title>
@@ -18,20 +18,27 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Autofac" Version="7.1.0" />
-		<ProjectReference Include="..\GreenFeetWorkFlow\GreenFeetWorkFlow.csproj" />
-
+	  <None Remove="LICENSE" />
+	  <None Remove="readme.md" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Update="LICENSE">
-			<Pack>True</Pack>
-			<PackagePath>\</PackagePath>
-		</None>
-		<None Update="readme.md">
-		  <Pack>True</Pack>
-		  <PackagePath>\</PackagePath>
-		</None>
+	  <Content Include="LICENSE">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="readme.md">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Autofac" Version="7.1.0" />
+		<ProjectReference Include="..\GreenFeetWorkFlow\GreenFeetWorkFlow.csproj" />
+
 	</ItemGroup>
 
 </Project>
