@@ -122,7 +122,10 @@ totalwaits: {TotalperformanceWaitCounter} totalfutile-fetches:{TotalperformanceF
                                 logger.LogTrace($"{nameof(Worker)}: Stopping worker thread due to no work",
                                     null,
                                     new Dictionary<string, object?>() { { "workerId", WorkerName } });
-                            coordinator.ForceStopEngine();
+
+                            ResetWaitForWorkers();
+                            
+                            coordinator.MayWorkerDie();
                             return;
                         }
 

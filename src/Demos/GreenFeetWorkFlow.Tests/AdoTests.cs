@@ -38,7 +38,7 @@ public class WorkerTests
             return ExecutionResult.Done();
         }))];
 
-        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
+        helper.StopWhenNoWork().BuildAndStart();
 
         stepResult.Should().Be("hello 1234");
         helper.AssertTableCounts(helper.FlowId, ready: 0, done: 1, failed: 0);
@@ -79,7 +79,7 @@ public class WorkerTests
                 GenericImplementation.Create(step => throw new FailCurrentStepException("some description"))
             )];
         helper.Steps = [new Step() { Name = name, FlowId = helper.FlowId }];
-        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
+        helper.StopWhenNoWork().BuildAndStart();
 
         helper.AssertTableCounts(helper.FlowId, ready: 0, done: 0, failed: 1);
         GetByFlowId().Should().Satisfy(x => x.Description == "some description");
@@ -91,7 +91,7 @@ public class WorkerTests
         const string name = "test-throw-failstepexception_from_step_variable";
         helper.Steps = [new Step(name) { FlowId = helper.FlowId }];
         helper.StepHandlers = [Handle(name, step => throw step.FailAsException("some description"))];
-        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
+        helper.StopWhenNoWork().BuildAndStart();
 
         helper.AssertTableCounts(helper.FlowId, ready: 0, done: 0, failed: 1);
         GetByFlowId().Single().Description.Should().Be("some description");
@@ -105,7 +105,7 @@ public class WorkerTests
 
         helper.StepHandlers = [Handle(name, step => throw step.FailAsException(newSteps: new Step(nameNewStep)))];
         helper.Steps = [new Step(name) { FlowId = helper.FlowId }];
-        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
+        helper.StopWhenNoWork().BuildAndStart();
 
         var steps = GetAllByFlowId();
 
@@ -181,7 +181,7 @@ public class WorkerTests
                     throw new Exception("exception message");
                 }))];
         helper.Steps = [new Step(name, "hej") { FlowId = helper.FlowId }];
-        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
+        helper.StopWhenNoWork().BuildAndStart();
 
         helper.AssertTableCounts(helper.FlowId, ready: 1, done: 0, failed: 0);
 
@@ -201,7 +201,7 @@ public class WorkerTests
         helper.StepHandlers = [Handle("onestep_fails", step => step.Fail())];
         helper.ConnectionString = IllegalConnectionString;
 
-        Action act = () => helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
+        Action act = () => helper.StopWhenNoWork().BuildAndStart();
 
         act.Should()
             .Throw<SqlException>()
@@ -214,7 +214,7 @@ public class WorkerTests
         const string name = "onestep_fails";
         helper.StepHandlers = [(name, new GenericImplementation(step => step.Fail()))];
         helper.Steps = [new Step(name) { FlowId = helper.FlowId }];
-        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
+        helper.StopWhenNoWork().BuildAndStart();
 
         helper.AssertTableCounts(helper.FlowId, ready: 0, done: 0, failed: 1);
     }
@@ -229,7 +229,7 @@ public class WorkerTests
             return ExecutionResult.Done();
         }))];
         helper.Steps = [new Step(helper.RndName)];
-        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
+        helper.StopWhenNoWork().BuildAndStart();
 
         stepResult.Should().Be(1);
     }
@@ -249,7 +249,7 @@ public class WorkerTests
             return ExecutionResult.Done();
         })];
         helper.Steps = [new Step(name) { InitialState = 1, FlowId = helper.FlowId }];
-        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
+        helper.StopWhenNoWork().BuildAndStart();
 
         stepResult.Should().Be("counter 3 executionCount 3");
 
@@ -274,7 +274,7 @@ public class WorkerTests
             FlowId = helper.FlowId,
             CorrelationId = helper.CorrelationId,
         }];
-        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
+        helper.StopWhenNoWork().BuildAndStart();
 
         executingStep.FlowId.Should().Be(helper.FlowId);
         executingStep.CorrelationId.Should().Be(helper.CorrelationId);
@@ -307,7 +307,7 @@ public class WorkerTests
             CorrelationId = oldId
         }];
 
-        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
+        helper.StopWhenNoWork().BuildAndStart();
 
         stepResult.Should().Be(newId);
     }
@@ -340,7 +340,7 @@ public class WorkerTests
             CorrelationId = oldId
         }];
 
-        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
+        helper.StopWhenNoWork().BuildAndStart();
 
         stepResult.Should().Be(newId);
     }
@@ -365,7 +365,7 @@ public class WorkerTests
                 return ExecutionResult.Done();
             })];
         helper.Steps = [new Step() { Name = "check-future-step/cookFood", FlowId = helper.FlowId }];
-        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
+        helper.StopWhenNoWork().BuildAndStart();
 
         stepResult.Should().Be($"cooking potatoes");
 
@@ -384,7 +384,7 @@ public class WorkerTests
             FlowId = helper.FlowId,
             ScheduleTime = DateTime.Now.AddYears(35)
         }];
-        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
+        helper.StopWhenNoWork().BuildAndStart();
 
         helper.AssertTableCounts(helper.FlowId, ready: 1, done: 0, failed: 0);
 
@@ -402,7 +402,7 @@ public class WorkerTests
             FlowId = helper.FlowId,
             ScheduleTime = DateTime.Now.AddYears(35)
         }];
-        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
+        helper.StopWhenNoWork().BuildAndStart();
         helper.AssertTableCounts(helper.FlowId, ready: 1, done: 0, failed: 0);
         stepResult.Should().BeNull();
 
@@ -430,7 +430,7 @@ public class WorkerTests
             FlowId = helper.FlowId,
             ScheduleTime = DateTime.Now.AddYears(35)
         }];
-        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
+        helper.StopWhenNoWork().BuildAndStart();
 
         // activate
         var id = GetByFlowId().Single().Id;
@@ -453,7 +453,7 @@ public class WorkerTests
             return step.Done(new Step("undefined-next-step/eat", "potatoes"));
         })];
         helper.Steps = [new Step(name) { FlowId = helper.FlowId }];
-        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
+        helper.StopWhenNoWork().BuildAndStart();
 
         stepResult.Should().Be($"cooking potatoes");
 
@@ -491,7 +491,7 @@ public class WorkerTests
 
         helper.Steps = [new Step("v1/forkjoin/drive-to-shop") { FlowId = helper.FlowId }];
 
-        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
+        helper.StopWhenNoWork().BuildAndStart();
 
         stepResult.Should().Be($"total: 61");
 

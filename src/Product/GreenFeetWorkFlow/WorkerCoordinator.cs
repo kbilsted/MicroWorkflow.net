@@ -35,7 +35,7 @@ public class WorkerCoordinator
         }
 
         if (logger.TraceLoggingEnabled)
-            logger.LogTrace($"{nameof(WorkerCoordinator)}: Worker count: {WorkerCount}. Total workers created: {TotalWorkerCreated}", null, null);
+            logger.LogTrace($"{nameof(WorkerCoordinator)}: Worker count: {WorkerCount}/{config.MaxWorkerCount}. Total workers created: {TotalWorkerCreated}", null, null);
 
         // we dont use Task.Factory.StartNew() with async due to reasons stated in  https://blog.stephencleary.com/2013/08/startnew-is-dangerous.html            
         Task t = Task
@@ -59,16 +59,28 @@ public class WorkerCoordinator
         return true;
     }
 
-    public void ForceStopEngine()
-    {
-        cts.Cancel();
-    }
-
     public bool MayWorkerDie()
     {
         lock (this)
         {
-            if (WorkerCount == config.MinWorkerCount)
+            // determine if we are any of the last remainders before any code 
+            bool AreWeAnyOfTheLastRemainingMinWorkers = WorkerCount == config.MinWorkerCount;
+
+            if (config.StopWhenNoImmediateWork)
+            {
+                if (logger.TraceLoggingEnabled)
+                    logger.LogTrace($"{nameof(WorkerCoordinator)}: TryForceStopEngine  WorkerCount:{WorkerCount} MinWorkers:{config.MinWorkerCount}", null, null);
+
+                if (AreWeAnyOfTheLastRemainingMinWorkers)
+                {
+                    if (logger.TraceLoggingEnabled)
+                        logger.LogTrace($"{nameof(WorkerCoordinator)}: cts.cancel", null, null);
+
+                    cts.Cancel();
+                }
+            }
+
+            if (AreWeAnyOfTheLastRemainingMinWorkers)
                 return false;
 
             WorkerCount--;

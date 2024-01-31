@@ -110,7 +110,7 @@ public class RuntimeDataTests
                 e.StepHandlers = [Handle(name, _ => throw new FailCurrentStepException("fail on purpose"))];
                 e.Steps = [step];
             })
-            .UseMax1Worker().StopWhenNoWork().BuildAndStart();
+            .StopWhenNoWork().BuildAndStart();
 
         int reExecutingId = engine.Data
            .ReExecuteSteps(new SearchModel(FlowId: helper.FlowId), FetchLevels.FAILED)

@@ -23,7 +23,7 @@ public class AdoSingletonStepTests
             FlowId = helper.FlowId
         }];
         helper.StepHandlers = [Handle(helper.RndName, step => { stepResult = $"hello"; return ExecutionResult.Done(); })];
-        helper.UseMax1Worker().StopWhenNoWork().BuildAndStart();
+        helper.StopWhenNoWork().BuildAndStart();
 
         stepResult.Should().Be("hello");
         helper.AssertTableCounts(helper.FlowId, ready: 0, done: 1, failed: 0);
