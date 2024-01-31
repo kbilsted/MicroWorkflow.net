@@ -42,12 +42,15 @@ public class WorkflowRuntimeData
     public int? AddStepIfNotExists(Step step, SearchModel searchModel, object? transaction = null)
     {
         IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
+
+        transaction ??= persister.CreateTransaction();
+
         int? result = persister.InTransaction(() =>
         {
             if (persister.SearchSteps(searchModel, StepStatus.Ready).Any())
                 return (int?)null;
 
-            return persister.Insert(StepStatus.Ready, step);
+            return AddStep(step, transaction);
         }, transaction);
 
         return result;

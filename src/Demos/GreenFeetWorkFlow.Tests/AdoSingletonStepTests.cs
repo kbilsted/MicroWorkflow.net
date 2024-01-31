@@ -30,7 +30,7 @@ public class AdoSingletonStepTests
     }
 
     [Test]
-    public void When_creating_two_identical_singleton_Then_fail()
+    public void When_adding_two_identical_singleton_steps_simultaniously_Then_fail()
     {
         var engine = helper.Build();
 
@@ -42,5 +42,37 @@ public class AdoSingletonStepTests
         act.Should()
             .Throw<SqlException>()
             .WithMessage("Cannot insert duplicate key row*");
+    }
+
+    [Test]
+    public void When_adding_two_identical_singleton_steps_Then_fail_on_last_insert()
+    {
+        var engine = helper.Build();
+        var step = new Step(helper.RndName) { Singleton = true, };
+        engine.Data.AddStep(step);
+
+        var step2 = new Step(helper.RndName) { Singleton = true, };
+        Func<object> act = () => engine.Data.AddStep(step2);
+
+        act.Should()
+            .Throw<SqlException>()
+            .WithMessage("Cannot insert duplicate key row*");
+    }
+
+    [Test]
+    public void When_AddStepIfNotExists_two_identical_singleton_steps_Then_insert_first_and_return_null_on_duplicate()
+    {
+        var engine = helper.Build();
+        
+        var step = new Step(helper.RndName) { Singleton = true };
+        SearchModel searchModel = new SearchModel(Name: step.Name);
+        engine.Data.AddStepIfNotExists(step, searchModel)
+            .Should()
+            .HaveValue();
+
+        var step2 = new Step(helper.RndName) { Singleton = true };
+        engine.Data.AddStepIfNotExists(step2, searchModel)
+            .Should()
+            .BeNull();
     }
 }
