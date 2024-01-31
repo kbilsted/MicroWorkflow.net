@@ -1,7 +1,7 @@
 ﻿namespace GreenFeetWorkflow;
 
 /// <summary>
-/// Shared amon all workers of the same engine. Coordinates when new tasks spawn and may die
+/// Shared among all workers of the same engine. Coordinates when new tasks spawn and may die
 /// </summary>
 public class WorkerCoordinator
 {
@@ -35,9 +35,9 @@ public class WorkerCoordinator
         }
 
         if (logger.TraceLoggingEnabled)
-            logger.LogTrace($"{nameof(WorkerCoordinator)}: starting worker count: {WorkerCount} / {TotalWorkerCreated} total", null, null);
+            logger.LogTrace($"{nameof(WorkerCoordinator)}: Worker count: {WorkerCount}. Total workers created: {TotalWorkerCreated}", null, null);
 
-        // dont use Task.Factory.StartNew() with async:  https://blog.stephencleary.com/2013/08/startnew-is-dangerous.html            
+        // we dont use Task.Factory.StartNew() with async due to reasons stated in  https://blog.stephencleary.com/2013/08/startnew-is-dangerous.html            
         Task t = Task
             .Run(newWorkerCreator)
             .ContinueWith(x =>
@@ -45,13 +45,14 @@ public class WorkerCoordinator
                 //Console.WriteLine($"{x.Id} stopping worker..isfaulted:{x.IsFaulted}. count: {WorkerCount}  total workers created: " + TotalWorkerCreated);
                 if (x.IsFaulted)
                 {
-                    logger.LogError("Unhandled exception during worker execution",
-                        x.Exception,
-                        new Dictionary<string, object?>
-                        {
+                    if (logger.ErrorLoggingEnabled)
+                        logger.LogError("Unhandled exception during worker execution",
+                            x.Exception,
+                            new Dictionary<string, object?>
+                            {
                                 {"workercount", WorkerCount},
                                 {"totalworkerscreated", TotalWorkerCreated}
-                        });
+                            });
                 }
             }, cts.Token);
 

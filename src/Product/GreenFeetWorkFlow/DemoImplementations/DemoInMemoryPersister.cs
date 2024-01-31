@@ -2,7 +2,7 @@
 
 /// <summary>
 ///  Simple in-memory storage FOR DEMO PURPOSES ONLY.
-///  The current transaction handling is incorrect!! 
+///  The current transaction handling is incorrect!
 /// </summary>
 public class DemoInMemoryPersister : IStepPersister
 {

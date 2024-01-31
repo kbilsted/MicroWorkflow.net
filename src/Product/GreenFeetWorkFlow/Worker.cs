@@ -6,7 +6,7 @@ public class Worker
 {
     private static readonly object Lock = new();
 
-    /// <summary> static field so it is shared among all workers. It ensures if no work and many workers, we don't bombard the persistent storage with request for ready items </summary>
+    /// <summary> Shared among all workers. It ensures if no work and many workers, we don't bombard the persistent storage with request for ready items </summary>
     static DateTime SharedThresholdToReducePollingReadyItems = DateTime.MinValue;
 
     public CancellationToken StoppingToken { get; private set; }
