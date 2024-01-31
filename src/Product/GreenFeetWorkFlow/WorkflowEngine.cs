@@ -55,7 +55,7 @@ public class WorkflowEngine
             cts = configuration.WorkerConfig.StopWhenNoImmediateWork ? new CancellationTokenSource() : null;
             if (cts == null)
                 throw new Exception("Either use a CancellationToken as a parameter, or use 'WorkerConfig.StopWhenNoImmediateWork=true'");
-            StoppingToken= cts.Token;
+            StoppingToken = cts.Token;
         }
         else
         {
@@ -64,14 +64,14 @@ public class WorkflowEngine
         }
 
         WorkerCoordinator = new WorkerCoordinator(
-            configuration.WorkerConfig, 
-            cts, 
-            logger, 
+            configuration.WorkerConfig,
+            cts,
+            logger,
             async () => new Worker(MakeWorkerName(), logger, iocContainer, Data, configuration.WorkerConfig, WorkerCoordinator).StartAsync(StoppingToken));
 
         if (configuration.WorkerConfig.MinWorkerCount < 1)
             throw new Exception("'MinWorkerCount' cannot be less than 1");
-        if(configuration.WorkerConfig.MaxWorkerCount< configuration.WorkerConfig.MinWorkerCount)
+        if (configuration.WorkerConfig.MaxWorkerCount < configuration.WorkerConfig.MinWorkerCount)
             throw new Exception("'MaxWorkerCount' cannot be less than 'MinWorkerCount'");
         for (int i = 0; i < configuration.WorkerConfig.MinWorkerCount; i++)
         {
@@ -82,7 +82,7 @@ public class WorkflowEngine
     }
 
     /// <summary>
-    /// start the engine, which starts workers in the back ground
+    /// start the engine, which starts workers in the background
     /// </summary>
     public void StartAsync(
         WorkflowConfiguration configuration,
@@ -96,11 +96,11 @@ public class WorkflowEngine
     /// Start the engine and await the stopping token gets cancelled
     /// </summary>
     public void Start(
-    WorkflowConfiguration configuration,
-    string? engineName = null,
-    CancellationToken? stoppingToken = null)
+        WorkflowConfiguration configuration,
+        string? engineName = null,
+        CancellationToken? stoppingToken = null)
     {
-        StartAsync(configuration, engineName, stoppingToken);    
+        StartAsync(configuration, engineName, stoppingToken);
 
         StoppingToken.WaitHandle.WaitOne();
     }
