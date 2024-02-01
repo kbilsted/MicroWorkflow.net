@@ -30,7 +30,7 @@ public class SqlServerPersister : IStepPersister
     public void SetTransaction(object transaction)
     {
         this.transaction = (SqlTransaction?)transaction;
-        this.connection = this.transaction.Connection;
+        this.connection = this.transaction!.Connection;
     }
 
     public object CreateTransaction()
