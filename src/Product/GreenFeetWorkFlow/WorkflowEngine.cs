@@ -7,7 +7,7 @@ public class WorkflowEngine
     public string? EngineName { get; set; }
     public CancellationToken StoppingToken { get; private set; }
 
-    public WorkerCoordinator WorkerCoordinator;
+    public WorkerCoordinator? WorkerCoordinator { get; private set; }
 
     public WorkflowEngine(
         IWorkflowLogger logger,

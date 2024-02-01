@@ -186,7 +186,7 @@ public class WorkerTests
         helper.AssertTableCounts(helper.FlowId, ready: 1, done: 0, failed: 0);
 
         var persister = helper.Persister;
-        var row = helper.Engine.Data.SearchSteps(new SearchModel(Id: dbid!.Value), StepStatus.Ready).Single();
+        var row = helper.Engine!.Data.SearchSteps(new SearchModel(Id: dbid!.Value), StepStatus.Ready).Single();
         row!.State.Should().Be("\"hej\"");
         row.FlowId.Should().Be(helper.FlowId);
         row.Name.Should().Be(name);
@@ -276,7 +276,7 @@ public class WorkerTests
         }];
         helper.StopWhenNoWork().BuildAndStart();
 
-        executingStep.FlowId.Should().Be(helper.FlowId);
+        executingStep!.FlowId.Should().Be(helper.FlowId);
         executingStep.CorrelationId.Should().Be(helper.CorrelationId);
         helper.AssertTableCounts(helper.FlowId, ready: 0, done: 2, failed: 0);
     }

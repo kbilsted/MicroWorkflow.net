@@ -11,7 +11,7 @@ public class PerformanceTests
     [TestCase(50)] // 3 (local 00:00:00.5890152)
     [TestCase(100)] // 5 (local 00:00:00.0149946)
     [TestCase(200)] // 10 (local 00:00:00.0244962)
-    public async Task Inserting_10000_steps_timing(int max)
+    public void  Inserting_10000_steps_timing(int max)
     {
         var helper = new TestHelper();
 
@@ -255,7 +255,7 @@ Worker count: 8 Elapsed: 1593ms Elements: 5000 ~ 0,3186 ms / per element and 313
             stopwach.Stop();
 
             int noElements = max;
-            Console.WriteLine($"Max Workers: {workerCount} Created:{testhelper.Engine.WorkerCoordinator.TotalWorkerCreated} Elapsed: {stopwach.ElapsedMilliseconds}ms Elements: {noElements} ~ {stopwach.ElapsedMilliseconds / (double)noElements} ms / per element and {noElements * 1000 / stopwach.ElapsedMilliseconds} pr. sec.\n\n");
+            Console.WriteLine($"Max Workers: {workerCount} Created:{testhelper.Engine!.WorkerCoordinator!.TotalWorkerCreated} Elapsed: {stopwach.ElapsedMilliseconds}ms Elements: {noElements} ~ {stopwach.ElapsedMilliseconds / (double)noElements} ms / per element and {noElements * 1000 / stopwach.ElapsedMilliseconds} pr. sec.\n\n");
         }
 
         doo(1);

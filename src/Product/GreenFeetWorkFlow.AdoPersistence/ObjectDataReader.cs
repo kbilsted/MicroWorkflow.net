@@ -15,13 +15,19 @@ public sealed class ObjectDataReader<TData> : IDataReader
     {
         public List<Func<TData, object>> Accessors { get; set; }
         public Dictionary<string, int> Lookup { get; set; }
+
+        public PropertyAccessor(List<Func<TData, object>> accessors, Dictionary<string, int> lookup)
+        {
+            Accessors = accessors;
+            Lookup = lookup;
+        }
     }
 
     private static readonly Lazy<PropertyAccessor> s_propertyAccessorCache = new Lazy<PropertyAccessor>(() =>
     {
         var propertyAccessors = typeof(TData)
             .GetProperties(BindingFlags.Instance | BindingFlags.Public)
-            .Where(p => p.CanRead && p.CanWrite && p.Name!= "InitialState")
+            .Where(p => p.CanRead && p.CanWrite && p.Name != "InitialState")
             .Select((p, i) => new
             {
                 Index = i,
@@ -30,23 +36,22 @@ public sealed class ObjectDataReader<TData> : IDataReader
             })
             .ToArray();
 
-        return new PropertyAccessor
-        {
-            Accessors = propertyAccessors.Select(p => p.Accessor).ToList(),
-            Lookup = propertyAccessors.ToDictionary(p => p.Property.Name, p => p.Index, StringComparer.OrdinalIgnoreCase)
-        };
+        return new PropertyAccessor(
+            propertyAccessors.Select(p => p.Accessor).ToList(),
+            propertyAccessors.ToDictionary(p => p.Property.Name, p => p.Index, StringComparer.OrdinalIgnoreCase)
+        );
     });
 
     private static Func<TData, object> CreatePropertyAccessor(PropertyInfo p)
     {
         var parameter = Expression.Parameter(typeof(TData), "input");
-        var propertyAccess = Expression.Property(parameter, p.GetGetMethod());
+        var propertyAccess = Expression.Property(parameter, p.GetGetMethod()!);
         var castAsObject = Expression.TypeAs(propertyAccess, typeof(object));
         var lamda = Expression.Lambda<Func<TData, object>>(castAsObject, parameter);
         return lamda.Compile();
     }
 
-    private IEnumerator<TData> m_dataEnumerator;
+    private IEnumerator<TData>? m_dataEnumerator;
 
     public ObjectDataReader(IEnumerable<TData> data)
     {
@@ -62,7 +67,7 @@ public sealed class ObjectDataReader<TData> : IDataReader
 
     public int Depth => 1;
 
-    public DataTable GetSchemaTable()
+    public DataTable? GetSchemaTable()
     {
         return null;
     }
@@ -78,7 +83,7 @@ public sealed class ObjectDataReader<TData> : IDataReader
     {
         if (IsClosed)
             throw new ObjectDisposedException(GetType().Name);
-        return m_dataEnumerator.MoveNext();
+        return m_dataEnumerator!.MoveNext();
     }
 
     public int RecordsAffected => -1;
@@ -138,7 +143,7 @@ public sealed class ObjectDataReader<TData> : IDataReader
         throw new NotImplementedException();
     }
 
-    public long GetBytes(int i, long fieldOffset, byte[] buffer, int bufferoffset, int length)
+    public long GetBytes(int i, long fieldOffset, byte[]? buffer, int bufferoffset, int length)
     {
         throw new NotImplementedException();
     }
@@ -148,7 +153,7 @@ public sealed class ObjectDataReader<TData> : IDataReader
         throw new NotImplementedException();
     }
 
-    public long GetChars(int i, long fieldoffset, char[] buffer, int bufferoffset, int length)
+    public long GetChars(int i, long fieldoffset, char[]? buffer, int bufferoffset, int length)
     {
         throw new NotImplementedException();
     }

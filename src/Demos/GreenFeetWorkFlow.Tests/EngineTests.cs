@@ -12,7 +12,7 @@ public class EngineTests
     }
 
     [Test]
-    public async Task When_adding_an_event_Then_an_id_PK_is_returned()
+    public void When_adding_an_event_Then_an_id_PK_is_returned()
     {
         Step step = new Step(helper.RndName) { ScheduleTime = DateTime.Now.AddMonths(1) };
 
@@ -67,8 +67,9 @@ public class EngineTests
             .ContinueWith(x =>
             {
                 continued = true;
-                x.Exception.GetType().Should().Be<AggregateException>();
-                x.Exception.InnerException.Message.Should().Be(str);
+                x.IsFaulted.Should().BeTrue();
+                x.Exception!.GetType().Should().Be<AggregateException>();
+                x.Exception!.InnerException!.Message.Should().Be(str);
             });
         await t;
         continued.Should().BeTrue();
@@ -80,7 +81,7 @@ public class EngineTests
     {
         var str = "some message";
         bool continued = false;
-
+        #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
         Task t = Task
         .Run(async () => { throw new Exception(str); })
             .ContinueWith(x =>
@@ -92,6 +93,7 @@ public class EngineTests
             });
         await t;
         continued.Should().BeTrue();
+        #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
     }
 
     [Test]
@@ -156,7 +158,9 @@ public class EngineTests
         continued.Should().BeFalse();  // notice await is not awaiting
     }
 
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
     static async Task SomeAsyncMethodThrowingException() => throw new Exception("foo");
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
 
     /// <summary>
     /// this is how we start tasks in the engine
