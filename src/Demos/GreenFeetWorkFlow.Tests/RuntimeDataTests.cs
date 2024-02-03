@@ -35,8 +35,6 @@ public class RuntimeDataTests
         steps.Keys.Count.Should().Be(3);
     }
 
-
-
     [Test]
     public void When_SearchSteps_for_nonmatch_Then_return_empty()
     {

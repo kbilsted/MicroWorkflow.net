@@ -1,8 +1,8 @@
 # GreenFeetWorkFlow .Net
 <!--start-->
-[![Stats](https://img.shields.io/badge/Code_lines-2,6_K-ff69b4.svg)]()
+[![Stats](https://img.shields.io/badge/Code_lines-2,7_K-ff69b4.svg)]()
 [![Stats](https://img.shields.io/badge/Test_lines-0-69ffb4.svg)]()
-[![Stats](https://img.shields.io/badge/Doc_lines-645-ffb469.svg)]()
+[![Stats](https://img.shields.io/badge/Doc_lines-650-ffb469.svg)]()
 <!--end-->
 
 An very fast, highly scalable (both horizontally and vertically), and simple system for workflows, queues, outbox-pattern and job scheduling.
