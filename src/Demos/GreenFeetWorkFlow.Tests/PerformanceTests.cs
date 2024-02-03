@@ -11,13 +11,13 @@ public class PerformanceTests
     [TestCase(50)] // 3 (local 00:00:00.5890152)
     [TestCase(100)] // 5 (local 00:00:00.0149946)
     [TestCase(200)] // 10 (local 00:00:00.0244962)
-    public void  Inserting_10000_steps_timing(int max)
+    public void Inserting_many_steps_timing(int max)
     {
         var helper = new TestHelper();
 
         var engine = helper.Build();
         var watch = Stopwatch.StartNew();
-        var name = "inserttest";
+        var name = nameof(Inserting_many_steps_timing);
 
         var steps = Enumerable.Range(0, max).Select(x => new Step(name)).ToArray();
         engine.Data.AddSteps(steps);
@@ -25,19 +25,23 @@ public class PerformanceTests
         watch.Stop();
         watch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds((max / 50.0) * 3.01));
         Console.WriteLine(watch);
+
+        engine.Data.FailSteps(new SearchModel(Name: name)).Length
+            .Should()
+            .BeGreaterThanOrEqualTo(max);
     }
 
     [Test]
     [TestCase(50)] // 3
     [TestCase(100)] // 5
     [TestCase(200)] // 10
-    public async Task Inserting_10000_steps_timing_bulk(int max)
+    public async Task Inserting_many_steps_timing_bulk(int max)
     {
         var helper = new TestHelper();
 
         var engine = helper.Build();
         var watch = Stopwatch.StartNew();
-        var name = "inserttest3";
+        var name = nameof(Inserting_many_steps_timing_bulk);
 
         var steps = Enumerable.Range(0, max).Select(x => new Step(name)).ToArray();
         await engine.Data.AddStepsBulkAsync(steps);
@@ -45,6 +49,10 @@ public class PerformanceTests
         watch.Stop();
         watch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(0.9));
         Console.WriteLine(watch);
+
+        engine.Data.FailSteps(new SearchModel(Name: name)).Length
+            .Should()
+            .BeGreaterThanOrEqualTo(max);
     }
 
 

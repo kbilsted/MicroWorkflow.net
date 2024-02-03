@@ -21,28 +21,31 @@ public class AdoHelper
             $@"SELECT TOP {fetchLevels.MaxRows} * 
                 FROM {table} WITH (NOLOCK)")
             .Where(model.Id, "[Id] = @Id")
-            .Where(model.CorrelationId, "[CorrelationId] = @CorrelationId")
             .Where(model.Name, "[Name] = @Name")
-            .Where(model.SearchKey, "[SearchKey] LIKE @SearchKey")
+            .Where(model.Singleton, "[Singleton] = @Singleton")
             .Where(model.FlowId, "[FlowId] = @FlowId")
-            .Where(model.Description, "[Description] LIKE @Description");
+            .Where(model.SearchKey, "[SearchKey] LIKE @SearchKey")
+            .Where(model.ExecutedBy, "[ExecutedBy] = @ExecutedBy")
+            .Where(model.CorrelationId, "[CorrelationId] = @CorrelationId")
+            .Where(model.CreatedTimeFrom, "[CreatedTime] >= @CreatedTimeFrom")
+            .Where(model.CreatedTimeUpto, "[CreatedTime] < @CreatedTimeUpto")
+            .Where(model.Description, "[Description] LIKE @Description")
+            ;
 
         if (logger.TraceLoggingEnabled)
             logger.LogTrace($"{nameof(SearchSteps)}: Sql: {(string)sql}", null, null);
 
         using var cmd = new SqlCommand(sql, tx.Connection, tx);
-        if (model.Id != null)
-            cmd.Parameters.Add(new SqlParameter("Id", model.Id));
-        if (model.CorrelationId != null)
-            cmd.Parameters.Add(new SqlParameter("CorrelationId", model.CorrelationId));
-        if (model.Name != null)
-            cmd.Parameters.Add(new SqlParameter("Name", model.Name));
-        if (model.SearchKey != null)
-            cmd.Parameters.Add(new SqlParameter("SearchKey", model.SearchKey));
-        if (model.FlowId != null)
-            cmd.Parameters.Add(new SqlParameter("FlowId", model.FlowId));
-        if (model.Description != null)
-            cmd.Parameters.Add(new SqlParameter("Description", model.Description));
+        if (model.Id != null) cmd.Parameters.Add(new SqlParameter("Id", model.Id));
+        if (model.Name != null) cmd.Parameters.Add(new SqlParameter("Name", model.Name));
+        if (model.Singleton != null) cmd.Parameters.Add(new SqlParameter("Singleton", model.Singleton));
+        if (model.FlowId != null) cmd.Parameters.Add(new SqlParameter("FlowId", model.FlowId));
+        if (model.SearchKey != null) cmd.Parameters.Add(new SqlParameter("SearchKey", model.SearchKey));
+        if (model.ExecutedBy != null) cmd.Parameters.Add(new SqlParameter("ExecutedBy", model.ExecutedBy));
+        if (model.CorrelationId != null) cmd.Parameters.Add(new SqlParameter("CorrelationId", model.CorrelationId));
+        if (model.CreatedTimeFrom != null) cmd.Parameters.Add(new SqlParameter("CreatedTimeFrom", model.CreatedTimeFrom));
+        if (model.CreatedTimeUpto != null) cmd.Parameters.Add(new SqlParameter("CreatedTimeUpto", model.CreatedTimeUpto));
+        if (model.Description != null) cmd.Parameters.Add(new SqlParameter("Description", model.Description));
 
         using SqlDataReader reader = cmd.ExecuteReader();
 

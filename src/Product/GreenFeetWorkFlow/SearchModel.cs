@@ -3,10 +3,14 @@
 public record SearchModel
 (
      int? Id = null,
-     string? CorrelationId = null,
-     string? SearchKey = null,
      string? Name = null,
+     bool? Singleton = null,
      string? FlowId = null,
+     string? SearchKey = null,
+     string? ExecutedBy = null,
+     string? CorrelationId = null,
+     DateTime? CreatedTimeFrom = null,
+     DateTime? CreatedTimeUpto = null,
      string? Description = null
 );
 

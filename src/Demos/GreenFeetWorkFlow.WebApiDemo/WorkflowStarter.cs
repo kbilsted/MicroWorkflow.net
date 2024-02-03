@@ -17,7 +17,7 @@ public class WorkflowStarter : BackgroundService
             Singleton = true, 
             Description= "continuously fetch the latest weather data and cache it" 
         };
-        SearchModel searchModel = new SearchModel(Name: step.Name);
+        SearchModel searchModel = new SearchModel(Name: step.Name, Singleton: step.Singleton);
         engine.Data.AddStepIfNotExists(step, searchModel);
 
         engine.StartAsync(new WorkflowConfiguration(new WorkerConfig()), stoppingToken: stoppingToken);

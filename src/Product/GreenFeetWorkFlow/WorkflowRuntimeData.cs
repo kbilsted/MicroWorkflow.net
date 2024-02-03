@@ -191,15 +191,20 @@ public class WorkflowRuntimeData
 
         int[] ids = persister.InTransaction(() =>
         {
-            var steps = persister.SearchSteps(criteria, StepStatus.Ready);
-
-            foreach (var step in steps)
+            List<int> result = new List<int>();
+            List<Step> steps;
+            do
             {
-                persister.Delete(StepStatus.Ready, step.Id);
-                persister.Insert(StepStatus.Failed, step);
-            }
+                steps = persister.SearchSteps(criteria, StepStatus.Ready);
 
-            return steps.Select(x => x.Id).ToArray();
+                foreach (var step in steps)
+                {
+                    persister.Delete(StepStatus.Ready, step.Id);
+                    persister.Insert(StepStatus.Failed, step);
+                    result.Add(step.Id);
+                }
+            } while (steps.Any());
+            return result.ToArray();
         }, transaction);
 
         return ids;

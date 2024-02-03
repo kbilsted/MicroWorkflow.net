@@ -165,6 +165,7 @@ public class WorkerTests
         ]
     }
 ]");
+        helper.Engine!.Data.FailSteps(new SearchModel(Name: nameNewStep));
     }
 
     [Test]
@@ -172,26 +173,24 @@ public class WorkerTests
     {
         int? dbid = null;
         const string name = "test-throw-exception";
-        helper.StepHandlers = [
-            (
-                name,
-                GenericImplementation.Create(step =>
+        helper.StepHandlers = [Handle(name,
+                step =>
                 {
                     dbid = step.Id;
                     throw new Exception("exception message");
-                }))];
-        helper.Steps = [new Step(name, "hej") { FlowId = helper.FlowId }];
+                })];
+        helper.Steps = [new Step(name, "hey") { FlowId = helper.FlowId }];
         helper.StopWhenNoWork().BuildAndStart();
 
         helper.AssertTableCounts(helper.FlowId, ready: 1, done: 0, failed: 0);
 
         var persister = helper.Persister;
         var row = helper.Engine!.Data.SearchSteps(new SearchModel(Id: dbid!.Value), StepStatus.Ready).Single();
-        row!.State.Should().Be("\"hej\"");
+        row!.State.Should().Be("\"hey\"");
         row.FlowId.Should().Be(helper.FlowId);
         row.Name.Should().Be(name);
+        helper.Engine.Data.FailSteps(new SearchModel(Name: name));
     }
-
 
     [Test]
     public void When_connecting_unsecurely_to_DB_Then_see_the_exception()
@@ -370,6 +369,7 @@ public class WorkerTests
         stepResult.Should().Be($"cooking potatoes");
 
         helper.AssertTableCounts(helper.FlowId, ready: 1, done: 1, failed: 0);
+        helper.Engine!.Data.FailSteps(new SearchModel(Name: "check-future-step/eat"));
     }
 
 
@@ -377,7 +377,7 @@ public class WorkerTests
     public void When_step_is_in_the_future_Then_it_wont_execute()
     {
         string? stepResult = null;
-        const string name = "When_step_is_in_the_future_Then_it_wont_execute";
+        const string name = nameof(When_step_is_in_the_future_Then_it_wont_execute);
         helper.StepHandlers = [Handle(name, step => { stepResult = step.FlowId; return step.Done(); })];
         helper.Steps = [new Step(name)
         {
@@ -389,6 +389,7 @@ public class WorkerTests
         helper.AssertTableCounts(helper.FlowId, ready: 1, done: 0, failed: 0);
 
         stepResult.Should().BeNull();
+        helper.Engine!.Data.FailSteps(new SearchModel(Name: name));
     }
 
     [Test]
@@ -459,6 +460,7 @@ public class WorkerTests
 
         helper.AssertTableCounts(helper.FlowId, ready: 1, done: 1, failed: 0);
         GetAllByFlowId()[StepStatus.Ready].Single().State.Should().Be("\"potatoes\"");
+        helper.Engine!.Data.FailSteps(new SearchModel(Name: "undefined-next-step/eat"));
     }
 
     [Test]

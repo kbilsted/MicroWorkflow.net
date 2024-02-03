@@ -35,8 +35,10 @@ public class RuntimeDataTests
         steps.Keys.Count.Should().Be(3);
     }
 
+
+
     [Test]
-    public void When_SearchSteps_Then_success()
+    public void When_SearchSteps_for_nonmatch_Then_return_empty()
     {
         var engine = helper.Build();
 
@@ -46,45 +48,87 @@ public class RuntimeDataTests
             CorrelationId = Guid.NewGuid().ToString(),
             SearchKey = Guid.NewGuid().ToString(),
             Description = Guid.NewGuid().ToString(),
+            ExecutedBy = Guid.NewGuid().ToString(),
+            Singleton = false
         };
-        var id = engine.Data.AddStep(step, null);
-
+        var now = DateTime.Now;
+        var id = tearDownStep = engine.Data.AddStep(step, null);
         FetchLevels fetchLevels = FetchLevels.ALL;
+
         var steps = engine.Data.SearchSteps(new SearchModel()
         {
-            Id = id,
-        }, fetchLevels);
-        steps[StepStatus.Ready].Single().Id.Should().Be(id);
-
-        steps = engine.Data.SearchSteps(new SearchModel()
-        {
-            CorrelationId = step.CorrelationId,
-        }, fetchLevels);
-        steps[StepStatus.Ready].Single().Id.Should().Be(id);
-
-        steps = engine.Data.SearchSteps(new SearchModel()
-        {
             Name = step.Name,
+            Singleton = true,
         }, fetchLevels);
+        steps[StepStatus.Ready].Should().BeEmpty();
+
+        steps = engine.Data.SearchSteps(new SearchModel(ExecutedBy: "no-match"), fetchLevels);
+        steps[StepStatus.Ready].Should().BeEmpty();
+
+        steps = engine.Data.SearchSteps(new SearchModel(Description: "no-match"), fetchLevels);
+        steps[StepStatus.Ready].Should().BeEmpty();
+
+        steps = engine.Data.SearchSteps(new SearchModel(CorrelationId: "no-match"), fetchLevels);
+        steps[StepStatus.Ready].Should().BeEmpty();
+
+        steps = engine.Data.SearchSteps(new SearchModel(SearchKey: "no-match"), fetchLevels);
+        steps[StepStatus.Ready].Should().BeEmpty();
+
+        steps = engine.Data.SearchSteps(new SearchModel(FlowId: "no-match"), fetchLevels);
+        steps[StepStatus.Ready].Should().BeEmpty();
+
+        steps = engine.Data.SearchSteps(new SearchModel(Id: id, CreatedTimeUpto: now), fetchLevels);
+        steps[StepStatus.Ready].Should().BeEmpty();
+
+        steps = engine.Data.SearchSteps(new SearchModel(Id: id, CreatedTimeFrom: now.AddSeconds(3)), fetchLevels);
+        steps[StepStatus.Ready].Should().BeEmpty();
+    }
+
+
+    [Test]
+    public void When_SearchSteps_Then_return_data()
+    {
+        var engine = helper.Build();
+        var step = new Step(helper.RndName)
+        {
+            FlowId = Guid.NewGuid().ToString(),
+            CorrelationId = Guid.NewGuid().ToString(),
+            SearchKey = Guid.NewGuid().ToString(),
+            Description = Guid.NewGuid().ToString(),
+            ExecutedBy = Guid.NewGuid().ToString(),
+            Singleton = false
+        };
+
+        var now = DateTime.Now;
+        var id = tearDownStep = engine.Data.AddStep(step, null);
+
+        FetchLevels fetchLevels = FetchLevels.ALL;
+        var steps = engine.Data.SearchSteps(new SearchModel(Id: id), fetchLevels);
         steps[StepStatus.Ready].Single().Id.Should().Be(id);
 
-        steps = engine.Data.SearchSteps(new SearchModel()
-        {
-            FlowId = step.FlowId,
-        }, fetchLevels);
+        steps = engine.Data.SearchSteps(new SearchModel(CorrelationId: step.CorrelationId), fetchLevels);
         steps[StepStatus.Ready].Single().Id.Should().Be(id);
 
-        steps = engine.Data.SearchSteps(new SearchModel()
-        {
-            SearchKey = step.SearchKey,
-        }, fetchLevels);
+        steps = engine.Data.SearchSteps(new SearchModel(Name: step.Name), fetchLevels);
         steps[StepStatus.Ready].Single().Id.Should().Be(id);
 
-        steps = engine.Data.SearchSteps(new SearchModel()
-        {
-            Description = step.Description,
-        }, fetchLevels);
+        steps = engine.Data.SearchSteps(new SearchModel(FlowId: step.FlowId), fetchLevels);
         steps[StepStatus.Ready].Single().Id.Should().Be(id);
+
+        steps = engine.Data.SearchSteps(new SearchModel(SearchKey: step.SearchKey), fetchLevels);
+        steps[StepStatus.Ready].Single().Id.Should().Be(id);
+
+        steps = engine.Data.SearchSteps(new SearchModel(Description: step.Description), fetchLevels);
+        steps[StepStatus.Ready].Single().Id.Should().Be(id);
+
+        steps = engine.Data.SearchSteps(new SearchModel(CreatedTimeFrom: now.AddSeconds(-3)), fetchLevels);
+        steps[StepStatus.Ready].Should().Contain(x => x.Id == id);
+
+        steps = engine.Data.SearchSteps(new SearchModel(CreatedTimeUpto: now.AddSeconds(3)), fetchLevels);
+        steps[StepStatus.Ready].Should().Contain(x => x.Id == id);
+
+        steps = engine.Data.SearchSteps(new SearchModel(ExecutedBy: step.ExecutedBy), fetchLevels);
+        steps[StepStatus.Ready].Should().BeEmpty(because: "step is not executed yet");
 
         // combined search
         steps = engine.Data.SearchSteps(new SearchModel()
@@ -94,6 +138,10 @@ public class RuntimeDataTests
             Name = step.Name,
             FlowId = step.FlowId,
             SearchKey = step.SearchKey,
+            Singleton = step.Singleton,
+            CreatedTimeFrom = now.AddSeconds(-3),
+            CreatedTimeUpto = now.AddSeconds(3),
+            // can't use ExecutedBy - step is not executed yet
         }, fetchLevels);
         steps[StepStatus.Ready].Single().Id.Should().Be(id);
     }
