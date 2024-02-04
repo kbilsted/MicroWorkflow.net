@@ -1,50 +1,53 @@
 # GreenFeetWorkFlow .Net
 <!--start-->
-[![Stats](https://img.shields.io/badge/Code_lines-2,7_K-ff69b4.svg)]()
-[![Stats](https://img.shields.io/badge/Test_lines-0-69ffb4.svg)]()
-[![Stats](https://img.shields.io/badge/Doc_lines-650-ffb469.svg)]()
+[![Stats](https://img.shields.io/badge/Code_lines-1,7_K-ff69b4.svg)]()
+[![Stats](https://img.shields.io/badge/Test_lines-1,1_K-69ffb4.svg)]()
+[![Stats](https://img.shields.io/badge/Doc_lines-450-ffb469.svg)]()
 <!--end-->
-
-An very fast, highly scalable (both horizontally and vertically), and simple system for workflows, queues, outbox-pattern and job scheduling.
-
-You can easily embed it directly in your solutions or use it as a stand-alone workflow. 
-
-
 
 
 # 1. Design goals
 
-Reasons to try out GreenFeet Workflow
-
 **Simplicity** 
-* We model only the steps in a workflow, not the transitions between them. 
-* This greatly simplify the datamodel, the versioning of a flow or a step, and enable you to use reusable code blocks for determining a transition.
-* It is easy to embed it directly into your solutions to improve resiliance
+* We model only the steps in a workflow, *not* the transitions between them 
+    * This greatly *simplify* the model, the versioning of flows and steps
+    * enable you to use reusable code blocks for determining a transition
+* It is *easy* to embed it directly into your solutions to improve resiliance or use as a stand-alone workflow
 
-**Steps are implemented in C# *not* in some obscure language** 
-* hence the code is readable, deubable, testable - like the rest of your code base
-* the code can use existing best practices for logging, IOC containers etc.
-* you can use existing branching, and deployment strategies and processes
-* You *do not* need a specual graphical editor for specifying flows
+**We use C# all the way**
+* We don't want to invent a new language - we love C#!
+* Workflow code is *readable*, *debugable*, and *testable* - like the rest of your code base
+* You can use existing best practices for logging, IOC containers etc.
+* Workflow code is *easy to commit and merge* use your existing *branching strategies*
+* You *do not* need a special graphical editor for specifying flows
 
-**The datamodel is simple - just three DB tables.** 
-* If things break in production, it is easy for you to figure out what has happened and how to remedy the problem
-* You can reason about the consequences of versioning the step implementations vs. simply change the existing flows.
+**The datamodel is simple - just three DB tables** 
+* If things break in production, it is easy for you to figure out what has happened and remedy the problem
+* You can reason about the consequences of versioning the step implementations vs. simply change the existing flows
 
-**Scalable run-time.** 
-* We Support both vertical and horizontal scalling. 
-* You can add more threads to the workflow engine (vertical scaling)
-* or add more servers that collectively will perform step executions (horizontal scaling)
+**Scalable** 
+* You can add more workers in the workflow engine (vertical scaling)
+* You can add more servers each running a workflow engine (horizontal scaling)
 
-**No external dependencies.** 
-* The core library has no external dependencies, you can use whatever database, logger, json/xml/binary serializer you want and the versions of libraries you want to use.
-
-
+**No external dependencies** 
+* The core library has *no external dependencies*, you can use whatever database, logger, json/xml/binary serializer you want 
+* ... in any version you want
 
 
-# 2. Getting started
 
-To define a workflow with the two steps  `FetchData` (which fetches some data), and `AnalyzeWords` (that analyzes the data), we implement interface `IStepImplementation` twice. 
+# 2. Overview
+
+![Overview](doc/overview.drawio.png)
+
+Supported scalabilities
+
+![Supported scalabilities](doc/scaling.drawio.png)
+
+
+
+# 3. Getting started
+
+To define a workflow with the two steps `FetchData` (which fetches some data), and `AnalyzeWords` (that analyzes the data), we implement interface `IStepImplementation` twice. 
 To transition from one step to one (or several steps), use `Done()`. This tells the engine that the current step has finished sucesfully. You can supply one or more steps that will be executed in the future. 
 This is how you control ordering of events.
 
@@ -100,7 +103,7 @@ You likely want to persist workflows in a database. We currently use Microsoft S
 
 
 
-# 3. Core concepts in Greenfeet Workflow
+# 4. Core concepts in Greenfeet Workflow
 
 The model revolves around the notion of a *step*. A step is in traditional workfow litterature referred to as an activity. Where activities live in a workflow. The workflow has identity and state and so forth. 
 In GreenFeet Workflow, however, there is only a `FlowId` property. No modelling of transitions nor workflow state. It is often desireable to store state around your business entities, in fact it is highly encouraged that you keep doing this. 
@@ -138,7 +141,7 @@ Operations you can do on steps
 
 
 
-# 4. Performance 
+# 5. Performance 
 
 Simplicify is the focus of the code base. Performance is simply a side-effect of keeping things simple. 
 
@@ -150,7 +153,7 @@ You can take outset in some simple test scenarios at https://github.com/kbilsted
 
 
 
-# 5. Flow versioning
+# 6. Flow versioning
 
 Since each step may be regarded as being part of a flow, or as a single independent step, there is no notion of versions. However, you can use a version number in steps (similar to using version in REST api's). 
 This enable you to create a new version with new steps that has a different implementation to the old. 
@@ -159,7 +162,7 @@ If all steps need to execute on the new code, simply use multiple step names for
 
 
 
-# 6. Retries and ordering 
+# 7. Retries and ordering 
 The automatic retry of a step in case of a failure is key feature. You can control ordering to some degree by putting longer and longer delays when retrying a failing step. This technique is sometimes called exponential back-off, since the time between retries exponentially increase to ensure throughput of succesful jobs. The default retry delay is calculated as `delay = retries^3 seconds`. 
 
 If you want to stop retrying either return a `step.Fail()` or `throw FailCurrentStepException`.
@@ -169,7 +172,7 @@ Step execution is only orderes by an earliest execution time. If you need to con
 
 
 
-# 7. GreenFeet Workflow and related concepts 
+# 8. GreenFeet Workflow and related concepts 
 Another way to gain conceptual insights into the framework, we explain why GreenFeet workflow is a good implementation fit to many concepts.
 
 
