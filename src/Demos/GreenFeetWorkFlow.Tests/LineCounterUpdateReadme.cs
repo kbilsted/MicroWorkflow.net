@@ -1,15 +1,5 @@
 ﻿using KbgSoft.LineCounter;
-using NUnit.Framework;
 using System.Reflection;
-using System.Text.RegularExpressions;
-
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Threading;
 
 namespace GreenFeetWorkflow.Tests;
 
@@ -21,6 +11,7 @@ public class LineCounterUpdateReadme
     {
         string topPath = Path.GetFullPath(Path.Combine(Assembly.GetExecutingAssembly().Location, "..", "..", "..", "..", "..", "..", ".."));
 
+        // code
         string sourcePath = Path.GetFullPath(Path.Combine(topPath, "src"));
         Console.WriteLine($"root: {sourcePath}");
         var sourceCounter = new LineCounting();
@@ -29,12 +20,14 @@ public class LineCounterUpdateReadme
         Console.WriteLine($"counting:\n{string.Join("\n", files)}");
         var sourceStats = sourceCounter.CountFiles(files);
 
+        // doc
         var documentationCounter = new LineCounting();
         var documentationStats = documentationCounter.CountFiles(
             documentationCounter
             .GetFiles(topPath)
             .Where(x => x.EndsWith(".md")));
 
+        // merge
         sourceStats.Add("Markdown",
             new Statistics()
             {
