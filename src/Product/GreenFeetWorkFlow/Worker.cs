@@ -242,7 +242,7 @@ totalwaits: {TotalperformanceWaitCounter} totalfutile-fetches:{TotalperformanceF
             }
 
             if (logger.DebugLoggingEnabled)
-                logger.LogDebug($"{nameof(Worker)}: Executing step-implementation for step", null, CreateLogContext(step));
+                logger.LogDebug($"{nameof(Worker)}: Executing step", null, CreateLogContext(step));
             ExecutionResult result;
             step.ExecutionStartTime = DateTime.Now;
             step.ExecutedBy = WorkerName;
