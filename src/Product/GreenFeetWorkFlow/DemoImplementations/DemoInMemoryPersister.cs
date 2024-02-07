@@ -116,6 +116,8 @@ public class DemoInMemoryPersister : IStepPersister
     {
     }
 
+    public string GetConnectionInfoForLogging() => "InMemory Demo Persister";
+
     public T InTransaction<T>(Func<T> code, object? transaction = null)
     {
         return code();

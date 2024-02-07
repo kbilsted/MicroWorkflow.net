@@ -43,7 +43,10 @@ public class WorkflowEngine
     void Init(WorkflowConfiguration configuration, string? engineName, CancellationToken? token)
     {
         if (logger.InfoLoggingEnabled)
-            logger.LogInfo($"{nameof(WorkflowEngine)}: starting engine {engineName}", null, null);
+        {
+            logger.LogInfo($"{nameof(WorkflowEngine)}: starting engine: {engineName}", null, null);
+            logger.LogInfo($"{nameof(WorkflowEngine)}: starting persister connection: {iocContainer.GetInstance<IStepPersister>().GetConnectionInfoForLogging()}", null, null);
+        }
 
         Configuration = configuration;
         configuration.LoggerConfiguration = logger.Configuration;

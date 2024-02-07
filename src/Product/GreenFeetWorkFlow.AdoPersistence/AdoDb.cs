@@ -1,6 +1,7 @@
 ﻿using GreenFeetWorkflow;
 using Microsoft.Data.SqlClient;
 using System.Data;
+using System.Text.RegularExpressions;
 
 namespace GreenFeetWorkFlow.AdoMsSql;
 
@@ -46,6 +47,8 @@ public class SqlServerPersister : IStepPersister
 
         return transaction;
     }
+
+    public string GetConnectionInfoForLogging() => "SqlServer persister: " + Regex.Replace(connectionString, "Password=[^;]*", "");
 
     public T InTransaction<T>(Func<T> code, object? outsideTransaction = null)
     {
