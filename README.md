@@ -1,10 +1,12 @@
-# GreenFeetWorkFlow .Net
+# MicroWorkflow .net 
 <!--start-->
 [![Stats](https://img.shields.io/badge/Code_lines-1,7_K-ff69b4.svg)]()
 [![Stats](https://img.shields.io/badge/Test_lines-1,1_K-69ffb4.svg)]()
-[![Stats](https://img.shields.io/badge/Doc_lines-450-ffb469.svg)]()
+[![Stats](https://img.shields.io/badge/Doc_lines-453-ffb469.svg)]()
 <!--end-->
 
+
+# 0.
 
 # 1. Design goals
 
@@ -30,9 +32,8 @@
 * You can add more servers each running a workflow engine (horizontal scaling)
 
 **No external dependencies** 
-* The core library has *no external dependencies*, you can use whatever database, logger, json/xml/binary serializer you want 
-* ... in any version you want
-
+* The core library has *no external dependencies*, you can use whatever database, logger, json/xml/binary serializer you want ... in any version you want
+* Convenience supplement nuget packages for Newtonsoft json, Ado .net, and Autofac are provided 
 
 
 # 2. Overview
@@ -84,29 +85,29 @@ Below are some more elaborate exaples.
 
 ### Simple console demo 
 
-A fully working C# example in one file: https://github.com/kbilsted/GreenFeetWorkFlow/blob/master/src/Demos/GreenFeetWorkFlow.ConsoleDemo/Program.cs
+A fully working C# example in one file: https://github.com/kbilsted/MicroWorkflow.net/blob/master/src/Demos/ConsoleDemo/Program.cs
 
 
 ### Webapi demo 
 
-Now that you have understood the basics, lets make an example using a real IOC container and a database see https://github.com/kbilsted/GreenFeetWorkFlow/tree/master/src/Demos/GreenFeetWorkFlow.WebApiDemo
+Now that you have understood the basics, lets make an example using a real IOC container and a database see https://github.com/kbilsted/MicroWorkflow.net/tree/master/src/Demos/WebApiDemo
 
 
 ### IOC container
 
-You can use any IOC container that supports named instances. We use Autofac. For more information see https://github.com/kbilsted/GreenFeetWorkFlow/tree/master/src/Product/GreenFeetWorkFlow.Ioc.Autofac
+You can use any IOC container that supports named instances. We use Autofac. For more information see https://github.com/kbilsted/MicroWorkflow.net/tree/master/src/Product/MicroWorkflow.Ioc.Autofac
 
 
 ### Database
 
-You likely want to persist workflows in a database. We currently use Microsoft SQL Server in production environments, but and SQL database should be easy to get working. For more information see https://github.com/kbilsted/GreenFeetWorkFlow/tree/master/src/Product/GreenFeetWorkFlow.AdoPersistence
+You likely want to persist workflows in a database. We currently use Microsoft SQL Server in production environments, but and SQL database should be easy to get working. For more information see https://github.com/kbilsted/MicroWorkflow.net/tree/master/src/Product/MicroWorkflow.AdoPersistence
 
 
 
-# 4. Core concepts in Greenfeet Workflow
+# 4. Core concepts in Micro Workflow
 
 The model revolves around the notion of a *step*. A step is in traditional workfow litterature referred to as an activity. Where activities live in a workflow. The workflow has identity and state and so forth. 
-In GreenFeet Workflow, however, there is only a `FlowId` property. No modelling of transitions nor workflow state. It is often desireable to store state around your business entities, in fact it is highly encouraged that you keep doing this. 
+In Micro Workflow, however, there is only a `FlowId` property. No modelling of transitions nor workflow state. It is often desireable to store state around your business entities, in fact it is highly encouraged that you keep doing this. 
 
 
 A *step* has the following properties
@@ -121,7 +122,7 @@ A *step* has the following properties
     * *done* (succesful execution).
 * During a step execution a step can spawn one or many new steps. Hence forming a chain or a graph of things to do. These steps execute after the current step. 
 * Each step has a number of *tracking fields* such as create date, execution time, correlation id, flow id, created by id.
-* There are a few more fields, they are all documented here https://github.com/kbilsted/GreenFeetWorkFlow/blob/master/src/Product/GreenFeetWorkFlow/Step.cs
+* There are a few more fields, they are all documented here https://github.com/kbilsted/MicroWorkflow.net/blob/master/src/Product/MicroWorkflow/Step.cs
 
 
 Orthogonal to the step data we have *step implementations*. 
@@ -148,7 +149,7 @@ Simplicify is the focus of the code base. Performance is simply a side-effect of
 On a 2020 mid-tier computer we execute 10.000/sec steps using a single Workflow engine with 8 workers and an un-optimized SQL Server instance. 
 
 Your milage may wary, so I highly recommend you do your own measurements before jumping to any conclusions. 
-You can take outset in some simple test scenarios at https://github.com/kbilsted/GreenFeetWorkFlow/blob/master/src/Demos/GreenFeetWorkFlow.Tests/PerformanceTests.cs
+You can take outset in some simple test scenarios at https://github.com/kbilsted/MicroWorkflow.net/blob/master/src/Demos/MicroWorkFlow.Tests/PerformanceTests.cs
 
 
 
@@ -172,26 +173,26 @@ Step execution is only orderes by an earliest execution time. If you need to con
 
 
 
-# 8. GreenFeet Workflow and related concepts 
-Another way to gain conceptual insights into the framework, we explain why GreenFeet workflow is a good implementation fit to many concepts.
+# 8. Micro Workflow and related concepts 
+Another way to gain conceptual insights into the framework, we explain why Micro Workflow is a good implementation fit to many concepts.
 
 
-### GreenFeet as a Queue
-You may not think of GreenFeet as a queue since the step execution is unordered. Queue's are asociated with FIFO - First In First Out. 
+### Micro Workflow as a Queue
+You may not think of Micro Workflow as a queue since the step execution is unordered. Queue's are asociated with FIFO - First In First Out. 
 A consequence of FIFO is that when queue elements can fail and retry, the FIFO property will stop the entire queue. For most real life scenarios this is unacceptable, hence most
 queues are in fact not FIFO.
 
 Thus we can implement a queue as a a workflow with only one step. 
 
 
-### GreenFeet as a Job scheduler
+### Micro Workflow as a Job scheduler
 The system can act as a job scheduler. A step can be scheduled for a certain time and re-executed again at a certain time. To ensure only one instance exist, use the `Singleton` attribute.
 
 
-### GreenFeet as the 'outbox pattern'
+### Micro Workflow as the 'outbox pattern'
 The *outbox pattern* is an implementation strategy you often read about when dealing with
 events or distributed systems. It is a way to ensure that notifying other systems of a change happens in the same transaction
 as the change itself. The implementation is simply to insert a row into a queue that notifies the other system. 
 
-This is exactly a one-to-one match with a step in GreenFeet Workflow.
+This is exactly a one-to-one match with a step in Micro Workflow.
 

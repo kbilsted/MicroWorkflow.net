@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>net6.0;net8.0</TargetFrameworks>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+
+		<IsPackable>true</IsPackable>
+		<Authors>Kasper B. Graversen</Authors>
+		<RepositoryUrl>https://github.com/kbilsted/MicroWorkflow.net/tree/master/src/Product/MicroWorkflow.Ioc.Autofac</RepositoryUrl>
+		<IncludeSymbols>True</IncludeSymbols>
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+		<Title>Autofac íntegration</Title>
+		<PackageTags>Autofac; MicroWorkflow</PackageTags>
+		<PackageReadmeFile>readme.md</PackageReadmeFile>
+		<GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <None Remove="LICENSE" />
+	  <None Remove="readme.md" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include="LICENSE">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="readme.md">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Autofac" Version="8.0.0" />
+		<ProjectReference Include="..\MicroWorkflow\MicroWorkflow.csproj" />
+
+	</ItemGroup>
+
+</Project>
