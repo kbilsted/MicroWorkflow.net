@@ -257,7 +257,7 @@ totalwaits: {TotalperformanceWaitCounter} totalfutile-fetches:{TotalperformanceF
             {
                 var args = CreateLogContext(step);
                 args.Add("executionDuration", step.ExecutionDurationMillis);
-                args.Add("newSteps", result.NewSteps?.Count() ?? 0);
+                args.Add("newSteps", result.NewSteps?.Count ?? 0);
                 logger.LogInfo($"{nameof(Worker)}: Execution result: {result.Status}.", null, args);
             }
 
@@ -313,7 +313,7 @@ totalwaits: {TotalperformanceWaitCounter} totalfutile-fetches:{TotalperformanceF
             }
 
             if (result.NewSteps != null)
-                persister.Insert(StepStatus.Ready, result.NewSteps.ToArray());
+                _ = persister.Insert(StepStatus.Ready, result.NewSteps.ToArray());
 
             persister.Commit();
         }

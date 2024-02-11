@@ -12,12 +12,12 @@ public class WorkflowStarter : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        Step step = new Step(StepFetchWeatherForecast.Name) 
+        Step step = new(StepFetchWeatherForecast.Name)
         { 
             Singleton = true, 
             Description= "continuously fetch the latest weather data and cache it" 
         };
-        SearchModel searchModel = new SearchModel(Name: step.Name, Singleton: step.Singleton);
+        SearchModel searchModel = new(Name: step.Name, Singleton: step.Singleton);
         engine.Data.AddStepIfNotExists(step, searchModel);
 
         engine.StartAsync(new WorkflowConfiguration(new WorkerConfig()), stoppingToken: stoppingToken);

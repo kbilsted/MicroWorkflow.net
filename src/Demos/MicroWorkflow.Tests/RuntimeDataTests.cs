@@ -7,7 +7,7 @@ namespace MicroWorkflow;
 /// </summary>
 public class RuntimeDataTests
 {
-    TestHelper helper = new TestHelper();
+    TestHelper helper = new();
 
     [SetUp]
     public void Setup()
@@ -42,11 +42,11 @@ public class RuntimeDataTests
 
         var step = new Step(helper.RndName)
         {
-            FlowId = Guid.NewGuid().ToString(),
-            CorrelationId = Guid.NewGuid().ToString(),
-            SearchKey = Guid.NewGuid().ToString(),
-            Description = Guid.NewGuid().ToString(),
-            ExecutedBy = Guid.NewGuid().ToString(),
+            FlowId = guid(),
+            CorrelationId = guid(),
+            SearchKey = guid(),
+            Description = guid(),
+            ExecutedBy = guid(),
             Singleton = false
         };
         var now = DateTime.Now;
@@ -82,18 +82,17 @@ public class RuntimeDataTests
         steps[StepStatus.Ready].Should().BeEmpty();
     }
 
-
     [Test]
     public void When_SearchSteps_Then_return_data()
     {
         var engine = helper.Build();
         var step = new Step(helper.RndName)
         {
-            FlowId = Guid.NewGuid().ToString(),
-            CorrelationId = Guid.NewGuid().ToString(),
-            SearchKey = Guid.NewGuid().ToString(),
-            Description = Guid.NewGuid().ToString(),
-            ExecutedBy = Guid.NewGuid().ToString(),
+            FlowId = guid(),
+            CorrelationId = guid(),
+            SearchKey = guid(),
+            Description = guid(),
+            ExecutedBy = guid(),
             Singleton = false
         };
 
@@ -148,7 +147,7 @@ public class RuntimeDataTests
     public void When_reexecuting_a_step_Then_place_it_in_the_ready_queue()
     {
         const string name = "v1/fail-and-reactivate";
-        Dictionary<int, int> results = new();
+        Dictionary<int, int> results = [];
         var step = new Step(name) { FlowId = helper.FlowId, CorrelationId = helper.CorrelationId };
         var engine = helper
             .With(e =>

@@ -63,7 +63,7 @@ public class Sql
     {
         var orSqlBlock = (new Sql("AND ("));
         code(orSqlBlock);
-        orSqlBlock.AddWhere(")");
+        orSqlBlock.Add(")");
 
         return AddWhere(orSqlBlock.Build());
     }

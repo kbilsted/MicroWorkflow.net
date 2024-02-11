@@ -78,10 +78,6 @@ public class ConsoleStepLogger : GenericStepLogger
 {
     private static readonly object Lock = new object();
 
-    public ConsoleStepLogger() : this(new LoggerConfiguration())
-    {
-    }
-
     public ConsoleStepLogger(LoggerConfiguration cfg) : base(cfg, Print)
     {
     }
@@ -110,10 +106,6 @@ public class ConsoleStepLogger : GenericStepLogger
 /// </summary>
 public class DiagnosticsStepLogger : GenericStepLogger
 {
-    public DiagnosticsStepLogger() : this(new LoggerConfiguration())
-    {
-    }
-
     public DiagnosticsStepLogger(LoggerConfiguration cfg) : base(cfg, Print)
     {
     }

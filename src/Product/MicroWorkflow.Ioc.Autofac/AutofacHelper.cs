@@ -29,7 +29,7 @@ public static class AutofacExtensions
     /// <summary> Register all implementations that are anotated with the <see cref="StepNameAttribute"/> </summary>
     public static void RegisterStepImplementations(this ContainerBuilder builder, IWorkflowLogger? logger, params Assembly[] assemblies)
     {
-        foreach (var x in ReflectionHelper.GetStepsFromAttribute(assemblies))
-            RegisterStepImplementation(builder, logger, x.implementationType, x.stepName);
+        foreach (var (implementationType, stepName) in ReflectionHelper.GetStepsFromAttribute(assemblies))
+            RegisterStepImplementation(builder, logger, implementationType, stepName);
     }
 }

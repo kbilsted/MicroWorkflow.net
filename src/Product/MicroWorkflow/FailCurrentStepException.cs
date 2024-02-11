@@ -7,17 +7,7 @@ public class FailCurrentStepException : Exception
 {
     public Step[]? NewSteps { get; set; }
 
-    public FailCurrentStepException() : this(null, null, null) { }
-
-    public FailCurrentStepException(string? description)
-        : this(description, null, null)
-    { }
-
-    public FailCurrentStepException(string? description, Exception? innerException)
-        : this(description, innerException, null)
-    { }
-
-    public FailCurrentStepException(string? description, Exception? innerException, params Step[]? newSteps)
+    public FailCurrentStepException(string? description = null, Exception? innerException = null, params Step[]? newSteps)
         : base(description, innerException)
     {
         NewSteps = newSteps;

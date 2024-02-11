@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 
-namespace MicroWorkflow;
+namespace MicroWorkflow.DemoImplementation;
 
 /// <summary>
 /// a demo holder for instances that can be retrieved by the engine
@@ -29,6 +29,12 @@ public class DemoIocContainer : IWorkflowIocContainer
             return (IStepImplementation)x;
 
         return null;
+    }
+
+    public DemoIocContainer RegisterInstance(Type t, object x)
+    {
+        Entries.Add(t.FullName!, x);
+        return this;
     }
 
     public DemoIocContainer RegisterNamedSteps(Assembly assembly)

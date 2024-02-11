@@ -284,8 +284,8 @@ Worker count: 8 Elapsed: 1593ms Elements: 5000 ~ 0,3186 ms / per element and 313
 
         void doo(int workerCount)
         {
-            ConcurrentBag<int> stepResults = new ConcurrentBag<int>();
-            var correlationIds = Enumerable.Range(0, 10).Select(x => Guid.NewGuid().ToString()).ToArray();
+            ConcurrentBag<int> stepResults = [];
+            var correlationIds = Enumerable.Range(0, 10).Select(x => guid()).ToArray();
 
             var testhelper = new TestHelper();
             testhelper.WorkflowConfiguration.WorkerConfig.MaxWorkerCount = workerCount;

@@ -14,10 +14,10 @@ public record SearchModel
      string? Description = null
 );
 
-public record FetchLevels(bool Ready = false, bool Done = false, bool Fail = false, int MaxRows = 100)
+public record FetchLevels(bool Ready = false, bool Done = false, bool Fail = false, int MaxRows = 1000)
 {
-    public static FetchLevels ALL = new FetchLevels(true, true, true);
-    public static FetchLevels READY = new FetchLevels(true, false, false);
-    public static FetchLevels NONREADY = new FetchLevels(false, true, true);
-    public static FetchLevels FAILED = new FetchLevels(false, false, true);
+    public static readonly FetchLevels ALL = new(true, true, true);
+    public static readonly FetchLevels READY = new(true, false, false);
+    public static readonly FetchLevels NONREADY = new(false, true, true);
+    public static readonly FetchLevels FAILED = new(false, false, true);
 };

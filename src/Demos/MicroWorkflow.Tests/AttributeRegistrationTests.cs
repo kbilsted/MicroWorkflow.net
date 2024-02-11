@@ -2,7 +2,7 @@
 
 public class AttributeRegistrationTests
 {
-    private static readonly Dictionary<string, string?> StepResult = new();
+    private static readonly Dictionary<string, string?> StepResult = [];
 
     [Test]
     public void When_using_stepnameattribute_Then_stepimplementation_is_registered()

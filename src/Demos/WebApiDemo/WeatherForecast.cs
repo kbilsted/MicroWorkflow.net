@@ -19,8 +19,8 @@ public class WeaterForecastDB
 {
     public static List<WeatherForecast> LazyFetchedWeatherForecasts { get; set; } = new List<WeatherForecast>();
 
-    internal static readonly string[] Summaries = new[]
-    {
+    internal static readonly string[] Summaries =
+    [
         "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-    };
+    ];
 }

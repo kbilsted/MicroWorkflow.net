@@ -5,7 +5,7 @@ namespace MicroWorkflow;
 
 public class AdoSingletonStepTests
 {
-    TestHelper helper = new TestHelper();
+    TestHelper helper = new();
 
     [SetUp]
     public void Setup()
@@ -65,7 +65,7 @@ public class AdoSingletonStepTests
         var engine = helper.Build();
         
         var step = new Step(helper.RndName) { Singleton = true };
-        SearchModel searchModel = new SearchModel(Name: step.Name);
+        SearchModel searchModel = new(Name: step.Name);
         engine.Data.AddStepIfNotExists(step, searchModel)
             .Should()
             .HaveValue();

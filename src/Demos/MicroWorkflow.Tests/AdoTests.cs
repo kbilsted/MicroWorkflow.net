@@ -8,8 +8,9 @@ namespace MicroWorkflow;
 
 public class WorkerTests
 {
-    TestHelper helper = new TestHelper();
-    private readonly WorkflowConfiguration cfg = new WorkflowConfiguration(
+    TestHelper helper = new();
+
+    readonly WorkflowConfiguration cfg = new WorkflowConfiguration(
         new WorkerConfig()
         {
             StopWhenNoImmediateWork = true
@@ -284,8 +285,8 @@ public class WorkerTests
     public void When_a_step_creates_a_new_step_Then_new_step_may_change_correlationid()
     {
         string? stepResult = null;
-        string oldId = Guid.NewGuid().ToString();
-        string newId = Guid.NewGuid().ToString();
+        string oldId = guid();
+        string newId = guid();
 
         helper.StepHandlers = [("check-correlationidchange/cookFood", new GenericImplementation(step =>
         {
@@ -316,8 +317,8 @@ public class WorkerTests
     public void When_a_step_creates_a_new_step_Then_new_step_may_change_correlationid2()
     {
         string? stepResult = null;
-        string oldId = Guid.NewGuid().ToString();
-        string newId = Guid.NewGuid().ToString();
+        string oldId = guid();
+        string newId = guid();
 
         helper.StepHandlers = [
             Handle("check-correlationidchange/cookFood", step =>
@@ -510,7 +511,7 @@ public class WorkerTests
 
     class GroceryBuyer : IStepImplementation
     {
-        internal static readonly List<(Guid id, string name, int total)> SalesDb = new();
+        internal static readonly List<(Guid id, string name, int total)> SalesDb = [];
         static readonly Dictionary<string, int> prices = new() { { "milk", 1 }, { "cookies", 2 } };
 
         public async Task<ExecutionResult> ExecuteAsync(Step step)

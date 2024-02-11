@@ -86,8 +86,7 @@ public class ExecutionResult
 
     public ExecutionResult With(Step newstep)
     {
-        if (NewSteps == null)
-            NewSteps = new List<Step>();
+        NewSteps ??= new List<Step>();
 
         NewSteps.Add(newstep);
 
