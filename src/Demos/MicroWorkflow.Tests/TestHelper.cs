@@ -6,7 +6,7 @@ public class TestHelper
 {
     public static string guid() => Guid.NewGuid().ToString();
 
-    public string RndName = "test" + guid();
+    public string RndName { get => (TestContext.CurrentContext.Test.FullName + guid()).Substring("MicroWorkflow.".Length); }
     public NewtonsoftStateFormatterJson? Formatter;
     public CancellationTokenSource cts = new();
     public AutofacAdaptor? iocContainer;

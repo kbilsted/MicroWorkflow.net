@@ -14,14 +14,15 @@ public class EngineTests
     [Test]
     public void When_adding_an_event_Then_an_id_PK_is_returned()
     {
-        Step step = new(helper.RndName) { ScheduleTime = DateTime.Now.AddMonths(1) };
+        var name = helper.RndName;
+        Step step = new(name) { ScheduleTime = DateTime.Now.AddMonths(1) };
 
         helper.Build();
         var id = helper.Engine!.Data.AddStep(step);
 
         var result = helper.Engine.Data.SearchSteps(new(Id: id), StepStatus.Ready);
 
-        result.Single().Name.Should().Be(helper.RndName);
+        result.Single().Name.Should().Be(name);
     }
 
     [Test]

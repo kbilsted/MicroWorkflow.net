@@ -26,6 +26,7 @@ public class WorkerTests
     public void When_executing_OneStep_with_initialstate_Then_that_state_is_accessible_and_step_is_executed()
     {
         string? stepResult = null;
+        bool? stepResultIsSingleton = null;
         const string StepName = "OneStep";
         helper.Steps = [new Step(StepName)
         {
@@ -36,12 +37,14 @@ public class WorkerTests
         {
             int counter = helper.Formatter!.Deserialize<int>(step.State);
             stepResult = $"hello {counter}";
+            stepResultIsSingleton = step.Singleton;
             return ExecutionResult.Done();
         }))];
 
         helper.StopWhenNoWork().BuildAndStart();
 
         stepResult.Should().Be("hello 1234");
+        stepResultIsSingleton.Should().BeFalse();
         helper.AssertTableCounts(helper.FlowId, ready: 0, done: 1, failed: 0);
     }
 
@@ -173,7 +176,7 @@ public class WorkerTests
     public void When_executing_step_throwing_exception_Then_rerun_current_step_and_ensure_state_is_unchanged()
     {
         int? dbid = null;
-        const string name = "test-throw-exception";
+        string name = helper.RndName;
         helper.StepHandlers = [Handle(name,
                 step =>
                 {
@@ -198,7 +201,7 @@ public class WorkerTests
     {
         const string IllegalConnectionString = "Server=localhost;Database=adotest;Integrated Security=False;TrustServerCertificate=False";
 
-        helper.StepHandlers = [Handle("onestep_fails", step => step.Fail())];
+        helper.StepHandlers = [Handle("any", step => step.Fail())];
         helper.ConnectionString = IllegalConnectionString;
 
         Action act = () => helper.StopWhenNoWork().BuildAndStart();
@@ -211,7 +214,7 @@ public class WorkerTests
     [Test]
     public void When_step_is_failing_Then_it_is_marked_as_failed()
     {
-        const string name = "onestep_fails";
+        string name = helper.RndName;
         helper.StepHandlers = [(name, new GenericImplementation(step => step.Fail()))];
         helper.Steps = [new Step(name) { FlowId = helper.FlowId }];
         helper.StopWhenNoWork().BuildAndStart();
@@ -223,12 +226,13 @@ public class WorkerTests
     public void When_executing_step_for_the_first_time_Then_execution_count_is_1()
     {
         int? stepResult = null;
-        helper.StepHandlers = [(helper.RndName, new GenericImplementation(step =>
+        var name = helper.RndName;
+        helper.StepHandlers = [(name, new GenericImplementation(step =>
         {
             stepResult = step.ExecutionCount;
             return ExecutionResult.Done();
         }))];
-        helper.Steps = [new Step(helper.RndName)];
+        helper.Steps = [new Step(name)];
         helper.StopWhenNoWork().BuildAndStart();
 
         stepResult.Should().Be(1);
@@ -237,7 +241,7 @@ public class WorkerTests
     [Test]
     public void When_step_returns_rerun_Then_it_is_rerun()
     {
-        const string name = "OneStep_Repeating_Thrice";
+        string name = helper.RndName;
         string? stepResult = null;
         helper.StepHandlers = [Handle(name, step =>
         {
