@@ -26,7 +26,6 @@
 	  <ProjectReference Include="..\..\Product\MicroWorkflow.AdoPersistence\MicroWorkflow.AdoMsSql.csproj" />
 	  <ProjectReference Include="..\..\Product\MicroWorkflow.Formatter.NewtonsoftJson\MicroWorkflow.Formatter.NewtonsoftJson.csproj" />
 	  <ProjectReference Include="..\..\Product\MicroWorkflow.Ioc.Autofac\MicroWorkflow.Ioc.Autofac.csproj" />
-	  <ProjectReference Include="..\..\Product\MicroWorkflow\MicroWorkflow.csproj" />
 	</ItemGroup>
 
 </Project>

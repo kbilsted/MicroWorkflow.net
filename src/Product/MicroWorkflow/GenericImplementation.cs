@@ -9,8 +9,7 @@ public class GenericImplementation : IStepImplementation
 
     public GenericImplementation(Func<Step, ExecutionResult> code)
     {
-        if (code == null)
-            throw new ArgumentNullException(nameof(code));
+        ArgumentNullException.ThrowIfNull(code);
         this.code = async (s) => await Task.FromResult(code(s));
     }
 

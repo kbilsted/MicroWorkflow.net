@@ -3,7 +3,7 @@ namespace MicroWorkflow;
 
 public class EngineTests
 {
-    TestHelper helper = new TestHelper();
+    TestHelper helper = new();
 
     [SetUp]
     public void Setup()
@@ -14,7 +14,7 @@ public class EngineTests
     [Test]
     public void When_adding_an_event_Then_an_id_PK_is_returned()
     {
-        Step step = new Step(helper.RndName) { ScheduleTime = DateTime.Now.AddMonths(1) };
+        Step step = new(helper.RndName) { ScheduleTime = DateTime.Now.AddMonths(1) };
 
         helper.Build();
         var id = helper.Engine!.Data.AddStep(step);

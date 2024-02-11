@@ -11,7 +11,7 @@ public class StepNameAttribute : Attribute
     {
         if (name == null)
             throw new ArgumentNullException(nameof(name));
-        if (name.StartsWith(" ") || name.EndsWith(" "))
+        if (name.StartsWith(' ') || name.EndsWith(' '))
             throw new Exception($"{nameof(StepNameAttribute)} instance with Name '{name}' may not start or end with ' '.");
 
         Name = name;

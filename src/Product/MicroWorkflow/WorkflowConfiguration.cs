@@ -2,7 +2,7 @@
 
 public record WorkflowConfiguration(WorkerConfig WorkerConfig)
 {
-    public LoggerConfiguration LoggerConfiguration { get; set; }
+    public LoggerConfiguration LoggerConfiguration { get; set; } = LoggerConfiguration.INFO;
 }
 
 public class LoggerConfiguration
@@ -17,10 +17,18 @@ public class LoggerConfiguration
     public bool InfoLoggingEnabled => DateTime.Now < InfoLoggingEnabledUntil;
     public bool ErrorLoggingEnabled => DateTime.Now < ErrorLoggingEnabledUntil;
 
-    public static LoggerConfiguration OFF = new LoggerConfiguration()
+    public static readonly LoggerConfiguration OFF = new LoggerConfiguration()
     {
         ErrorLoggingEnabledUntil = DateTime.MinValue,
         InfoLoggingEnabledUntil = DateTime.MinValue,
+        DebugLoggingEnabledUntil = DateTime.MinValue,
+        TraceLoggingEnabledUntil = DateTime.MinValue,
+    };
+
+    public static readonly LoggerConfiguration INFO = new LoggerConfiguration()
+    {
+        ErrorLoggingEnabledUntil = DateTime.MaxValue,
+        InfoLoggingEnabledUntil = DateTime.MaxValue,
         DebugLoggingEnabledUntil = DateTime.MinValue,
         TraceLoggingEnabledUntil = DateTime.MinValue,
     };

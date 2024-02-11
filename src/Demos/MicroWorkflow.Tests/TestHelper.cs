@@ -4,23 +4,25 @@ namespace MicroWorkflow;
 
 public class TestHelper
 {
-    public string RndName = "test" + Guid.NewGuid().ToString();
+    public static string guid() => guid();
+
+    public string RndName = "test" + guid();
     public NewtonsoftStateFormatterJson? Formatter;
     public CancellationTokenSource cts = new();
     public AutofacAdaptor? iocContainer;
     public SqlServerPersister Persister => (SqlServerPersister)iocContainer!.GetInstance<IStepPersister>();
-    public readonly string CorrelationId = Guid.NewGuid().ToString();
-    public readonly string FlowId = Guid.NewGuid().ToString();
+    public readonly string CorrelationId = guid();
+    public readonly string FlowId = guid();
     public IWorkflowLogger? Logger;
     public WorkflowEngine? Engine;
-    public (string, IStepImplementation)[] StepHandlers { get; set; } = new (string, IStepImplementation)[0];
+    public (string, IStepImplementation)[] StepHandlers { get; set; } = Array.Empty<(string, IStepImplementation)>();
 
-    readonly ContainerBuilder builder = new ContainerBuilder();
+    readonly ContainerBuilder builder = new();
     public string ConnectionString = "Server=localhost;Database=adotest;Integrated Security=True;TrustServerCertificate=True";
 
-    public Step[] Steps = Array.Empty<Step>();
+    public Step[] Steps = [];
 
-    public LoggerConfiguration LoggerConfiguration = new LoggerConfiguration()
+    public LoggerConfiguration LoggerConfiguration = new()
     {
         ErrorLoggingEnabledUntil = DateTime.MaxValue,
         InfoLoggingEnabledUntil = DateTime.MaxValue,

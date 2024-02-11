@@ -1,4 +1,4 @@
-﻿namespace MicroWorkflow;
+﻿namespace MicroWorkflow.DemoImplementation;
 
 /// <summary>
 ///  Simple in-memory storage FOR DEMO PURPOSES ONLY.
@@ -34,7 +34,7 @@ public class DemoInMemoryPersister : IStepPersister
                 return null;
 
             Locked.Add(step.Id);
-            if (LocalTransaction.Any())
+            if (LocalTransaction.Count != 0)
                 throw new Exception("inside an existing transaction");
             LocalTransaction.Add(step.Id);
 
@@ -75,7 +75,7 @@ public class DemoInMemoryPersister : IStepPersister
 
     public Dictionary<StepStatus, List<Step>> SearchSteps(SearchModel criteria, FetchLevels fetchLevels)
     {
-        List<Step> ready = new List<Step>();
+        List<Step> ready = new();
         if (fetchLevels.Ready)
         {
             ready = ReadySteps.Where(x =>
@@ -157,7 +157,7 @@ public class DemoInMemoryPersister : IStepPersister
     {
         if (target == StepStatus.Ready)
         {
-            Insert(StepStatus.Ready, new[] { step });
+            _ = Insert(StepStatus.Ready, new[] { step });
             return step.Id;
         }
 

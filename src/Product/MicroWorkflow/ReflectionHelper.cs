@@ -10,18 +10,12 @@ public class ReflectionHelper
     {
         var result = new Dictionary<string, (Type implementationType, string stepName)>();
 
-        foreach (var assembly in assemblies)
+        foreach (var step in assemblies.SelectMany(x => GetSteps(x)))
         {
-            var steps = GetSteps(assembly);
+            if (result.TryGetValue(step.stepName, out var existingStep))
+                throw new Exception($"Duplicate step name (name:{step.stepName}, type: {step.implementationType}) matches (name:{existingStep.stepName}, type: {existingStep.implementationType})");
 
-            foreach (var step in steps)
-            {
-                if (result.TryGetValue(step.stepName, out var existingStep))
-                    throw new Exception(
-                        $"Duplicate step name (name:{step.stepName}, type: {step.implementationType}) matches (name:{existingStep.stepName}, type: {existingStep.implementationType})");
-
-                result.Add(step.stepName, step);
-            }
+            result.Add(step.stepName, step);
         }
 
         return result.Values;
@@ -31,9 +25,7 @@ public class ReflectionHelper
     {
         var x = a.GetTypes()
             .Select(x => new { type = x, attrs = x.GetCustomAttributes<StepNameAttribute>() })
-            .SelectMany(x => x.attrs, resultSelector: (x, a) => (x.type, a.Name))
-            .ToArray();
-
+            .SelectMany(x => x.attrs, resultSelector: (x, a) => (x.type, a.Name));
         return x;
     }
 }

@@ -2,7 +2,7 @@
 <!--start-->
 [![Stats](https://img.shields.io/badge/Code_lines-1,7_K-ff69b4.svg)]()
 [![Stats](https://img.shields.io/badge/Test_lines-1,1_K-69ffb4.svg)]()
-[![Stats](https://img.shields.io/badge/Doc_lines-450-ffb469.svg)]()
+[![Stats](https://img.shields.io/badge/Doc_lines-453-ffb469.svg)]()
 <!--end-->
 
 

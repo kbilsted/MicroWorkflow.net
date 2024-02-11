@@ -2,7 +2,7 @@
 
 public class RuntimeMetricsTests
 {
-    TestHelper helper = new TestHelper();
+    TestHelper helper = new();
 
     [SetUp]
     public void Setup()
