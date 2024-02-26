@@ -39,7 +39,7 @@ public class Step
     /// <summary> the arguments for an activation as it is formatted and persisted in the persistencelayer </summary>
     public string? ActivationArgs { get; set; }
 
-    /// <summary> The time when the latest execution took place </summary>
+    /// <summary> During a step implementation, this is the time when the engine started the execution. When queried outside this scope it may not yet have been executed (then it is null) or in case of a step that is being rerun, it is the last execution time. </summary>
     public DateTime? ExecutionStartTime { get; set; }
 
     /// <summary> The elapsed time of the latest execution </summary>
