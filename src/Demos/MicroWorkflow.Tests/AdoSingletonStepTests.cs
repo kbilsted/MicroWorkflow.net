@@ -27,7 +27,7 @@ public class AdoSingletonStepTests
         helper.StepHandlers = [Handle(name, step => { 
             stepResult = $"hello";
             stepResultIsSingleton = step.Singleton;
-            return ExecutionResult.Done(); 
+            return step.Done(); 
         })];
         helper.StopWhenNoWork().BuildAndStart();
 
