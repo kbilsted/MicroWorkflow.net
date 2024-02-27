@@ -72,7 +72,7 @@ public interface IWorkflowStepPersister : IDisposable
     int Update(StepStatus target, Step step);
 }
 
-public interface IWorkflowStepStateFormatter
+public interface IWorkflowStepStateFormatter // TODO rename to IWorkflowStateFormatter
 {
     public string StateFormatName { get; }
 

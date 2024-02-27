@@ -1,7 +1,6 @@
 ﻿using Autofac;
 using MicroWorkflow;
 using MicroWorkflow.DemoImplementation;
-using System.Reflection;
 using System.Text.Json;
 
 
@@ -44,15 +43,15 @@ class AnalyzeWords : IStepImplementation
     {
         var content = JsonSerializer.Deserialize<string>(step.State!);
         var topWords = content!
-            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Split(' ')
             .Where(x => x.Length > 3)
             .GroupBy(x => x)
             .OrderByDescending(x => x.Count())
             .Take(3)
             .Select(x => x.Key);
 
-        return await Task.FromResult(
-            step.Done().With(new Step(SendEmail.Name, topWords)));
+        ExecutionResult done = step.Done().With(new Step(SendEmail.Name, topWords));
+        return await Task.FromResult(done);
     }
 }
 
@@ -76,17 +75,12 @@ class Program
 {
     public static void Main()
     {
-        var cfg = new WorkflowConfiguration(
-            new WorkerConfig
-            {
-                StopWhenNoImmediateWork = true,
-                MinWorkerCount = 1,
-                MaxWorkerCount = 8,
-            });
-
         var builder = new ContainerBuilder();
+        var cfg = new WorkflowConfiguration(new WorkerConfig { StopWhenNoImmediateWork = true });
         builder.UseMicroWorkflow(cfg);
-        builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly()).AsSelf();
+        builder.RegisterType<EmailSender>().AsSelf();
+        builder.RegisterType<ConsoleStepLogger>().As<IWorkflowLogger>();
+
         var container = builder.Build();
 
         // Add a step to be executed - you can add new steps at any time during run-time
@@ -94,8 +88,13 @@ class Program
         engine.Data.AddStep(new Step(FetchData.Name, 0));
 
         // Start the engine and wait for it to terminate
-        engine.Start(cfg);
+        engine.Start();
 
+        PrintResult();
+    }
+
+    private static void PrintResult()
+    {
         Console.WriteLine(PrintTable("Ready", DemoInMemoryPersister.ReadySteps));
         Console.WriteLine(PrintTable("Failed", DemoInMemoryPersister.FailedSteps));
         Console.WriteLine(PrintTable("Done", DemoInMemoryPersister.DoneSteps));

@@ -31,19 +31,17 @@ public class AutofacAdaptor : IWorkflowIocContainer
 
 public static class AutofacExtensions
 {
-    public static void UseMicroWorkflow(this ContainerBuilder builder, WorkflowConfiguration config, params Assembly?[] assemblies)
+    public static void UseMicroWorkflow(this ContainerBuilder builder, WorkflowConfiguration config, params Assembly?[] assembliesToSearch)
     {
         builder.RegisterInstance(config);
         builder.RegisterInstance(config.LoggerConfiguration);
-
         builder.RegisterType<AutofacAdaptor>().As<IWorkflowIocContainer>();
-
         builder.RegisterType<WorkflowEngine>().AsSelf();
 
-        assemblies = ReflectionHelper.FindRelevantAssemblies(assemblies);
+        var assemblies = ReflectionHelper.FindRelevantAssemblies(assembliesToSearch ?? new Assembly[0]);
 
         var registrar = new AutofacAdaptor(builder);
-        foreach (var (stepName, implementationType ) in ReflectionHelper.FindStepsFromAttribute(assemblies!))
+        foreach (var (stepName, implementationType) in ReflectionHelper.FindStepsFromAttribute(assemblies!))
             registrar.RegisterWorkflowStep(stepName, implementationType);
 
         FindAndRegister<IWorkflowLogger>();
@@ -63,9 +61,9 @@ public static class AutofacExtensions
             .Where(x => x.IsClass && !x.IsAbstract && x.IsAssignableTo(typeof(T)))
             .FirstOrDefault();
 
-    public static void RegisterWorkflowSteps(this ContainerBuilder builder, params Assembly?[] assemblies)
+    public static void RegisterWorkflowSteps(this ContainerBuilder builder, params Assembly[] assemblies)
     {
-        if (assemblies == null || assemblies.Length == 0)
+        if (assemblies.Length == 0)
             assemblies = AppDomain.CurrentDomain.GetAssemblies();
 
         var registrar = new AutofacAdaptor(builder);
@@ -73,10 +71,10 @@ public static class AutofacExtensions
             registrar.RegisterWorkflowStep(stepName, implementationType);
     }
 
-    public static void RegisterWorkflowSteps(this ContainerBuilder builder, params (string stepName, IStepImplementation implementationType)[] stepHandlers)
+    public static void RegisterWorkflowSteps(this ContainerBuilder builder, params (string stepName, IStepImplementation implementation)[] stepHandlers)
     {
         var registrar = new AutofacAdaptor(builder);
-        stepHandlers.ToList().ForEach(x => registrar.RegisterWorkflowStep(x.stepName, x.implementationType));
+        foreach(var stepHandler in stepHandlers)
+            registrar.RegisterWorkflowStep(stepHandler.stepName, stepHandler.implementation);
     }
 }
-

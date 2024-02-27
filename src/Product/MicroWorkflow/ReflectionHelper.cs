@@ -29,9 +29,9 @@ public class ReflectionHelper
         }
     }
 
-    public static Assembly[] FindRelevantAssemblies(Assembly?[] assemblies)
+    public static Assembly[] FindRelevantAssemblies(Assembly[] assemblies)
     {
-        if (assemblies != null && assemblies.Length > 0)
+        if (assemblies.Length > 0)
             return assemblies!;
 
         var ass = AppDomain.CurrentDomain.GetAssemblies()
