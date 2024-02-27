@@ -1,4 +1,5 @@
-﻿using MicroWorkflow;
+﻿using Autofac;
+using MicroWorkflow;
 using MicroWorkflow.DemoImplementation;
 using System.Reflection;
 using System.Text.Json;
@@ -56,8 +57,7 @@ class AnalyzeWords : IStepImplementation
 }
 
 [StepName(Name)]
-[StepName("v2/alternative-name")] // step implementation may have multiple names
-class SendEmail : IStepImplementation
+class SendEmail(EmailSender sender) : IStepImplementation
 {
     public const string Name = "v1/demos/fetch-wordanalyzeemail/ship-results";
 
@@ -66,8 +66,7 @@ class SendEmail : IStepImplementation
         var topWords = JsonSerializer.Deserialize<string[]>(step.State!);
         var words = string.Join(", ", topWords!);
 
-        await new EmailSender()
-            .SendEmail(to: "demos@demoland.com", from: "some@one.cool", $"Top 3 words: {words}");
+        await sender.SendEmail(to: "demos@demoland.com", from: "some@one.cool", $"Top 3 words: {words}");
 
         return step.Done();
     }
@@ -77,14 +76,6 @@ class Program
 {
     public static void Main()
     {
-        // register the steps by scanning the assembly
-        var iocContainer = new DemoIocContainer().RegisterNamedSteps(Assembly.GetExecutingAssembly());
-        // we persist in-memory
-        iocContainer.RegisterInstance(typeof(IStepPersister), new DemoInMemoryPersister());
-
-        // For the demo we tell the engine to stop when there is no immediate pending work, so the program terminates quickly. For production you want the engine to run forever
-        // The number of workers is dynamically adjusted during execution to fit the pending work.
-        // This ensures we do not constantly bombard the persistence storage with requests while at the same time quickly respond to new work
         var cfg = new WorkflowConfiguration(
             new WorkerConfig
             {
@@ -93,12 +84,13 @@ class Program
                 MaxWorkerCount = 8,
             });
 
-        // register the logger. Loglevels can change at run-time so you can turn on e.g. fine-grained logs for a limited time
-        var logger = new ConsoleStepLogger(cfg.LoggerConfiguration);
-
-        var engine = new WorkflowEngine(logger, iocContainer, new DotNetStepStateFormatterJson(logger));
+        var builder = new ContainerBuilder();
+        builder.UseMicroWorkflow(cfg);
+        builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly()).AsSelf();
+        var container = builder.Build();
 
         // Add a step to be executed - you can add new steps at any time during run-time
+        var engine = container.Resolve<WorkflowEngine>();
         engine.Data.AddStep(new Step(FetchData.Name, 0));
 
         // Start the engine and wait for it to terminate

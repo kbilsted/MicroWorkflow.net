@@ -28,4 +28,22 @@ public class ReflectionHelper
             .SelectMany(x => x.attrs, resultSelector: (x, a) => (x.type, a.Name));
         return x;
     }
+
+    public static Assembly[] FindRelevantAssemblies(Assembly?[] assemblies)
+    {
+        if (assemblies != null && assemblies.Length > 0)
+            return assemblies!;
+
+        var ass = AppDomain.CurrentDomain.GetAssemblies()
+            .Where(x => x.FullName != null && !x.FullName.StartsWith("System") && !x.FullName.StartsWith("Microsoft"))
+            .ToArray();
+
+        Assembly[] allAssembliesWithMicroWorkflowAsLast = new[] { Assembly.GetEntryAssembly() }
+            .Concat(ass.Where(x => !x.FullName.StartsWith("MicroWorkflow")))
+            .Concat(ass.Where(x => x.FullName.StartsWith("MicroWorkflow")))
+            .Distinct()
+            .ToArray()!;
+
+        return allAssembliesWithMicroWorkflowAsLast;
+    }
 }

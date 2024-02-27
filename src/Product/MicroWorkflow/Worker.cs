@@ -234,7 +234,7 @@ totalwaits: {TotalperformanceWaitCounter} totalfutile-fetches:{TotalperformanceF
                 return status!.Value;
             }
 
-            IStepImplementation? implementation = iocContainer.GetNamedInstance(step.Name);
+            IStepImplementation? implementation = iocContainer.GetStep(step.Name);
             if (implementation == null)
             {
                 LogAndRescheduleStep(persister, step);

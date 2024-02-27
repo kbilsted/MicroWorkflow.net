@@ -23,6 +23,6 @@ public class RegisterWorkflow : Module
         builder.RegisterType<AutofacAdaptor>().As<IWorkflowIocContainer>();
 
         // find and register all step-implementations
-        builder.RegisterStepImplementations(null, GetType().Assembly);
+        builder.RegisterWorkflowSteps(GetType().Assembly);
     }
 }

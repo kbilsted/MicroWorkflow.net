@@ -6,8 +6,8 @@
 /// </summary>
 public class DemoInMemoryPersister : IStepPersister
 {
-    readonly object GlobalLock = new();
-    int GlobalId = 1;
+    static readonly object GlobalLock = new();
+    static int GlobalId = 1;
 
     public static readonly Dictionary<int, Step> ReadySteps = new();
     public static readonly Dictionary<int, Step> DoneSteps = new();

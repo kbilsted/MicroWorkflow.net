@@ -28,9 +28,19 @@ public interface IWorkflowLogger
 public interface IWorkflowIocContainer
 {
     /// <summary> implement to return null wnen registration is not found, and throw exception on creation failure. </summary>
-    IStepImplementation? GetNamedInstance(string stepName);
+    IStepImplementation? GetStep(string stepName);
 
+    /// <summary> implement to return null wnen registration is not found, and throw exception on creation failure. </summary>
     T GetInstance<T>() where T : notnull;
+
+    void RegisterWorkflowStep(string stepName, Type implementationType);
+
+    void RegisterWorkflowSteps((string stepName, Type implementationType)[] stepHandlers)
+        => stepHandlers.ToList().ForEach(x => RegisterWorkflowStep(x.stepName, x.implementationType));
+    void RegisterWorkflowStep(string stepName, IStepImplementation instance);
+
+    void RegisterWorkflowSteps((string stepName, IStepImplementation instance)[] stepHandlers)
+        => stepHandlers.ToList().ForEach(x => RegisterWorkflowStep(x.stepName, x.instance));
 }
 
 /// <summary>
@@ -39,7 +49,7 @@ public interface IWorkflowIocContainer
 public interface IStepPersister : IDisposable
 {
     string GetConnectionInfoForLogging();
-    
+
     T InTransaction<T>(Func<T> code, object? transaction = null);
     object CreateTransaction();
     /// <summary> You can either set the transaction explicitly or create one using <see cref="CreateTransaction"/> </summary>
@@ -52,7 +62,7 @@ public interface IStepPersister : IDisposable
 
     public List<Step> SearchSteps(SearchModel criteria, StepStatus target);
     Dictionary<StepStatus, List<Step>> SearchSteps(SearchModel criteria, FetchLevels fetchLevels);
-    
+
     Dictionary<StepStatus, int> CountTables(string? flowId = null);
     int Delete(StepStatus target, int id);
     int Insert(StepStatus target, Step step);

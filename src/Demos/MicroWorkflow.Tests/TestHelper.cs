@@ -15,7 +15,7 @@ public class TestHelper
     public readonly string FlowId = guid();
     public IWorkflowLogger? Logger;
     public WorkflowEngine? Engine;
-    public (string, IStepImplementation)[] StepHandlers { get; set; } = Array.Empty<(string, IStepImplementation)>();
+    public (string name, IStepImplementation implementation)[] StepHandlers { get; set; } = Array.Empty<(string, IStepImplementation)>();
 
     readonly ContainerBuilder builder = new();
     public string ConnectionString = "Server=localhost;Database=adotest;Integrated Security=True;TrustServerCertificate=True";
@@ -50,11 +50,11 @@ public class TestHelper
             ((DiagnosticsStepLogger)Logger).AddNestedLogger(new ConsoleStepLogger(WorkflowConfiguration.LoggerConfiguration));
         }
 
-        builder.RegisterInstances(Logger, StepHandlers);
+        builder.RegisterWorkflowSteps(StepHandlers.ToArray());
         builder.Register<IStepPersister>(c => new SqlServerPersister(ConnectionString, Logger)).InstancePerDependency();
 
         // register all classes having a [step] attribute
-        builder.RegisterStepImplementations(Logger, typeof(TestHelper).Assembly);
+        builder.RegisterWorkflowSteps(typeof(TestHelper).Assembly);
 
         Formatter ??= new NewtonsoftStateFormatterJson(Logger);
 

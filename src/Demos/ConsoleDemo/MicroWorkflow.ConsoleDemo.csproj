@@ -10,6 +10,12 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <PackageReference Include="Autofac" Version="8.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+
+		<ProjectReference Include="..\..\Product\MicroWorkflow.Ioc.Autofac\MicroWorkflow.Ioc.Autofac.csproj" />
 
 		<ProjectReference Include="..\..\Product\MicroWorkflow\MicroWorkflow.csproj" />
 	</ItemGroup>
