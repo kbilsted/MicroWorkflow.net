@@ -19,7 +19,7 @@ public class WorkflowEngine
     {
         this.logger = logger;
         this.iocContainer = iocContainer;
-        this.configuration = configuration;
+        this.configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
 
         Data = new WorkflowRuntimeData(iocContainer, formatter, logger, null);
         Metrics = new WorkflowRuntimeMetrics(iocContainer);
@@ -74,7 +74,7 @@ public class WorkflowEngine
             configuration.WorkerConfig,
             cts,
             logger,
-            async () => new Worker(MakeWorkerName(), logger, iocContainer, Data, configuration.WorkerConfig, WorkerCoordinator).StartAsync(StoppingToken));
+            async () => await new Worker(MakeWorkerName(), logger, iocContainer, Data, configuration.WorkerConfig, WorkerCoordinator!).StartAsync(StoppingToken));
 
         if (configuration.WorkerConfig.MinWorkerCount < 1)
             throw new Exception("'MinWorkerCount' cannot be less than 1");

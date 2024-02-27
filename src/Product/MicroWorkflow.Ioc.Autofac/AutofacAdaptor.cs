@@ -31,7 +31,7 @@ public class AutofacAdaptor : IWorkflowIocContainer
 
 public static class AutofacExtensions
 {
-    public static void UseMicroWorkflow(this ContainerBuilder builder, WorkflowConfiguration config, params Assembly?[] assembliesToSearch)
+    public static void UseMicroWorkflow(this ContainerBuilder builder, WorkflowConfiguration config, params Assembly[] assembliesToSearch)
     {
         builder.RegisterInstance(config);
         builder.RegisterInstance(config.LoggerConfiguration);

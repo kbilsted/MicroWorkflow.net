@@ -39,8 +39,8 @@ public class ReflectionHelper
             .ToArray();
 
         Assembly[] allAssembliesWithMicroWorkflowAsLast = new[] { Assembly.GetEntryAssembly() }
-            .Concat(ass.Where(x => !x.FullName.StartsWith("MicroWorkflow")))
-            .Concat(ass.Where(x => x.FullName.StartsWith("MicroWorkflow")))
+            .Concat(ass.Where(x => !x.FullName!.StartsWith("MicroWorkflow")))
+            .Concat(ass.Where(x => x.FullName!.StartsWith("MicroWorkflow")))
             .Distinct()
             .ToArray()!;
 

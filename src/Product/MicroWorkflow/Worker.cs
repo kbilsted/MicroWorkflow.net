@@ -64,7 +64,7 @@ totalwaits: {TotalperformanceWaitCounter} totalfutile-fetches:{TotalperformanceF
         this.iocContainer = iocContainer;
         this.engineRuntimeData = runtime;
         this.workerConfig = config;
-        this.coordinator = coordinator;
+        this.coordinator = coordinator ?? throw new ArgumentNullException(nameof(coordinator));
     }
 
     enum WorkerRunStatus { Stop, Continue, NoWorkDone, Error }
