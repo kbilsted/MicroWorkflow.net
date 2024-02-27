@@ -69,7 +69,7 @@ public class WorkerCoordinator
             if (config.StopWhenNoImmediateWork)
             {
                 if (logger.TraceLoggingEnabled)
-                    logger.LogTrace($"{nameof(WorkerCoordinator)}: TryForceStopEngine  WorkerCount:{WorkerCount} MinWorkers:{config.MinWorkerCount}", null, null);
+                    logger.LogTrace($"{nameof(WorkerCoordinator)}: MayWorkerDie  WorkerCount:{WorkerCount} MinWorkers:{config.MinWorkerCount}", null, null);
 
                 if (AreWeAnyOfTheLastRemainingMinWorkers)
                 {

@@ -43,7 +43,7 @@ public static class AutofacExtensions
         assemblies = ReflectionHelper.FindRelevantAssemblies(assemblies);
 
         var registrar = new AutofacAdaptor(builder);
-        foreach (var (implementationType, stepName) in ReflectionHelper.GetStepsFromAttribute(assemblies!))
+        foreach (var (stepName, implementationType ) in ReflectionHelper.FindStepsFromAttribute(assemblies!))
             registrar.RegisterWorkflowStep(stepName, implementationType);
 
         FindAndRegister<IWorkflowLogger>();
@@ -69,7 +69,7 @@ public static class AutofacExtensions
             assemblies = AppDomain.CurrentDomain.GetAssemblies();
 
         var registrar = new AutofacAdaptor(builder);
-        foreach (var (implementationType, stepName) in ReflectionHelper.GetStepsFromAttribute(assemblies!))
+        foreach (var (stepName, implementationType) in ReflectionHelper.FindStepsFromAttribute(assemblies!))
             registrar.RegisterWorkflowStep(stepName, implementationType);
     }
 
