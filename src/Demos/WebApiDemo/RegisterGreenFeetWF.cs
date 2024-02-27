@@ -24,5 +24,7 @@ public class RegisterWorkflow : Module
 
         // find and register all step-implementations
         builder.RegisterWorkflowSteps(GetType().Assembly);
+
+        builder.RegisterInstance(new WorkflowConfiguration(new WorkerConfig()));
     }
 }

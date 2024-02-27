@@ -7,15 +7,19 @@ public class WorkflowEngine
     public string? EngineName { get; set; }
     public CancellationToken StoppingToken { get; private set; }
 
+    readonly WorkflowConfiguration configuration;
+
     public WorkerCoordinator? WorkerCoordinator { get; private set; }
 
     public WorkflowEngine(
+        WorkflowConfiguration configuration,
         IWorkflowLogger logger,
         IWorkflowIocContainer iocContainer,
         IWorkflowStepStateFormatter formatter)
     {
         this.logger = logger;
         this.iocContainer = iocContainer;
+        this.configuration = configuration;
 
         Data = new WorkflowRuntimeData(iocContainer, formatter, logger, null);
         Metrics = new WorkflowRuntimeMetrics(iocContainer);
@@ -88,7 +92,6 @@ public class WorkflowEngine
     /// start the engine, which starts workers in the background
     /// </summary>
     public void StartAsync(
-        WorkflowConfiguration configuration,
         string? engineName = null,
         CancellationToken? stoppingToken = null)
     {
@@ -99,11 +102,10 @@ public class WorkflowEngine
     /// Start the engine and await the stopping token gets cancelled
     /// </summary>
     public void Start(
-        WorkflowConfiguration configuration,
         string? engineName = null,
         CancellationToken? stoppingToken = null)
     {
-        StartAsync(configuration, engineName, stoppingToken);
+        StartAsync(engineName, stoppingToken);
 
         StoppingToken.WaitHandle.WaitOne();
     }

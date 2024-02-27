@@ -20,7 +20,7 @@ public class WorkflowStarter : BackgroundService
         SearchModel searchModel = new(Name: step.Name, Singleton: step.Singleton);
         engine.Data.AddStepIfNotExists(step, searchModel);
 
-        engine.StartAsync(new WorkflowConfiguration(new WorkerConfig()), stoppingToken: stoppingToken);
+        engine.StartAsync(stoppingToken: stoppingToken);
 
         await Task.CompletedTask;
     }

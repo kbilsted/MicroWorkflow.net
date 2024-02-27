@@ -59,7 +59,7 @@ public class TestHelper
         Formatter ??= new NewtonsoftStateFormatterJson(Logger);
 
         iocContainer = new AutofacAdaptor(builder.Build());
-        Engine = new WorkflowEngine(Logger, iocContainer, Formatter);
+        Engine = new WorkflowEngine(WorkflowConfiguration, Logger, iocContainer, Formatter);
 
         Engine.Data.AddSteps(Steps);
 
@@ -92,14 +92,14 @@ public class TestHelper
 
     public WorkflowEngine StartAsync()
     {
-        Engine!.StartAsync(WorkflowConfiguration, stoppingToken: cts.Token);
+        Engine!.StartAsync(stoppingToken: cts.Token);
         return Engine;
     }
 
     public WorkflowEngine Start()
     {
         if (Engine == null) throw new Exception("Remember to 'build' before 'start'");
-        Engine!.Start(WorkflowConfiguration, stoppingToken: cts.Token);
+        Engine!.Start(stoppingToken: cts.Token);
         return Engine;
     }
 
