@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace MicroWorkflow;
 
-public class SqlServerPersister : IStepPersister
+public class SqlServerPersister : IWorkflowStepPersister
 {
     public string TableNameReady { get; set; } = "[dbo].[Steps_Ready]";
     public string TableNameFail { get; set; } = "[dbo].[Steps_Fail]";

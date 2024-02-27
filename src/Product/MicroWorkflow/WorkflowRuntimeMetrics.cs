@@ -11,7 +11,7 @@ public class WorkflowRuntimeMetrics
 
     public Dictionary<StepStatus, int> CountSteps()
     {
-        using var persister = container.GetInstance<IStepPersister>();
+        using var persister = container.GetInstance<IWorkflowStepPersister>();
         return persister.InTransaction(() => persister.CountTables());
     }
 }

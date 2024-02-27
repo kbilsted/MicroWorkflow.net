@@ -1,8 +1,3 @@
 ﻿namespace MicroWorkflow;
 
-public enum StepStatus
-{
-    Done,
-    Failed,
-    Ready
-}
+public enum StepStatus { Done, Failed, Ready }

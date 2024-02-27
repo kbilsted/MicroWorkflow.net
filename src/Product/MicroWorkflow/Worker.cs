@@ -71,6 +71,8 @@ totalwaits: {TotalperformanceWaitCounter} totalfutile-fetches:{TotalperformanceF
 
     public async Task StartAsync(CancellationToken stoppingToken)
     {
+        if (stoppingToken == null) throw new ArgumentNullException(nameof(stoppingToken));
+
         if (logger.TraceLoggingEnabled)
             logger.LogTrace($"{nameof(Worker)}: starting worker", null, new Dictionary<string, object?>() {
                 { "workerId", WorkerName } });
@@ -124,7 +126,7 @@ totalwaits: {TotalperformanceWaitCounter} totalfutile-fetches:{TotalperformanceF
                                     new Dictionary<string, object?>() { { "workerId", WorkerName } });
 
                             ResetWaitForWorkers();
-                            
+
                             coordinator.MayWorkerDie();
                             return;
                         }
@@ -179,7 +181,7 @@ totalwaits: {TotalperformanceWaitCounter} totalfutile-fetches:{TotalperformanceF
         }
     }
 
-    (Step?, WorkerRunStatus?) GetNextStep(IStepPersister persister)
+    (Step?, WorkerRunStatus?) GetNextStep(IWorkflowStepPersister persister)
     {
         try
         {
@@ -222,7 +224,7 @@ totalwaits: {TotalperformanceWaitCounter} totalfutile-fetches:{TotalperformanceF
 
     async Task<WorkerRunStatus> FetchExecuteStoreStep()
     {
-        using (var persister = iocContainer.GetInstance<IStepPersister>())
+        using (var persister = iocContainer.GetInstance<IWorkflowStepPersister>())
         {
             if (CreateTransaction(persister) == null)
                 return WorkerRunStatus.Error;
@@ -234,7 +236,7 @@ totalwaits: {TotalperformanceWaitCounter} totalfutile-fetches:{TotalperformanceF
                 return status!.Value;
             }
 
-            IStepImplementation? implementation = iocContainer.GetNamedInstance(step.Name);
+            IStepImplementation? implementation = iocContainer.GetStep(step.Name);
             if (implementation == null)
             {
                 LogAndRescheduleStep(persister, step);
@@ -291,7 +293,7 @@ totalwaits: {TotalperformanceWaitCounter} totalfutile-fetches:{TotalperformanceF
         }
     }
 
-    private bool PersistChanges(IStepPersister persister, Step step, ExecutionResult result)
+    private bool PersistChanges(IWorkflowStepPersister persister, Step step, ExecutionResult result)
     {
         try
         {
@@ -328,7 +330,7 @@ totalwaits: {TotalperformanceWaitCounter} totalfutile-fetches:{TotalperformanceF
         return true;
     }
 
-    private void LogAndRescheduleStep(IStepPersister persister, Step step)
+    private void LogAndRescheduleStep(IWorkflowStepPersister persister, Step step)
     {
         var msg = $"{nameof(Worker)}: missing step-implementation for step '{step.Name}'";
         if (logger.InfoLoggingEnabled)
@@ -340,7 +342,7 @@ totalwaits: {TotalperformanceWaitCounter} totalfutile-fetches:{TotalperformanceF
         persister.Commit();
     }
 
-    object? CreateTransaction(IStepPersister persister)
+    object? CreateTransaction(IWorkflowStepPersister persister)
     {
         try
         {

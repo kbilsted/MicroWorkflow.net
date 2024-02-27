@@ -8,7 +8,7 @@ public class RegisterWorkflow : Module
     protected override void Load(ContainerBuilder builder)
     {
         // log to in-memory storage
-        builder.RegisterType<DemoInMemoryPersister>().As<IStepPersister>();
+        builder.RegisterType<DemoInMemoryPersister>().As<IWorkflowStepPersister>();
 
         // use a simple logger
         builder.RegisterType<DiagnosticsStepLogger>().As<IWorkflowLogger>();
@@ -23,6 +23,8 @@ public class RegisterWorkflow : Module
         builder.RegisterType<AutofacAdaptor>().As<IWorkflowIocContainer>();
 
         // find and register all step-implementations
-        builder.RegisterStepImplementations(null, GetType().Assembly);
+        builder.RegisterWorkflowSteps(GetType().Assembly);
+
+        builder.RegisterInstance(new WorkflowConfiguration(new WorkerConfig()));
     }
 }

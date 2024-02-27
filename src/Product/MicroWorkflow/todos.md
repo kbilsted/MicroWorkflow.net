@@ -7,10 +7,6 @@
     * done ready task - spawn new task to ensure we perform the operaton in case the tast is rerunning and is long to execute - worst case a direct call would time out waiting 
     * fail ready task - spawn new task to ensure we perform the operaton in case the tast is rerunning and is long to execute - worst case a direct call would time out waiting 
     *  activateWaitingReadyTask
-* AddStepIfNotExist 
-    *   method that first check the db - then inserts.. 
-    * since there can be multiple instances of the engine running, we can still have a race condition, we still need to catch an duplicatekey exception that we need to create and use in the persistence layer. 
-    * SearchModel needs be extended
 
 ### documentation
 * Getting started guide
@@ -29,4 +25,3 @@
 ### Performance todo's
 * Add steps to insert using prepared sql and possibly multiple values
 * Hardcode column over GetOrdinal() for added speed
-* MAYBE delay should have a counter in each worker, if some threshold has been reached wait for a longer period - current implementation block performane of e.g few repeating jobs

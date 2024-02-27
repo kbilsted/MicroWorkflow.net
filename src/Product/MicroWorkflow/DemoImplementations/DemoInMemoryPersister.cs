@@ -4,10 +4,10 @@
 ///  Simple in-memory storage FOR DEMO PURPOSES ONLY.
 ///  The current transaction handling is incorrect!
 /// </summary>
-public class DemoInMemoryPersister : IStepPersister
+public class DemoInMemoryPersister : IWorkflowStepPersister
 {
-    readonly object GlobalLock = new();
-    int GlobalId = 1;
+    static readonly object GlobalLock = new();
+    static int GlobalId = 1;
 
     public static readonly Dictionary<int, Step> ReadySteps = new();
     public static readonly Dictionary<int, Step> DoneSteps = new();

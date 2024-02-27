@@ -10,12 +10,12 @@ public class TestHelper
     public NewtonsoftStateFormatterJson? Formatter;
     public CancellationTokenSource cts = new();
     public AutofacAdaptor? iocContainer;
-    public SqlServerPersister Persister => (SqlServerPersister)iocContainer!.GetInstance<IStepPersister>();
+    public SqlServerPersister Persister => (SqlServerPersister)iocContainer!.GetInstance<IWorkflowStepPersister>();
     public readonly string CorrelationId = guid();
     public readonly string FlowId = guid();
     public IWorkflowLogger? Logger;
     public WorkflowEngine? Engine;
-    public (string, IStepImplementation)[] StepHandlers { get; set; } = Array.Empty<(string, IStepImplementation)>();
+    public (string name, IStepImplementation implementation)[] StepHandlers { get; set; } = Array.Empty<(string, IStepImplementation)>();
 
     readonly ContainerBuilder builder = new();
     public string ConnectionString = "Server=localhost;Database=adotest;Integrated Security=True;TrustServerCertificate=True";
@@ -50,16 +50,16 @@ public class TestHelper
             ((DiagnosticsStepLogger)Logger).AddNestedLogger(new ConsoleStepLogger(WorkflowConfiguration.LoggerConfiguration));
         }
 
-        builder.RegisterInstances(Logger, StepHandlers);
-        builder.Register<IStepPersister>(c => new SqlServerPersister(ConnectionString, Logger)).InstancePerDependency();
+        builder.RegisterWorkflowSteps(StepHandlers.ToArray());
+        builder.Register<IWorkflowStepPersister>(c => new SqlServerPersister(ConnectionString, Logger)).InstancePerDependency();
 
         // register all classes having a [step] attribute
-        builder.RegisterStepImplementations(Logger, typeof(TestHelper).Assembly);
+        builder.RegisterWorkflowSteps(typeof(TestHelper).Assembly);
 
         Formatter ??= new NewtonsoftStateFormatterJson(Logger);
 
         iocContainer = new AutofacAdaptor(builder.Build());
-        Engine = new WorkflowEngine(Logger, iocContainer, Formatter);
+        Engine = new WorkflowEngine(WorkflowConfiguration, Logger, iocContainer, Formatter);
 
         Engine.Data.AddSteps(Steps);
 
@@ -92,14 +92,14 @@ public class TestHelper
 
     public WorkflowEngine StartAsync()
     {
-        Engine!.StartAsync(WorkflowConfiguration, stoppingToken: cts.Token);
+        Engine!.StartAsync(stoppingToken: cts.Token);
         return Engine;
     }
 
     public WorkflowEngine Start()
     {
         if (Engine == null) throw new Exception("Remember to 'build' before 'start'");
-        Engine!.Start(WorkflowConfiguration, stoppingToken: cts.Token);
+        Engine!.Start(stoppingToken: cts.Token);
         return Engine;
     }
 
