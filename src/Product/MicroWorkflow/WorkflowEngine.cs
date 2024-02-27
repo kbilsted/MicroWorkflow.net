@@ -45,7 +45,7 @@ public class WorkflowEngine
         if (logger.InfoLoggingEnabled)
         {
             logger.LogInfo($"{nameof(WorkflowEngine)}: starting engine: {engineName}", null, null);
-            logger.LogInfo($"{nameof(WorkflowEngine)}: starting persister connection: {iocContainer.GetInstance<IStepPersister>().GetConnectionInfoForLogging()}", null, null);
+            logger.LogInfo($"{nameof(WorkflowEngine)}: starting persister connection: {iocContainer.GetInstance<IWorkflowStepPersister>().GetConnectionInfoForLogging()}", null, null);
         }
 
         Configuration = configuration;

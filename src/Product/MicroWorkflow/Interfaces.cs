@@ -46,7 +46,7 @@ public interface IWorkflowIocContainer
 /// <summary>
 /// This interface is disposable such that connections/transactions may be cleaned up by the dispose method
 /// </summary>
-public interface IStepPersister : IDisposable
+public interface IWorkflowStepPersister : IDisposable
 {
     string GetConnectionInfoForLogging();
 

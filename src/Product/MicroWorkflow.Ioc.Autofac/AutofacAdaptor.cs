@@ -47,7 +47,7 @@ public static class AutofacExtensions
             registrar.RegisterWorkflowStep(stepName, implementationType);
 
         FindAndRegister<IWorkflowLogger>();
-        FindAndRegister<IStepPersister>();
+        FindAndRegister<IWorkflowStepPersister>();
         FindAndRegister<IWorkflowStepStateFormatter>();
 
         void FindAndRegister<T>() where T : notnull

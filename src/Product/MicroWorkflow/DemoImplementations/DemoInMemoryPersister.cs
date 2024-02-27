@@ -4,7 +4,7 @@
 ///  Simple in-memory storage FOR DEMO PURPOSES ONLY.
 ///  The current transaction handling is incorrect!
 /// </summary>
-public class DemoInMemoryPersister : IStepPersister
+public class DemoInMemoryPersister : IWorkflowStepPersister
 {
     static readonly object GlobalLock = new();
     static int GlobalId = 1;

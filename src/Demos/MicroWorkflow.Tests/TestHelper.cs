@@ -10,7 +10,7 @@ public class TestHelper
     public NewtonsoftStateFormatterJson? Formatter;
     public CancellationTokenSource cts = new();
     public AutofacAdaptor? iocContainer;
-    public SqlServerPersister Persister => (SqlServerPersister)iocContainer!.GetInstance<IStepPersister>();
+    public SqlServerPersister Persister => (SqlServerPersister)iocContainer!.GetInstance<IWorkflowStepPersister>();
     public readonly string CorrelationId = guid();
     public readonly string FlowId = guid();
     public IWorkflowLogger? Logger;
@@ -51,7 +51,7 @@ public class TestHelper
         }
 
         builder.RegisterWorkflowSteps(StepHandlers.ToArray());
-        builder.Register<IStepPersister>(c => new SqlServerPersister(ConnectionString, Logger)).InstancePerDependency();
+        builder.Register<IWorkflowStepPersister>(c => new SqlServerPersister(ConnectionString, Logger)).InstancePerDependency();
 
         // register all classes having a [step] attribute
         builder.RegisterWorkflowSteps(typeof(TestHelper).Assembly);

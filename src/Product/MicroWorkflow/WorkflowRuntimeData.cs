@@ -19,7 +19,7 @@ public class WorkflowRuntimeData
     /// <summary> Reschedule a ready step to 'now' and send it activation data </summary>
     public int ActivateStep(int id, object? activationArguments, object? transaction = null)
     {
-        var persister = iocContainer.GetInstance<IStepPersister>();
+        var persister = iocContainer.GetInstance<IWorkflowStepPersister>();
 
         int rows = persister.InTransaction(() =>
             {
@@ -41,7 +41,7 @@ public class WorkflowRuntimeData
     /// <returns>the identity of the step or null if a search found one or more ready steps</returns>
     public int? AddStepIfNotExists(Step step, SearchModel searchModel, object? transaction = null)
     {
-        IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
+        IWorkflowStepPersister persister = iocContainer.GetInstance<IWorkflowStepPersister>();
 
         transaction ??= persister.CreateTransaction();
 
@@ -71,7 +71,7 @@ public class WorkflowRuntimeData
             FixupNewStep(null, step, now);
         }
 
-        IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
+        IWorkflowStepPersister persister = iocContainer.GetInstance<IWorkflowStepPersister>();
         var result = persister.InTransaction(() => persister.Insert(StepStatus.Ready, steps), transaction);
 
         Worker.ResetWaitForWorkers();
@@ -87,7 +87,7 @@ public class WorkflowRuntimeData
     {
         var now = DateTime.Now;
 
-        var persister = iocContainer.GetInstance<IStepPersister>();
+        var persister = iocContainer.GetInstance<IWorkflowStepPersister>();
 
         var fix = steps.Select(x =>
         {
@@ -120,14 +120,14 @@ public class WorkflowRuntimeData
 
     public List<Step> SearchSteps(SearchModel criteria, StepStatus target, object? transaction = null)
     {
-        IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
+        IWorkflowStepPersister persister = iocContainer.GetInstance<IWorkflowStepPersister>();
         var result = persister.InTransaction(() => persister.SearchSteps(criteria, target), transaction);
         return result;
     }
 
     public Dictionary<StepStatus, List<Step>> SearchSteps(SearchModel criteria, FetchLevels fetchLevels, object? transaction = null)
     {
-        IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
+        IWorkflowStepPersister persister = iocContainer.GetInstance<IWorkflowStepPersister>();
         var result = persister.InTransaction(() => persister.SearchSteps(criteria, fetchLevels), transaction);
         return result;
     }
@@ -136,7 +136,7 @@ public class WorkflowRuntimeData
     /// <returns>Ids of inserted steps into the ready queue</returns>
     public int[] ReExecuteSteps(SearchModel criteria, FetchLevels stepKinds, object? transaction = null)
     {
-        IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
+        IWorkflowStepPersister persister = iocContainer.GetInstance<IWorkflowStepPersister>();
 
         if (stepKinds.Ready)
             throw new ArgumentException("Cannot re-execute 'ready' steps");
@@ -187,7 +187,7 @@ public class WorkflowRuntimeData
     /// <returns>The ids of the failed steps</returns>
     public int[] FailSteps(SearchModel criteria, object? transaction = null)
     {
-        IStepPersister persister = iocContainer.GetInstance<IStepPersister>();
+        IWorkflowStepPersister persister = iocContainer.GetInstance<IWorkflowStepPersister>();
 
         int[] ids = persister.InTransaction(() =>
         {
