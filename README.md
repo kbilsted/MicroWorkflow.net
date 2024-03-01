@@ -5,6 +5,9 @@
 [![Stats](https://img.shields.io/badge/Doc_lines-594-ffb469.svg)]()
 <!--end-->
 
+
+<p align="center"> <img src="doc/microworkflow.webp" alt="logo"></p>
+
 Micro Workflow is a very fast, small, embedable and distributed workflow system primarily for .Net developers.
 
 The code base is so small every one can read and understand the inner workings if necesarry.
