@@ -65,7 +65,7 @@ class DocumentationTests
 
             // ... stuff
 
-            return step.Done();
+            return await Task.FromResult(step.Done());
         }
     }
 
@@ -82,7 +82,7 @@ class DocumentationTests
 
             // ... fetch data
 
-            return step.Rerun(scheduleTime: step.ExecutionStartTime!.Value.AddHours(1));
+            return await Task.FromResult(step.Rerun(scheduleTime: step.ExecutionStartTime!.Value.AddHours(1)));
         }
     }
 
