@@ -43,8 +43,6 @@ public class WorkflowRuntimeData
     {
         IWorkflowStepPersister persister = iocContainer.GetInstance<IWorkflowStepPersister>();
 
-        transaction ??= persister.CreateTransaction();
-
         int? result = persister.InTransaction(() =>
         {
             if (persister.SearchSteps(searchModel, StepStatus.Ready).Any())
