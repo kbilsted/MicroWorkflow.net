@@ -11,6 +11,9 @@ Micro Workflow is a very fast, small, embedable and distributed workflow system 
 
 The code base is so small every one can read and understand the inner workings if necesarry.
 
+# 0. Nuget
+We are on nuget [https://www.nuget.org/packages?q=microworkflow](https://www.nuget.org/packages?q=microworkflow)
+
 # 1. Why use Micro Workflow
 
 You should consider using Micro Workflow for one or more of the following reasons. 
