@@ -36,7 +36,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Autofac" Version="8.0.0" />
+		<PackageReference Include="Autofac" Version="8.1.1" />
 		<ProjectReference Include="..\MicroWorkflow\MicroWorkflow.csproj" />
 
 	</ItemGroup>
