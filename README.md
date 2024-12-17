@@ -1,10 +1,9 @@
 # Micro Workflow .net 
 <!--start-->
-[![Stats](https://img.shields.io/badge/Code_lines-1,7_K-ff69b4.svg)]()
+[![Stats](https://img.shields.io/badge/Code_lines-1,8_K-ff69b4.svg)]()
 [![Stats](https://img.shields.io/badge/Test_lines-1,2_K-69ffb4.svg)]()
-[![Stats](https://img.shields.io/badge/Doc_lines-594-ffb469.svg)]()
+[![Stats](https://img.shields.io/badge/Doc_lines-936-ffb469.svg)]()
 <!--end-->
-
 
 <p align="center"> <img src="doc/microworkflow.webp" alt="logo"></p>
 
@@ -14,22 +13,27 @@ The code base is so small every one can read and understand the inner workings i
 
 # 1. Why use Micro Workflow
 
-You should consider using Micro Workflow due to one or more of the following reason
+You should consider using Micro Workflow for one or more of the following reasons. 
+* When you have a need for a queue, 
+* scheduling and re-scheduling of code to be executed
+* distributing load across multiple servers
+* or a business process that needs to be robust (have it being broken up into steps and its progress persisted). 
 
-when you have a need for a queue, scheduling of code to execute, or a business process that needs to be robus. We provide many examples in ["integration patterns"](https://github.com/kbilsted/MicroWorkflow.net/tree/feature/doc?tab=readme-ov-file#5-integration-patterns)
+We provide many examples in ["integration patterns"](https://github.com/kbilsted/MicroWorkflow.net/tree/feature/doc?tab=readme-ov-file#5-integration-patterns) on how to get started.
 
+Design philosophy
 
 **Simplicity** 
 * We model only the steps in a workflow, *not* the transitions between them 
-    * This greatly *simplify* the model, the versioning of flows and steps
-    * enable you to use reusable code blocks for determining a transition
-* It is *easy* to embed it directly into your solutions to improve resiliance or use as a stand-alone workflow
+    * This greatly *simplifies* the model, especially when dealing with change and versioning 
+    * It enables you to use reusable code blocks for determining a transition
+* It is *easy* to embed micro workflow directly into your solutions to improve resiliance or use as a stand-alone workflow
 
 **We use C# all the way**
-* We don't want to invent a new language - we love C#!
+* We don't want to invent a new language for the workflow - we love C#!
 * Workflow code is *readable*, *debugable*, and *testable* - like the rest of your code base.
 * You can use existing best practices for logging, IOC containers etc. of your choice
-* Since Workflow code is just C# it is *easy to commit and merge* use your existing *branching strategies*
+* Workflow code is just C# so it is *easy to commit and merge* using your existing *branching strategies*
 * You *do not* need a special graphical editor for specifying flows
 
 **The datamodel is simple - just three DB tables** 
@@ -38,7 +42,7 @@ when you have a need for a queue, scheduling of code to execute, or a business p
 
 **Distributed mindset**
 * Supports *Fail-over setup* To improve up-time applications/integrations are often running on multiple servers at the same time. This is a common scenario is supported with no special setup.
-* Supports incremental deployments across more instances. When deploying multiple instances, the roll-out is typical gradual. Hence we support that steps may be added that is only known to a sub-set of the running workflows.
+* Supports incremental deployments across multiple instances, meaning the roll-out is gradual. Hence we support that steps may be added that is only known to a sub-set of the running workflows.
 
 **Scalable** 
 * You can add more workers in the workflow engine (vertical scaling)
@@ -46,7 +50,7 @@ when you have a need for a queue, scheduling of code to execute, or a business p
 
 **No external dependencies** 
 * The core library has *no external dependencies*, you can use whatever database, logger, json/xml/binary serializer you want ... in any version you want
-* Convenience supplement nuget packages for Newtonsoft json, Ado .net, and Autofac are provided 
+* To get you quickly started, we supply nuget packages for "Newtonsoft Json", "Ado .Net Db", and "Autofac IOC". The packages are completely optional.
 
 
 # 2. Overview
@@ -61,11 +65,11 @@ Supported scalabilities
 
 # 3. Getting started
 
-To define a workflow with the two steps `FetchData` (which fetches some data), and `AnalyzeWords` (that analyzes the data), we implement interface `IStepImplementation` twice. 
-To transition from one step to one (or several steps), use `Done()`. This tells the engine that the current step has finished sucesfully. You can supply one or more steps that will be executed in the future. 
+To define a workflow with the two steps, a `FetchData` step that fetches some data, and a `AnalyzeWords` step that analyzes the data, we implement interface `IStepImplementation` twice. 
+To transition from one step to another, the step uses `return Done()`. This tells the engine that the current step has finished sucesfully. You can supply one or more steps that will be executed as a result of the success. 
 This is how you control ordering of events.
 
-There are no restrictions on the names of steps, but we found using a scheme similar to REST api's is beneficial. Hence we recommend you to use `{version}/{business domain}/{workflow name}/{workflow step}`. 
+There are no restrictions on the names of steps, but we found using a scheme similar to REST api's to be beneficial. Hence using the following format `{version}/{business domain}/{workflow name}/{workflow step}`. By defining the name of the flow as a `public const` it is easy to "find usage" inside the code base and to ensure no mis-spelling. Two workflow steps cannot have the same name.
 
 ```C#
 [StepName(Name)]

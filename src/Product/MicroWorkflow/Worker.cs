@@ -385,7 +385,7 @@ totalwaits: {TotalperformanceWaitCounter} totalfutile-fetches:{TotalperformanceF
             }
         }
 
-        step.Description = result.Description ?? step.Description;
+        step.Description = result.Description;
         step.StateFormat = result.PersistedStateFormat ?? step.StateFormat;
 
         if (result.NewSteps != null)

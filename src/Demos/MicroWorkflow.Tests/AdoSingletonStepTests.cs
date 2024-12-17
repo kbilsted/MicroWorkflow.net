@@ -24,10 +24,10 @@ public class AdoSingletonStepTests
             Singleton = true,
             FlowId = helper.FlowId
         }];
-        helper.StepHandlers = [Handle(name, step => { 
+        helper.StepHandlers = [Handle(name, step => {
             stepResult = $"hello";
             stepResultIsSingleton = step.Singleton;
-            return step.Done(); 
+            return step.Done();
         })];
         helper.StopWhenNoWork().BuildAndStart();
 
@@ -74,13 +74,14 @@ public class AdoSingletonStepTests
         var name = helper.RndName;
         var step = new Step(name) { Singleton = true };
         SearchModel searchModel = new(Name: step.Name);
-        engine.Data.AddStepIfNotExists(step, searchModel)
-            .Should()
+
+        var id = engine.Data.AddStepIfNotExists(step, searchModel);
+        id.Should()
             .HaveValue();
 
         var step2 = new Step(name) { Singleton = true };
-        engine.Data.AddStepIfNotExists(step2, searchModel)
-            .Should()
+        id = engine.Data.AddStepIfNotExists(step2, searchModel);
+        id.Should()
             .BeNull();
     }
 }

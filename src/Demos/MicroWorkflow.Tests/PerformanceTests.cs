@@ -5,6 +5,7 @@ using static MicroWorkflow.TestHelper;
 
 namespace MicroWorkflow;
 
+[Explicit("slow")]
 public class PerformanceTests
 {
     [Test]
